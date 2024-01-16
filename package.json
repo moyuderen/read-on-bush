@@ -1,8 +1,8 @@
 {
   "name": "readOnBush",
-  "displayName": "readOnBush",
-  "description": "readOnBush",
-  "version": "0.0.3",
+  "displayName": "Read On Bush",
+  "description": "在vscode状态栏阅读小说",
+  "version": "0.0.4",
   "publisher": "moyuderen",
   "engines": {
     "vscode": "^1.85.0"
@@ -56,7 +56,7 @@
       "activitybar": [
         {
           "id": "readOnBush",
-          "title": "Fish Read",
+          "title": "Read On Bush",
           "icon": "public/logo.svg"
         }
       ]
