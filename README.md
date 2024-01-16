@@ -6,12 +6,12 @@
 
 如果安装成功在应用栏会显示插件Icon, 右下角会有添加图书暗暗
 
-![Alt text](/readme/install.png)
+![Alt text](https://github.com/moyuderen/CDN/blob/main/moyuderen/read-on-bush/install.png?raw=true)
 
 ## 插入.txt格式书到书架
 
-![Alt text](/readme/import-book.png)
+![Alt text](https://github.com/moyuderen/CDN/blob/main/moyuderen/read-on-bush/import-book.png?raw=true)
 
 ## 点击书架中要阅读的书
 
-![Alt text](/readme/read.png)
+![Alt text](https://github.com/moyuderen/CDN/blob/main/moyuderen/read-on-bush/read.png?raw=true)
