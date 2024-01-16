@@ -2,11 +2,12 @@
   "name": "readOnBush",
   "displayName": "readOnBush",
   "description": "readOnBush",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "moyuderen",
   "engines": {
     "vscode": "^1.85.0"
   },
+  "repository": "https://github.com/moyuderen/read-on-bush.git",
   "categories": [
     "Other"
   ],
@@ -15,7 +16,7 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
+    "commands": [ 
       {
         "command": "readOnBush.helloWorld",
         "title": "Hello World"
@@ -35,6 +36,20 @@
       {
         "command": "readOnBush.import",
         "title": "Import"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "readOnBush.prev",
+        "key": "cmd+left",
+        "mac": "cmd+left",
+        "when": "!editorFocus"
+      },
+      {
+        "command": "readOnBush.next",
+        "key": "cmd+right",
+        "mac": "cmd+right",
+        "when": "!editorFocus"
       }
     ],
     "viewsContainers": {
