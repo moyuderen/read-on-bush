@@ -33,7 +33,7 @@ export class Parse {
             results.push(line);
           } else {
             const count = Math.floor(line.length / this.lineWidth);
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i <= count; i++) {
               results.push(line.substring(i * this.lineWidth, (i + 1) * this.lineWidth));
             }
           }

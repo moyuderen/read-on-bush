@@ -17,6 +17,21 @@ let preStatusBarItem: StatusBarItem;
 let nextStatusBarItem: StatusBarItem;
 let startStatusBarItem: StatusBarItem;
 let stopStatusBarItem: StatusBarItem;
+let processStatusBarItem: StatusBarItem;
+
+function process(context: ExtensionContext) {
+  if(!processStatusBarItem) {
+    processStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 90);
+    context.subscriptions.push(processStatusBarItem);
+    processStatusBarItem.text = '加载中...';
+    processStatusBarItem.show();
+  }
+}
+
+function updateProcess(cur: number, total: number, book: BookData) {
+  processStatusBarItem.text = `${cur}/${total}`;
+  processStatusBarItem.tooltip = `《${book.name}》进度...`;
+}
 
 function viewContent(context: ExtensionContext) {
   if(!contentBarItem) {
@@ -77,6 +92,9 @@ function start(context: ExtensionContext) {
       startStatusBarItem.hide();
       stopStatusBarItem.show();
       contentBarItem.show();
+      preStatusBarItem.show();
+      nextStatusBarItem.show();
+      processStatusBarItem.show();
     });
   }
 }
@@ -94,6 +112,9 @@ function stop(context: ExtensionContext) {
       startStatusBarItem.show();
       stopStatusBarItem.hide();
       contentBarItem.hide();
+      preStatusBarItem.hide();
+      nextStatusBarItem.hide();
+      processStatusBarItem.hide();
     });
   }
 }
@@ -110,6 +131,7 @@ export class Book {
     this.book = book;
     this.contents = [];
     viewContent(context);
+    process(context);
     preLine(context, () => this.prevLine());
     start(context);
     stop(context);
@@ -123,6 +145,7 @@ export class Book {
     this.contents = contents;
     const content = contents[this.book.process];
     updateContent(content);
+    updateProcess(this.book.process, this.contents.length, this.book);
   }
 
   prevLine() {
@@ -133,6 +156,7 @@ export class Book {
     this.book.process --;
     const content = this.contents[this.book.process];
     updateContent(content);
+    updateProcess(this.book.process, this.contents.length, this.book);
     this.bookList.updateBookList(this.book.id, this.book.process);
   }
 
@@ -144,6 +168,7 @@ export class Book {
     this.book.process ++;
     const content = this.contents[this.book.process];
     updateContent(content);
+    updateProcess(this.book.process, this.contents.length, this.book);
     this.bookList.updateBookList(this.book.id, this.book.process);
   }
 }
