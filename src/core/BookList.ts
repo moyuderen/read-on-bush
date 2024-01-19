@@ -1,5 +1,6 @@
 import { window, commands } from 'vscode';
 import { type ExtensionContext } from 'vscode';
+import path from 'path';
 import { BookTreeProvider, BookTreeItem } from './BookTree';
 import { ReadBook } from './ReadBook';
 import { Book, BookData } from './Book';
@@ -63,6 +64,7 @@ export class BookList {
     this.books = this.books.filter(book => book.id !== id);
     this.updateBookTreeProvider();
     setStorage('books', this.books);
+    message(`Delete successful !`);
   }
 
   updateBookList(id: string, process: number) {
@@ -85,7 +87,7 @@ export class BookList {
     if (files && files.length > 0) {
       const file = files[0];
       const book = {
-        name: file.path,
+        name: path.parse(file.path).base,
         id: generateId(),
         process: 0,
         url: file.path

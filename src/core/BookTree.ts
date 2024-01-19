@@ -16,7 +16,7 @@ export class BookTreeItem extends vscode.TreeItem {
     this.url = url;
     this.label = `《${this.name}》`;
     this.process = process;
-    this.tooltip = `《${this.name}》[${this.url}]`;
+    this.tooltip = `${this.url}`;
     this.iconPath =  new vscode.ThemeIcon("book"); 
     // : new vscode.ThemeIcon("check");
     this.command = {
