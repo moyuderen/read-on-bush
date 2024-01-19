@@ -1,22 +1,17 @@
-import { type ExtensionContext } from 'vscode';
+import { type ExtensionContext, commands } from 'vscode';
 import { BookList } from './BookList';
 
 export type Plugin = {
   install:(app: ReadBook) => ReadBook,
   [key: string]: any
 };
-
 export class ReadBook {
   public context: ExtensionContext;
-  public bookList: BookList | null;
+  public bookList: BookList;
 
   constructor(context: ExtensionContext) {
     this.context = context;
-    this.bookList = null;
-  }
-
-  use(plugin: Plugin) {
-    plugin.install && plugin.install(this);
+    this.bookList = new BookList(context);
   }
 }
 

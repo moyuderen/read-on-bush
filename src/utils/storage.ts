@@ -1,11 +1,10 @@
-import { Memento} from 'vscode';
-import { ReadBook, type Plugin } from '../core/ReadBook';
+import { Memento, ExtensionContext} from 'vscode';
 
 let storage: Memento;
 
-function init(app: ReadBook) {
-  storage = app.context.globalState;
-  app.context.globalState.setKeysForSync([
+export function setupStorage(context: ExtensionContext) {
+  storage = context.globalState;
+  context.globalState.setKeysForSync([
 
   ]);
 }
@@ -29,10 +28,7 @@ export function rmStorage(key: string): void {
 }
 
 export default {
-  install(app: ReadBook) {
-    init(app);
-    return app;
-  },
+  setupStorage,
   getStorage,
   setStorage,
   rmStorage

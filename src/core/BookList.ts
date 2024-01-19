@@ -8,6 +8,7 @@ import { getStorage, setStorage, rmStorage } from '../utils/storage';
 import { importFile } from './Import';
 import { generateId } from '../utils/generateId';
 
+export let readingBook: Book;
 export class BookList {
   public context: ExtensionContext;
   public readingBook: Book | null;
@@ -18,17 +19,11 @@ export class BookList {
     this.readingBook = null;
     importFile(this.context, () => this.addBook());
     this.books = this.getBooks();
-    this.initBooks();
+    this.updateBookTreeProvider();
+    this.initCommands();
   }
 
   getBooks() {
-    // const books = [{
-    //   id: '1',
-    //   name:'刀锋',
-    //   process:0,
-    //   url: '/Users/yiqi/Downloads/阅读/刀锋.txt',
-    //   children: []
-    // }];
     // rmStorage('books');
     if(!getStorage('books') || getStorage('books') === undefined || getStorage('books') === 'undefined') {
       setStorage('books', []);
@@ -36,12 +31,8 @@ export class BookList {
     }
     return getStorage('books');
   }
-
-  initBooks() {
-    const provider = new BookTreeProvider(this.books);
-    provider.refresh();
-    window.registerTreeDataProvider('bookList', provider);
-
+  
+  initCommands() {
     commands.registerCommand('readOnBush.openBook', (event) => {
       this.openOnBook(event);
     });
@@ -59,6 +50,7 @@ export class BookList {
       { id, name, process, url },
       this
     );
+    readingBook = this.readingBook;
   }
 
   updateBookTreeProvider() {
