@@ -1,17 +1,36 @@
 # Read On Bush
 
-## 目前只支持.txt文件阅读
+目前只支持.txt文件阅读
 
-## 安装插件
+## 1. 使用指南
 
-如果安装成功在应用栏会显示插件Icon, 右下角会有添加图书暗暗
+### 1.1 Install Read On Bush
 
-![Alt text](https://github.com/moyuderen/CDN/blob/main/moyuderen/read-on-bush/install.png?raw=true)
+如果安装成功在应用栏会显示插件Icon, 右下角会有添加图书按钮
 
-## 插入.txt格式书到书架
+![Install](https://github.com/moyuderen/CDN/blob/main/moyuderen/read-on-bush/install.png?raw=true)
 
-![Alt text](https://github.com/moyuderen/CDN/blob/main/moyuderen/read-on-bush/import-book.png?raw=true)
+### 1.2 Import book.txt
 
-## 点击书架中要阅读的书
+![Import book](https://github.com/moyuderen/CDN/blob/main/moyuderen/read-on-bush/import-book.png?raw=true)
 
-![Alt text](https://github.com/moyuderen/CDN/blob/main/moyuderen/read-on-bush/read.png?raw=true)
+### 1.3 Read
+
+![How to read](https://github.com/moyuderen/CDN/blob/main/moyuderen/read-on-bush/read.png?raw=true)
+
+## 2. Key Bindings
+
+### Mac
+
+Prev line `cmd+left`
+
+Next line `cmd+right`
+
+### Windows
+
+Prev line `cmd+left`
+
+Next line `cmd+right`
+
+Key Bindings: Takes effect when the editor loses focus
+快键键： 在编辑器失去焦点时快捷键才会生效（比如鼠标焦点在终端或者状态栏）
