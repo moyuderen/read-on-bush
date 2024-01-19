@@ -1,12 +1,14 @@
 import { type ExtensionContext } from 'vscode';
-import { ReadBook, type Plugin } from "./core/ReadBook";
-import Storage from './utils/storage';
-import BookList from './core/BookList';
+import { ReadBook } from "./core/ReadBook";
+import { setupStorage } from './utils/storage';
+import { setupHandler } from './core/handler';
 
 function setup(context: ExtensionContext) {
+  setupStorage(context);
+  setupHandler(context);
   const app = new ReadBook(context);
-  app.use(Storage);
-  app.use(BookList);
+
+  return app;
 }
 
 export {
