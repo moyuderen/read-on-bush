@@ -2,7 +2,7 @@
   "name": "readOnBush",
   "displayName": "Read On Bush",
   "description": "在vscode状态栏阅读小说",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "publisher": "moyuderen",
   "engines": {
     "vscode": "^1.85.0"
