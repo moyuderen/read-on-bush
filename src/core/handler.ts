@@ -15,7 +15,7 @@ function viewContent(context: ExtensionContext) {
     contentBarItem = window.createStatusBarItem();
     context.subscriptions.push(contentBarItem);
   }
-  updateContent('加载内容中，请耐心等待...');
+  updateContent('Please select the book you want to read !');
   contentBarItem.show();
 }
 
@@ -28,7 +28,7 @@ export function updateContent(content: string) {
 function preLine(context: ExtensionContext) {
   if(!preStatusBarItem) {
     let commandPrev = "readOnBush.prev";
-    preStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 90);
+    preStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 80);
     preStatusBarItem.command = commandPrev;
     context.subscriptions.push(preStatusBarItem);
     preStatusBarItem.text = `$(chevron-left)`;
@@ -45,7 +45,7 @@ function preLine(context: ExtensionContext) {
 function nextLine(context: ExtensionContext) {
   if(!nextStatusBarItem) {
     let commandNext = "readOnBush.next";
-    nextStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 70);
+    nextStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 60);
     nextStatusBarItem.command = commandNext;
     context.subscriptions.push(nextStatusBarItem);
     nextStatusBarItem.text = `$(chevron-right)`;
@@ -62,7 +62,7 @@ function nextLine(context: ExtensionContext) {
 
 function start(context: ExtensionContext) {
   if(!startStatusBarItem) {
-    startStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 90);
+    startStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 70);
     startStatusBarItem.command = 'readOnBush.start';
     context.subscriptions.push(startStatusBarItem);
     startStatusBarItem.text = `$(run)`;
@@ -82,7 +82,7 @@ function start(context: ExtensionContext) {
 
 function stop(context: ExtensionContext) {
   if(!stopStatusBarItem) {
-     stopStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 80);
+    stopStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 70);
     stopStatusBarItem.command = 'readOnBush.end';
     context.subscriptions.push(stopStatusBarItem);
     stopStatusBarItem.text = `$(debug-stop)`;
@@ -105,14 +105,14 @@ function process(context: ExtensionContext) {
   if(!processStatusBarItem) {
     processStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 90);
     context.subscriptions.push(processStatusBarItem);
-    processStatusBarItem.text = '加载中...';
+    processStatusBarItem.text = '';
     processStatusBarItem.show();
   }
 }
 
 export function updateProcess(cur: number, total: number, book: BookData) {
   processStatusBarItem.text = `${cur}/${total}`;
-  processStatusBarItem.tooltip = `《${book.name}》进度...`;
+  processStatusBarItem.tooltip = `《${book.name}》of progress...`;
 }
 
 export function setupHandler(context: ExtensionContext) {

@@ -2,7 +2,7 @@ import { window, StatusBarAlignment, commands, type StatusBarItem, type Extensio
 
 let importStatusBarItem: StatusBarItem;
 const command = "readOnBush.import";
-importStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 60);
+importStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 20);
 importStatusBarItem.text = '$(add)';
 importStatusBarItem.tooltip = '导入';
 importStatusBarItem.command = command;
