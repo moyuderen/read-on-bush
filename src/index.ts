@@ -7,7 +7,6 @@ function setup(context: ExtensionContext) {
   setupStorage(context);
   setupHandler(context);
   const app = new ReadBook(context);
-
   return app;
 }
 
