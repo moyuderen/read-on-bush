@@ -1,5 +1,11 @@
-const Prefix = 'readOnBush';
+import { AppName } from "./config";
 
 export enum Commands {
-  'importBook' = `${Prefix}.import`
+  ImportBook = `${AppName}.import`,
+  ActiveKeyBinding = `${AppName}.activeKeyBinding`,
+  DisableKeyBinding = `${AppName}.disableKeyBinding`
+}
+
+export enum CustomWhenClauseContext {
+  KeyBindingsStatus = `${AppName}.keyBindingsStatus`
 }

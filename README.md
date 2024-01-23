@@ -22,15 +22,18 @@
 
 ### Mac
 
-Prev line `cmd+left`
+Prev line `Cmd+left`
 
-Next line `cmd+right`
+Next line `Ctrl+right`
 
 ### Windows
 
-Prev line `cmd+left`
+Prev line `Cmd+left`
 
-Next line `cmd+right`
+Next line `Ctrl+right`
 
-Key Bindings: Takes effect when the editor loses focus
-快键键： 在编辑器失去焦点时快捷键才会生效（比如鼠标焦点在终端或者状态栏）
+### 激活、禁用快捷键（默认是禁用状态）
+
+状态栏增加**Reading mode**（开启快捷键阅读功能）和**Coding mode**（禁用快捷键阅读功能）按钮,方便随时切换
+
+在停止读书后会自动切换到`Coding`模式

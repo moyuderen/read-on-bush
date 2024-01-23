@@ -1,6 +1,9 @@
 import { type ExtensionContext, type StatusBarItem, StatusBarAlignment,  window, commands } from 'vscode';
 import { BookData, Book } from './Book';
 import { readingBook } from './BookList';
+import { setupKeyBindingsBarItem, activeBarItem, disableBarItem } from './keyBindingHandler';
+import { StatusBarPriority } from './config';
+import { Commands } from './Commands';
 
 export let contentBarItem: StatusBarItem;
 export let preStatusBarItem: StatusBarItem;
@@ -28,7 +31,7 @@ export function updateContent(content: string) {
 function preLine(context: ExtensionContext) {
   if(!preStatusBarItem) {
     let commandPrev = "readOnBush.prev";
-    preStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 80);
+    preStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, StatusBarPriority.PrevLine);
     preStatusBarItem.command = commandPrev;
     context.subscriptions.push(preStatusBarItem);
     preStatusBarItem.text = `$(chevron-left)`;
@@ -45,7 +48,7 @@ function preLine(context: ExtensionContext) {
 function nextLine(context: ExtensionContext) {
   if(!nextStatusBarItem) {
     let commandNext = "readOnBush.next";
-    nextStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 60);
+    nextStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, StatusBarPriority.NextLine);
     nextStatusBarItem.command = commandNext;
     context.subscriptions.push(nextStatusBarItem);
     nextStatusBarItem.text = `$(chevron-right)`;
@@ -62,7 +65,7 @@ function nextLine(context: ExtensionContext) {
 
 function start(context: ExtensionContext) {
   if(!startStatusBarItem) {
-    startStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 70);
+    startStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, StatusBarPriority.Start);
     startStatusBarItem.command = 'readOnBush.start';
     context.subscriptions.push(startStatusBarItem);
     startStatusBarItem.text = `$(run)`;
@@ -82,7 +85,7 @@ function start(context: ExtensionContext) {
 
 function stop(context: ExtensionContext) {
   if(!stopStatusBarItem) {
-    stopStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 70);
+    stopStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, StatusBarPriority.Stop);
     stopStatusBarItem.command = 'readOnBush.end';
     context.subscriptions.push(stopStatusBarItem);
     stopStatusBarItem.text = `$(debug-stop)`;
@@ -96,6 +99,9 @@ function stop(context: ExtensionContext) {
       preStatusBarItem.hide();
       nextStatusBarItem.hide();
       processStatusBarItem.hide();
+      disableBarItem.show();
+      activeBarItem.hide();
+      commands.executeCommand(Commands.DisableKeyBinding);
     });
   }
 }
@@ -103,7 +109,7 @@ function stop(context: ExtensionContext) {
 
 function process(context: ExtensionContext) {
   if(!processStatusBarItem) {
-    processStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 90);
+    processStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, StatusBarPriority.Process);
     context.subscriptions.push(processStatusBarItem);
     processStatusBarItem.text = '';
     processStatusBarItem.show();
@@ -116,6 +122,8 @@ export function updateProcess(cur: number, total: number, book: BookData) {
 }
 
 export function setupHandler(context: ExtensionContext) {
+  setupKeyBindingsBarItem(context);
+  
   viewContent(context);
   preLine(context);
   nextLine(context);
