@@ -1,5 +1,7 @@
-import { window } from 'vscode';
+import { window, commands} from 'vscode';
 
-export default function message(message = 'Hello World !!!') {
-  window.showInformationMessage(message);
+export default function message(message = 'Hello World !!!', time = 3000) {
+  window.showInformationMessage(message).then(() => {
+    
+  });
 }
