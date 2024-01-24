@@ -22,14 +22,14 @@
         "title": "Hello World"
       },
       {
-        "command": "readOnBush.activeKeyBinding",
+        "command": "readOnBush.switchReadingMode",
         "title": "快捷键激活",
         "category": "Read On Bush",
         "icon": "",
         "shortTitle": "激活阅读快捷键"
       },
       {
-        "command": "readOnBush.disableKeyBinding",
+        "command": "readOnBush.switchCodingMode",
         "title": "快捷键禁用",
         "category": "Read On Bush",
         "icon": "",
@@ -58,13 +58,13 @@
         "command": "readOnBush.prev",
         "key": "ctrl+left",
         "mac": "cmd+left",
-        "when": "readOnBush.keyBindingsStatus == true"
+        "when": "readOnBush.isReadingMode == true"
       },
       {
         "command": "readOnBush.next",
         "key": "ctrl+right",
         "mac": "cmd+right",
-        "when": "readOnBush.keyBindingsStatus == true"
+        "when": "readOnBush.isReadingMode == true"
       }
     ],
     "viewsContainers": {

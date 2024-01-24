@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { type BookData } from './Book';
+import { Commands } from './commands';
 
 export class BookTreeItem extends vscode.TreeItem {
   constructor(
@@ -21,7 +22,7 @@ export class BookTreeItem extends vscode.TreeItem {
     // : new vscode.ThemeIcon("check");
     this.command = {
       title: this.name,
-      command: 'readOnBush.openBook',
+      command: Commands.OpenBook,
       arguments: [this]
     };
   }

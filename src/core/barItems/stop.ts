@@ -31,7 +31,7 @@ export function setupStopBarItem(context: ExtensionContext) {
     progressBarItem.hide();
     codingModeBarItem.show();
     readingModeBarItem.hide();
-    commands.executeCommand(Commands.DisableKeyBinding);
+    commands.executeCommand(Commands.SwitchCodingMode);
 
     app.readingBook.pause();
   });
