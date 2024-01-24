@@ -7,6 +7,7 @@ import { Book, BookData } from './Book';
 import message from '../utils/message';
 import { getStorage, setStorage, rmStorage } from '../utils/storage';
 import { generateId } from '../utils/generateId';
+import { Commands } from './commands';
 
 export class BookList {
   public app: ReadBook;
@@ -31,11 +32,11 @@ export class BookList {
   }
   
   initCommands() {
-    commands.registerCommand('readOnBush.openBook', (event) => {
+    commands.registerCommand(Commands.OpenBook, (event) => {
       this.openOnBook(event);
     });
 
-    commands.registerCommand('readOnBush.deleteEntry', event => {
+    commands.registerCommand(Commands.DeleteBook, event => {
       this.deleteBook(event.id);
     });
   }

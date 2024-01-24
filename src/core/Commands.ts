@@ -1,5 +1,8 @@
 
 export enum Commands {
+  OpenBook = "readOnBush.openBook",
+  DeleteBook = "readOnBush.deleteEntry",
+
   ImportBook = "readOnBush.import",
   PrevLine = "readOnBush.prev",
   NextLine = 'readOnBush.next',
@@ -7,10 +10,12 @@ export enum Commands {
   Stop = 'readOnBush.stop',
 
 
-  ActiveKeyBinding = "readOnBush.activeKeyBinding",
-  DisableKeyBinding = "readOnBush.disableKeyBinding"
+  SwitchReadingMode = "readOnBush.switchReadingMode",
+  SwitchCodingMode = "readOnBush.switchCodingMode"
 }
 
 export enum CustomWhenClauseContext {
-  KeyBindingsStatus = "readOnBush.keyBindingsStatus"
+  IsReadingMode = "readOnBush.isReadingMode"
 }
+
+export const isReadingMode = true;
