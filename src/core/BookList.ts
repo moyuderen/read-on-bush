@@ -6,19 +6,16 @@ import { ReadBook } from './ReadBook';
 import { Book, BookData } from './Book';
 import message from '../utils/message';
 import { getStorage, setStorage, rmStorage } from '../utils/storage';
-import { importFile } from './Import';
 import { generateId } from '../utils/generateId';
 
-export let readingBook: Book;
 export class BookList {
+  public app: ReadBook;
   public context: ExtensionContext;
-  public readingBook: Book | null;
   public books: BookData[];
 
-  constructor(context: ExtensionContext) {
-    this.context = context;
-    this.readingBook = null;
-    importFile(this.context, () => this.addBook());
+  constructor(app: ReadBook) {
+    this.app = app;
+    this.context = app.context;
     this.books = this.getBooks();
     this.updateBookTreeProvider();
     this.initCommands();
@@ -46,12 +43,10 @@ export class BookList {
   openOnBook(book: BookTreeItem) {
     const { id, name, process, label, url } = book;
     message(`Switch to ${label} !`);
-    this.readingBook = new Book(
-      this.context, 
+    this.app.readingBook = new Book(
       { id, name, process, url },
-      this
+      this.app
     );
-    readingBook = this.readingBook;
   }
 
   updateBookTreeProvider() {
@@ -98,10 +93,3 @@ export class BookList {
     }
   }
 }
-
-export default {
-  install(app: ReadBook) {
-    app.bookList = new BookList(app.context);
-    return app;
-  }
-};

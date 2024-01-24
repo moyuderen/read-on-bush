@@ -26,10 +26,3 @@ export function setStorage(key: string, value: any): void {
 export function rmStorage(key: string): void {
   storage.update(key, undefined);
 }
-
-export default {
-  setupStorage,
-  getStorage,
-  setStorage,
-  rmStorage
-};

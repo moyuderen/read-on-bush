@@ -14,15 +14,13 @@ export class Parse {
     this.read = readline(url);
   }
 
-  start(): Promise<string[]> {
+  readContent(): Promise<string[]> {
     return new Promise((resolve, reject) => {
-      this.read
-      .on("line", (line: string, lineCount: number, byteCount: number) => {
+      this.read.on("line", (line: string, lineCount: number, byteCount: number) => {
         if (line) {
           this.originContents.push(line);
         }
-      })
-      .on("error", (err: any) => {
+      }).on("error", (err: any) => {
         reject(err);
       });
 

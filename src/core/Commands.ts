@@ -1,11 +1,16 @@
-import { AppName } from "./config";
 
 export enum Commands {
-  ImportBook = `${AppName}.import`,
-  ActiveKeyBinding = `${AppName}.activeKeyBinding`,
-  DisableKeyBinding = `${AppName}.disableKeyBinding`
+  ImportBook = "readOnBush.import",
+  PrevLine = "readOnBush.prev",
+  NextLine = 'readOnBush.next',
+  Start = 'readOnBush.start',
+  Stop = 'readOnBush.stop',
+
+
+  ActiveKeyBinding = "readOnBush.activeKeyBinding",
+  DisableKeyBinding = "readOnBush.disableKeyBinding"
 }
 
 export enum CustomWhenClauseContext {
-  KeyBindingsStatus = `${AppName}.keyBindingsStatus`
+  KeyBindingsStatus = "readOnBush.keyBindingsStatus"
 }
