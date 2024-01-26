@@ -17,7 +17,7 @@ export function setupJumpLineBarItem(context: ExtensionContext) {
     jumpLineBarItem.show();
     commands.registerCommand(Commands.JumpLine, async () => {
       if(!app.readingBook) {
-        message.error('请选择要读的书籍！');
+        message.warn('请选择要读的书籍！');
         return;
       }
       const value = await window.showInputBox({
