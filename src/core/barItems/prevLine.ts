@@ -17,7 +17,7 @@ export function setupPreLineBarItem(context: ExtensionContext) {
     prevLineBarItem.show();
     commands.registerCommand(Commands.PrevLine, () => {
       if(!app.readingBook) {
-        message.error('请选择要读的书籍！');
+        message.warn('请选择要读的书籍！');
         return;
       }
       app.readingBook.prevLine();

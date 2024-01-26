@@ -18,7 +18,7 @@ export function setupNextLineBarItem(context: ExtensionContext) {
     nextLineBarItem.show();
     commands.registerCommand(Commands.NextLine, () => {
       if(!app.readingBook) {
-        message.error('请选择要读的书籍！');
+        message.warn('请选择要读的书籍！');
         return;
       }
       app.readingBook.nextLine();
