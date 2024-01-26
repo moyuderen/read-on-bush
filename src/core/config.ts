@@ -6,7 +6,8 @@ export enum StatusBarPriority {
   Start = 70,
   Stop = 71,
   NextLine = 60,
-  DisableKeyBind = 50,
-  ActiveKeyBind = 51,
-  ImportBook = 40
+  JumpLine = 50,
+  DisableKeyBind = 40,
+  ActiveKeyBind = 41,
+  ImportBook = 30
 }

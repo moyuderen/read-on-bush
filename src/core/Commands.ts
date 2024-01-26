@@ -6,6 +6,7 @@ export enum Commands {
   ImportBook = "readOnBush.import",
   PrevLine = "readOnBush.prev",
   NextLine = 'readOnBush.next',
+  JumpLine  = 'readOnBush.jump',
   Start = 'readOnBush.start',
   Stop = 'readOnBush.stop',
 
