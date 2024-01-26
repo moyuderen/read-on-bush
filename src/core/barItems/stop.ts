@@ -6,6 +6,7 @@ import { startBarItem } from './start';
 import { contentBarItem } from './content';
 import { prevLineBarItem } from './prevLine';
 import { nextLineBarItem } from './nextLine';
+import { jumpLineBarItem } from './jumpLine';
 import { readingModeBarItem, codingModeBarItem } from './mode';
 import { progressBarItem } from './progress';
 import { app } from '../index';
@@ -28,11 +29,12 @@ export function setupStopBarItem(context: ExtensionContext) {
     contentBarItem.hide();
     prevLineBarItem.hide();
     nextLineBarItem.hide();
+    jumpLineBarItem.hide();
     progressBarItem.hide();
     codingModeBarItem.show();
     readingModeBarItem.hide();
     commands.executeCommand(Commands.SwitchCodingMode);
 
-    app.readingBook.pause();
+    app.readingBook && app.readingBook.pause();
   });
 }

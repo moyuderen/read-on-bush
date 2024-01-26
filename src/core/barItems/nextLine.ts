@@ -3,6 +3,7 @@ import type { StatusBarItem, ExtensionContext } from 'vscode';
 import { StatusBarPriority } from '../config';
 import { Commands } from '../commands';
 import { app } from '../index';
+import message from '../../utils/message';
 
 export let nextLineBarItem: StatusBarItem;
 
@@ -16,9 +17,11 @@ export function setupNextLineBarItem(context: ExtensionContext) {
     nextLineBarItem.tooltip = 'Next line';
     nextLineBarItem.show();
     commands.registerCommand(Commands.NextLine, () => {
-      if(app.readingBook) {
-        app.readingBook.nextLine();
+      if(!app.readingBook) {
+        message.error('请选择要读的书籍！');
+        return;
       }
+      app.readingBook.nextLine();
     });
   }
 }

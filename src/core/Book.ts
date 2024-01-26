@@ -66,6 +66,18 @@ export class Book {
     this.app.bookList.updateBookList(this.book.id, this.book.process);
   }
 
+  jumpLine(process: number) {
+    if(!this.isReading) {
+      return;
+    }
+
+    this.book.process = process;
+    const content = this.contents[this.book.process];
+    updateContent(content);
+    updateProgress(this.book.process, this.contents.length, this.book);
+    this.app.bookList.updateBookList(this.book.id, this.book.process);
+  }
+
   pause() {
     this.isReading = false;
   }

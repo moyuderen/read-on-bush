@@ -6,6 +6,7 @@ import { stopBarItem } from './stop';
 import { contentBarItem } from './content';
 import { prevLineBarItem } from './prevLine';
 import { nextLineBarItem } from './nextLine';
+import { jumpLineBarItem } from './jumpLine';
 import { progressBarItem } from './progress';
 import { app } from '../index';
 
@@ -27,8 +28,9 @@ export function setupStartBarItem(context: ExtensionContext) {
     contentBarItem.show();
     prevLineBarItem.show();
     nextLineBarItem.show();
+    jumpLineBarItem.show();
     progressBarItem.show();
 
-    app.readingBook.start();
+    app.readingBook && app.readingBook.start();
   });
 }
