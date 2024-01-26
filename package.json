@@ -2,13 +2,20 @@
   "name": "readOnBush",
   "displayName": "Read On Bush",
   "description": "在vscode状态栏阅读小说",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "publisher": "moyuderen",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
     "Other"
+  ],
+   "keywords": [
+    "read",
+    "阅读",
+    "小说",
+    "摸鱼",
+    "vscode 状态栏"
   ],
   "icon": "public/moyu.png",
   "activationEvents": [
