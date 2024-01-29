@@ -1,5 +1,5 @@
 import type { ExtensionContext } from 'vscode';
-import { importBarItem,  setupImportBarItem } from "./import";
+// import { setupImportBarItem } from "./import";
 import { readingModeBarItem, codingModeBarItem,  setupModeBarItem } from './mode';
 import { setupContentBarItem } from './content';
 import { setupPreLineBarItem } from './prevLine';
@@ -10,13 +10,12 @@ import { setupStopBarItem } from './stop';
 import { setupProgressBarItem } from './progress';
 
 export {
-  importBarItem,
   readingModeBarItem,
   codingModeBarItem,
 };
 
 export function setupBars(context: ExtensionContext) {
-  setupImportBarItem(context);
+  // setupImportBarItem(context);
   setupModeBarItem(context);
   setupContentBarItem(context);
   setupPreLineBarItem(context);
