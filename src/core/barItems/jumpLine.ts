@@ -32,6 +32,10 @@ export function setupJumpLineBarItem(context: ExtensionContext) {
             return '请输入正确页码';
           }
 
+          if(!/^[+]{0,1}(\d+)$/.test(value)) {
+            return '请输入正确页码';
+          }
+
           if(+value < 0 || +value > app.readingBook.contents.length) {
             return '请输入正确范围的页码';
           }
