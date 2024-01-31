@@ -2,7 +2,7 @@
   "name": "readOnBush",
   "displayName": "Read On Bush",
   "description": "在vscode状态栏阅读小说。支持: 1.翻页 2.跳转到指定页码 3.暂停阅读(隐藏阅读内容) 4.快捷键阅读(Reading和Coding模式随时切换, 避免编码时快捷键冲突)",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publisher": "moyuderen",
   "engines": {
     "vscode": "^1.85.0"
