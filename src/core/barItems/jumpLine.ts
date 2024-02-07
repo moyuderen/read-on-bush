@@ -43,7 +43,9 @@ export function setupJumpLineBarItem(context: ExtensionContext) {
           return; 
         }
       });
-
+      if(!value) {
+        return;
+      }
       app.readingBook.jumpLine(Number(value));
     });
   }
