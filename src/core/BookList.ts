@@ -43,7 +43,6 @@ export class BookList {
 
   openOnBook(book: BookTreeItem) {
     const { id, name, process, label, url } = book;
-    message(`Switch to ${label} !`);
     this.app.readingBook = new Book(
       { id, name, process, url },
       this.app

@@ -22,16 +22,21 @@ export class Book {
     this.book = book;
     this.contents = [];
     this.isReading = true;
-    const parse = new Parse(book.url);
-    this.init(parse);
+    this.init();
   }
 
-  async init(parse: Parse) {
-    const contents: string[] = await parse.readContent();
-    this.contents = contents;
-    const content = contents[this.book.process];
-    updateContent(content);
-    updateProgress(this.book.process, this.contents.length, this.book);
+  async init() {
+    try {
+      const parse = new Parse(this.book.url);
+      const contents: string[] = await parse.readContent();
+      this.contents = contents;
+      const content = contents[this.book.process];
+      message(`Switch to 《${this.book.name}》 !`);
+      updateContent(content);
+      updateProgress(this.book.process, this.contents.length, this.book);
+    } catch(e: any) {
+      message.error(e.message);
+    }
   }
 
   prevLine() {
