@@ -12,4 +12,3 @@ export class ReadBook {
     this.bookList = new BookList(this);
   }
 }
-

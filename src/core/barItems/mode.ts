@@ -6,10 +6,13 @@ import { StatusBarPriority } from '../config';
 export let codingModeBarItem: StatusBarItem;
 
 function setupCodingModeBarItem(context: ExtensionContext) {
-  if(codingModeBarItem) {
-    return; 
+  if (codingModeBarItem) {
+    return;
   }
-  codingModeBarItem = window.createStatusBarItem(StatusBarAlignment.Right, StatusBarPriority.ActiveKeyBind);
+  codingModeBarItem = window.createStatusBarItem(
+    StatusBarAlignment.Right,
+    StatusBarPriority.ActiveKeyBind
+  );
   codingModeBarItem.command = Commands.SwitchReadingMode;
   context.subscriptions.push(codingModeBarItem);
   codingModeBarItem.text = `$(code) Coding`;
@@ -26,10 +29,13 @@ function setupCodingModeBarItem(context: ExtensionContext) {
 
 export let readingModeBarItem: StatusBarItem;
 function setupReadingModeBarItem(context: ExtensionContext) {
-  if(readingModeBarItem) {
-    return; 
+  if (readingModeBarItem) {
+    return;
   }
-  readingModeBarItem = window.createStatusBarItem(StatusBarAlignment.Right, StatusBarPriority.DisableKeyBind);
+  readingModeBarItem = window.createStatusBarItem(
+    StatusBarAlignment.Right,
+    StatusBarPriority.DisableKeyBind
+  );
   readingModeBarItem.command = Commands.SwitchCodingMode;
   context.subscriptions.push(readingModeBarItem);
   readingModeBarItem.text = `$(vr) Reading`;

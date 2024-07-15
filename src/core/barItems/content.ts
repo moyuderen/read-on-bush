@@ -1,4 +1,3 @@
-
 import { window, MarkdownString } from 'vscode';
 import type { StatusBarItem, ExtensionContext } from 'vscode';
 import { app } from '../index';
@@ -9,7 +8,7 @@ export function updateContent(content: string) {
   contentBarItem.text = content;
   // contentBarItem.tooltip = content;
   // 需要 [链接](http://) 来块化tooltip, 起到hover不隐藏的目的
-  const mk = ` 
+  const mk = `
   |      |
   | :--- |
   | []() ${content} |
@@ -18,7 +17,7 @@ export function updateContent(content: string) {
   tooltip.supportHtml = true;
   tooltip.isTrusted = true;
 
-  if(app && app.readingBook) {
+  if (app && app.readingBook) {
     tooltip.appendMarkdown(`\n\n---\n\n《${app.readingBook.book.name}》`);
   }
 
@@ -26,7 +25,7 @@ export function updateContent(content: string) {
 }
 
 export function setupContentBarItem(context: ExtensionContext) {
-  if(contentBarItem) {
+  if (contentBarItem) {
     return;
   }
 

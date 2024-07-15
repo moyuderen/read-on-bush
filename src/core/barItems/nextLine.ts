@@ -8,16 +8,19 @@ import message from '../../utils/message';
 export let nextLineBarItem: StatusBarItem;
 
 export function setupNextLineBarItem(context: ExtensionContext) {
-  if(!nextLineBarItem) {
+  if (!nextLineBarItem) {
     let commandPrev = Commands.NextLine;
-    nextLineBarItem = window.createStatusBarItem(StatusBarAlignment.Right, StatusBarPriority.NextLine);
+    nextLineBarItem = window.createStatusBarItem(
+      StatusBarAlignment.Right,
+      StatusBarPriority.NextLine
+    );
     nextLineBarItem.command = commandPrev;
     context.subscriptions.push(nextLineBarItem);
     nextLineBarItem.text = `$(chevron-right)`;
     nextLineBarItem.tooltip = 'Next line';
     nextLineBarItem.show();
     commands.registerCommand(Commands.NextLine, () => {
-      if(!app.readingBook) {
+      if (!app.readingBook) {
         message.warn('请选择要读的书籍！');
         return;
       }

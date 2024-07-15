@@ -7,11 +7,14 @@ import { Commands } from '../commands';
 export let importBarItem: StatusBarItem;
 
 export function setupImportBarItem(context: ExtensionContext) {
-  if(importBarItem) {
+  if (importBarItem) {
     return;
   }
 
-  importBarItem = window.createStatusBarItem(StatusBarAlignment.Right, StatusBarPriority.ImportBook);
+  importBarItem = window.createStatusBarItem(
+    StatusBarAlignment.Right,
+    StatusBarPriority.ImportBook
+  );
   importBarItem.text = '$(add)';
   importBarItem.tooltip = '导入';
   importBarItem.command = Commands.ImportBook;

@@ -5,11 +5,11 @@ import { updateProgress } from './barItems/progress';
 import { ReadBook } from './ReadBook';
 
 export type BookData = {
-  id: string
-  name: string
-  process: number
-  url: string
-  children?: BookData[]
+  id: string;
+  name: string;
+  process: number;
+  url: string;
+  children?: BookData[];
 };
 export class Book {
   public app: ReadBook;
@@ -39,27 +39,27 @@ export class Book {
       updateContent(content);
       updateProgress(this.book.process, this.contents.length, this.book);
       this.inited = true;
-    } catch(e: any) {
+    } catch (e: any) {
       message.error(e.message || 'Parse txt failed !');
       this.inited = false;
     }
   }
 
   prevLine() {
-    if(!this.isReading) {
+    if (!this.isReading) {
       return;
     }
 
-    if(!this.inited) {
+    if (!this.inited) {
       message.warn(`《${this.book.name}》Initializing failed !`);
       return;
     }
 
-    if(this.book.process < 1) {
+    if (this.book.process < 1) {
       message('已经是第一页了');
-      return; 
+      return;
     }
-    this.book.process --;
+    this.book.process--;
     const content = this.contents[this.book.process];
     updateContent(content);
     updateProgress(this.book.process, this.contents.length, this.book);
@@ -67,20 +67,20 @@ export class Book {
   }
 
   nextLine() {
-    if(!this.isReading) {
+    if (!this.isReading) {
       return;
     }
 
-    if(!this.inited) {
+    if (!this.inited) {
       message.warn(`《${this.book.name}》Initializing failed !`);
       return;
     }
 
-    if(this.book.process >= this.contents.length) {
+    if (this.book.process >= this.contents.length) {
       message('已经是最后一页了');
-      return; 
+      return;
     }
-    this.book.process ++;
+    this.book.process++;
     const content = this.contents[this.book.process];
     updateContent(content);
     updateProgress(this.book.process, this.contents.length, this.book);
@@ -88,11 +88,11 @@ export class Book {
   }
 
   jumpLine(process: number) {
-    if(!this.isReading) {
+    if (!this.isReading) {
       return;
     }
 
-    if(!this.inited) {
+    if (!this.inited) {
       message.warn(`《${this.book.name}》Initializing failed !`);
       return;
     }

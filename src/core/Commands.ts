@@ -1,22 +1,20 @@
-
 export enum Commands {
-  OpenBook = "readOnBush.openBook",
-  DeleteBook = "readOnBush.deleteEntry",
+  OpenBook = 'readOnBush.openBook',
+  DeleteBook = 'readOnBush.deleteEntry',
 
-  ImportBook = "readOnBush.import",
-  PrevLine = "readOnBush.prev",
+  ImportBook = 'readOnBush.import',
+  PrevLine = 'readOnBush.prev',
   NextLine = 'readOnBush.next',
-  JumpLine  = 'readOnBush.jump',
+  JumpLine = 'readOnBush.jump',
   Start = 'readOnBush.start',
   Stop = 'readOnBush.stop',
 
-
-  SwitchReadingMode = "readOnBush.switchReadingMode",
-  SwitchCodingMode = "readOnBush.switchCodingMode"
+  SwitchReadingMode = 'readOnBush.switchReadingMode',
+  SwitchCodingMode = 'readOnBush.switchCodingMode'
 }
 
 export enum CustomWhenClauseContext {
-  IsReadingMode = "readOnBush.isReadingMode"
+  IsReadingMode = 'readOnBush.isReadingMode'
 }
 
 export const isReadingMode = true;

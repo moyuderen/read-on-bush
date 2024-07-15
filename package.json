@@ -22,7 +22,7 @@
   "categories": [
     "Other"
   ],
-   "keywords": [
+  "keywords": [
     "read",
     "阅读",
     "小说",
@@ -35,7 +35,7 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [ 
+    "commands": [
       {
         "command": "readOnBush.helloWorld",
         "title": "Hello World"

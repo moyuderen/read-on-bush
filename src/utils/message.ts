@@ -1,9 +1,7 @@
-import { window, commands} from 'vscode';
+import { window, commands } from 'vscode';
 
 export default function message(message = 'Hello World !!!', time = 3000) {
-  window.showInformationMessage(message).then(() => {
-    
-  });
+  window.showInformationMessage(message).then(() => {});
 }
 
 message.warn = (message = 'Hello World !!!') => {
