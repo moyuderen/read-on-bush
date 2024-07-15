@@ -12,7 +12,7 @@ import { app } from '../index';
 
 export let startBarItem: StatusBarItem;
 export function setupStartBarItem(context: ExtensionContext) {
-  if(startBarItem) {
+  if (startBarItem) {
     return;
   }
 

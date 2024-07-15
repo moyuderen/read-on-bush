@@ -24,29 +24,30 @@ export class BookList {
 
   getBooks() {
     // rmStorage('books');
-    if(!getStorage('books') || getStorage('books') === undefined || getStorage('books') === 'undefined') {
+    if (
+      !getStorage('books') ||
+      getStorage('books') === undefined ||
+      getStorage('books') === 'undefined'
+    ) {
       setStorage('books', []);
       return [];
     }
     return getStorage('books');
   }
-  
+
   initCommands() {
     commands.registerCommand(Commands.OpenBook, (event) => {
       this.openOnBook(event);
     });
 
-    commands.registerCommand(Commands.DeleteBook, event => {
+    commands.registerCommand(Commands.DeleteBook, (event) => {
       this.deleteBook(event.id);
     });
   }
 
   openOnBook(book: BookTreeItem) {
     const { id, name, process, label, url } = book;
-    this.app.readingBook = new Book(
-      { id, name, process, url },
-      this.app
-    );
+    this.app.readingBook = new Book({ id, name, process, url }, this.app);
   }
 
   updateBookTreeProvider() {
@@ -56,15 +57,15 @@ export class BookList {
   }
 
   deleteBook(id: string) {
-    this.books = this.books.filter(book => book.id !== id);
+    this.books = this.books.filter((book) => book.id !== id);
     this.updateBookTreeProvider();
     setStorage('books', this.books);
     message(`Delete successful !`);
   }
 
   updateBookList(id: string, process: number) {
-    this.books.forEach(book => {
-      if(book.id === id) {
+    this.books.forEach((book) => {
+      if (book.id === id) {
         book.process = process;
       }
     });
@@ -74,10 +75,10 @@ export class BookList {
 
   async addBook() {
     const files = await window.showOpenDialog({
-      title: "选择书籍txt",
+      title: '选择书籍txt',
       filters: {
-        'file': ['txt']
-      },
+        file: ['txt']
+      }
     });
     if (files && files.length > 0) {
       const file = files[0];

@@ -8,15 +8,18 @@ import message from '../../utils/message';
 export let prevLineBarItem: StatusBarItem;
 
 export function setupPreLineBarItem(context: ExtensionContext) {
-  if(!prevLineBarItem) {
-    prevLineBarItem = window.createStatusBarItem(StatusBarAlignment.Right, StatusBarPriority.PrevLine);
+  if (!prevLineBarItem) {
+    prevLineBarItem = window.createStatusBarItem(
+      StatusBarAlignment.Right,
+      StatusBarPriority.PrevLine
+    );
     prevLineBarItem.command = Commands.PrevLine;
     context.subscriptions.push(prevLineBarItem);
     prevLineBarItem.text = `$(chevron-left)`;
     prevLineBarItem.tooltip = 'Prev line';
     prevLineBarItem.show();
     commands.registerCommand(Commands.PrevLine, () => {
-      if(!app.readingBook) {
+      if (!app.readingBook) {
         message.warn('请选择要读的书籍！');
         return;
       }

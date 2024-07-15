@@ -7,7 +7,7 @@ export class BookTreeItem extends vscode.TreeItem {
     public name: string,
     public id: string,
     public url: string,
-    public process: number = 0,
+    public process: number = 0
   ) {
     // super(name, vscode.TreeItemCollapsibleState.Collapsed);
     super(name, vscode.TreeItemCollapsibleState.None);
@@ -18,7 +18,7 @@ export class BookTreeItem extends vscode.TreeItem {
     this.label = `《${this.name}》`;
     this.process = process;
     this.tooltip = `${this.url}`;
-    this.iconPath =  new vscode.ThemeIcon("book"); 
+    this.iconPath = new vscode.ThemeIcon('book');
     // : new vscode.ThemeIcon("check");
     this.command = {
       title: this.name,
@@ -32,16 +32,14 @@ export class BookTreeProvider implements vscode.TreeDataProvider<BookTreeItem> {
   public books: BookTreeItem[];
 
   constructor(books: BookData[] = []) {
-    this.books = books.map(book => new BookTreeItem(
-      book.name,
-      book.id,
-      book.url,
-      book.process,
-    ));
+    this.books = books.map((book) => new BookTreeItem(book.name, book.id, book.url, book.process));
   }
 
-  onDidChangeTreeData?: vscode.Event<void | BookTreeItem | BookTreeItem[] | null | undefined> | undefined;
-  private _onDidChangeTreeData: vscode.EventEmitter<BookTreeItem | undefined | void> = new vscode.EventEmitter<BookTreeItem | undefined | void>();
+  onDidChangeTreeData?:
+    | vscode.Event<void | BookTreeItem | BookTreeItem[] | null | undefined>
+    | undefined;
+  private _onDidChangeTreeData: vscode.EventEmitter<BookTreeItem | undefined | void> =
+    new vscode.EventEmitter<BookTreeItem | undefined | void>();
 
   refresh(): void {
     this._onDidChangeTreeData.fire();
@@ -59,13 +57,15 @@ export class BookTreeProvider implements vscode.TreeDataProvider<BookTreeItem> {
     throw new Error('Method not implemented.');
   }
 
-  resolveTreeItem?(item: vscode.TreeItem, element: BookTreeItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.TreeItem> {
+  resolveTreeItem?(
+    item: vscode.TreeItem,
+    element: BookTreeItem,
+    token: vscode.CancellationToken
+  ): vscode.ProviderResult<vscode.TreeItem> {
     throw new Error('Method not implemented.');
   }
-  
+
   onClick(element: BookTreeItem) {
     console.log(element);
   }
 }
-
- 

@@ -1,5 +1,5 @@
 import { type ExtensionContext } from 'vscode';
-import { ReadBook } from "./ReadBook";
+import { ReadBook } from './ReadBook';
 import { setupStorage } from '../utils/storage';
 import { setupBars } from './barItems';
 import { setupViewTitleImport } from './views';

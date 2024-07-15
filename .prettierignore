@@ -1,0 +1,7 @@
+**/.git
+**/.svn
+**/.hg
+**/node_modules
+out
+LICENSE
+.package-lock.json

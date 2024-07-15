@@ -11,10 +11,10 @@ import { readingModeBarItem, codingModeBarItem } from './mode';
 import { progressBarItem } from './progress';
 import { app } from '../index';
 
-export let  stopBarItem: StatusBarItem;
+export let stopBarItem: StatusBarItem;
 export function setupStopBarItem(context: ExtensionContext) {
-  if(stopBarItem) {
-    return; 
+  if (stopBarItem) {
+    return;
   }
   stopBarItem = window.createStatusBarItem(StatusBarAlignment.Right, StatusBarPriority.Stop);
   stopBarItem.command = Commands.Stop;

@@ -1,12 +1,10 @@
-import { Memento, ExtensionContext} from 'vscode';
+import { Memento, ExtensionContext } from 'vscode';
 
 let storage: Memento;
 
 export function setupStorage(context: ExtensionContext) {
   storage = context.globalState;
-  context.globalState.setKeysForSync([
-
-  ]);
+  context.globalState.setKeysForSync([]);
 }
 
 export function getStorage(key: string) {
