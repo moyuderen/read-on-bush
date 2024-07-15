@@ -2,10 +2,18 @@
   "name": "readOnBush",
   "displayName": "Read On Bush",
   "description": "在vscode状态栏阅读小说。支持: 1.翻页 2.跳转到指定页码 3.暂停阅读(隐藏阅读内容) 4.快捷键阅读(Reading和Coding模式随时切换, 避免编码时快捷键冲突)",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "publisher": "moyuderen",
   "author": {
     "name": "moyuderen",
+    "email": "moyuderen2021@163.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moyuderen/read-on-bush"
+  },
+  "bugs": {
+    "url": "https://github.com/moyuderen/read-on-bush/issues",
     "email": "moyuderen2021@163.com"
   },
   "engines": {
