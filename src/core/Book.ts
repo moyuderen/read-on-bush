@@ -16,12 +16,14 @@ export class Book {
   public book: BookData;
   public contents: string[];
   public isReading!: boolean;
+  private inited: boolean;
 
   constructor(book: BookData, app: ReadBook) {
     this.app = app;
     this.book = book;
     this.contents = [];
     this.isReading = true;
+    this.inited = false;
     this.init();
   }
 
@@ -30,17 +32,26 @@ export class Book {
       const parse = new Parse(this.book.url);
       const contents: string[] = await parse.readContent();
       this.contents = contents;
+      // 兼容 分段算法导致的文件最大值改变
+      this.book.process = Math.min(this.book.process, this.contents.length);
       const content = contents[this.book.process];
       message(`Switch to 《${this.book.name}》 !`);
       updateContent(content);
       updateProgress(this.book.process, this.contents.length, this.book);
+      this.inited = true;
     } catch(e: any) {
-      message.error(e.message);
+      message.error(e.message || 'Parse txt failed !');
+      this.inited = false;
     }
   }
 
   prevLine() {
     if(!this.isReading) {
+      return;
+    }
+
+    if(!this.inited) {
+      message.warn(`《${this.book.name}》Initializing failed !`);
       return;
     }
 
@@ -60,6 +71,11 @@ export class Book {
       return;
     }
 
+    if(!this.inited) {
+      message.warn(`《${this.book.name}》Initializing failed !`);
+      return;
+    }
+
     if(this.book.process >= this.contents.length) {
       message('已经是最后一页了');
       return; 
@@ -73,6 +89,11 @@ export class Book {
 
   jumpLine(process: number) {
     if(!this.isReading) {
+      return;
+    }
+
+    if(!this.inited) {
+      message.warn(`《${this.book.name}》Initializing failed !`);
       return;
     }
 

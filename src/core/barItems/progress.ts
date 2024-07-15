@@ -15,5 +15,6 @@ export function setupProgressBarItem(context: ExtensionContext) {
 
 export function updateProgress(cur: number, total: number, book: BookData) {
   progressBarItem.text = `${cur || 0}/${total}`;
-  progressBarItem.tooltip = `《${book.name}》of progress...`;
+  const percent =`${((cur / total) * 100).toFixed(2)}%`  ;
+  progressBarItem.tooltip = `《${book.name}》${percent}`;
 }
