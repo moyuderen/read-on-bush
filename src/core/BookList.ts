@@ -86,7 +86,7 @@ export class BookList {
         name: path.parse(file.path).base,
         id: generateId(),
         process: 0,
-        url: file.path
+        url: file.fsPath
       };
       this.books.push(book);
       this.updateBookTreeProvider();
