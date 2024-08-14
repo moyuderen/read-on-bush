@@ -7,7 +7,7 @@ import { Book, BookData } from './Book';
 import message from '../utils/message';
 import { getStorage, setStorage, rmStorage } from '../utils/storage';
 import { generateId } from '../utils/generateId';
-import { Commands } from './commands';
+import { Commands } from './Commands';
 
 export class BookList {
   public app: ReadBook;

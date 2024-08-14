@@ -1,7 +1,7 @@
 import { window, commands, StatusBarAlignment } from 'vscode';
 import type { StatusBarItem, ExtensionContext } from 'vscode';
 import { StatusBarPriority } from '../config';
-import { Commands } from '../commands';
+import { Commands } from '../Commands';
 import { app } from '../index';
 import message from '../../utils/message';
 

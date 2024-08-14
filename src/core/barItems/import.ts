@@ -2,7 +2,7 @@ import { window, StatusBarAlignment, commands } from 'vscode';
 import type { StatusBarItem, ExtensionContext } from 'vscode';
 import { app } from '../index';
 import { StatusBarPriority } from '../config';
-import { Commands } from '../commands';
+import { Commands } from '../Commands';
 
 export let importBarItem: StatusBarItem;
 
