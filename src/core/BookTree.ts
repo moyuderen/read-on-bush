@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { type BookData } from './Book';
-import { Commands } from './commands';
+import { Commands } from './Commands';
 
 export class BookTreeItem extends vscode.TreeItem {
   constructor(
