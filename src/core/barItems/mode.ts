@@ -1,6 +1,6 @@
 import type { StatusBarItem, ExtensionContext } from 'vscode';
 import { window, StatusBarAlignment, commands } from 'vscode';
-import { Commands, CustomWhenClauseContext, isReadingMode } from '../commands';
+import { Commands, CustomWhenClauseContext, isReadingMode } from '../Commands';
 import { StatusBarPriority } from '../config';
 
 export let codingModeBarItem: StatusBarItem;
