@@ -32,7 +32,9 @@ export class BookList {
       setStorage('books', []);
       return [];
     }
-    return getStorage('books');
+    const books = getStorage('books');
+    this.books = books;
+    return books;
   }
 
   initCommands() {

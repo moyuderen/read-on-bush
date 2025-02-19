@@ -3,6 +3,7 @@ export enum Commands {
   DeleteBook = 'readOnBush.deleteEntry',
 
   ImportBook = 'readOnBush.import',
+  RefreshBookList = 'readOnBush.refreshBookList',
   PrevLine = 'readOnBush.prev',
   NextLine = 'readOnBush.next',
   JumpLine = 'readOnBush.jump',
