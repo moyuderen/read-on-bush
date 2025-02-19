@@ -14,6 +14,8 @@
 
 ![Import book](https://github.com/moyuderen/CDN/blob/main/moyuderen/read-on-bush/import-book.png?raw=true)
 
+![Refresh Book list](https://github.com/moyuderen/CDN/blob/main/moyuderen/read-on-bush/refresh-booklist.jpg?raw=true)
+
 ### 1.3 Read
 
 ![How to read](https://github.com/moyuderen/CDN/blob/main/moyuderen/read-on-bush/read.png?raw=true)
