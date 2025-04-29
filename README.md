@@ -8,17 +8,17 @@
 
 如果安装成功在应用栏会显示插件Icon, 右下角会有添加图书按钮
 
-![Install](https://github.com/moyuderen/CDN/blob/main/moyuderen/read-on-bush/install.png?raw=true)
+![Install](https://cdn.jsdelivr.net/gh/moyuderen/CDN@main/moyuderen/read-on-bush/install.png)
 
 ### 1.2 Import book.txt
 
-![Import book](https://github.com/moyuderen/CDN/blob/main/moyuderen/read-on-bush/import-book.png?raw=true)
+![Import book](https://cdn.jsdelivr.net/gh/moyuderen/CDN@main/moyuderen/read-on-bush/import-book.png)
 
-![Refresh Book list](https://github.com/moyuderen/CDN/blob/main/moyuderen/read-on-bush/refresh-booklist.jpg?raw=true)
+![Refresh Book list](https://cdn.jsdelivr.net/gh/moyuderen/CDN@main/moyuderen/read-on-bush/refresh-booklist.jpg)
 
 ### 1.3 Read
 
-![How to read](https://github.com/moyuderen/CDN/blob/main/moyuderen/read-on-bush/read.png?raw=true)
+![How to read](https://cdn.jsdelivr.net/gh/moyuderen/CDN@main/moyuderen/read-on-bush/read.png)
 
 ## 2. Key Bindings
 
