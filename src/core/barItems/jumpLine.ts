@@ -25,7 +25,7 @@ export function setupJumpLineBarItem(context: ExtensionContext) {
       }
       const value = await window.showInputBox({
         title: '跳转到指定行',
-        placeHolder: `请输入页码 (${0}-${app.readingBook.contents.length})`,
+        placeHolder: `请输入页码 (1-${app.readingBook.contents.length})`,
         validateInput: (value: string) => {
           if (value === '') {
             return '请输入正确页码';
@@ -39,7 +39,7 @@ export function setupJumpLineBarItem(context: ExtensionContext) {
             return '请输入正确页码';
           }
 
-          if (+value < 0 || +value > app.readingBook.contents.length) {
+          if (+value < 1 || +value > app.readingBook.contents.length) {
             return '请输入正确范围的页码';
           }
 
@@ -49,7 +49,7 @@ export function setupJumpLineBarItem(context: ExtensionContext) {
       if (!value) {
         return;
       }
-      app.readingBook.jumpLine(Number(value));
+      app.readingBook.jumpLine(Number(value) - 1);
     });
   }
 }

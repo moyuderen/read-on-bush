@@ -1,12 +1,12 @@
 {
   "name": "readOnBush",
   "displayName": "Read On Bush",
-  "description": "在vscode状态栏阅读小说。支持: 1.翻页 2.跳转到指定页码 3.暂停阅读(隐藏阅读内容) 4.快捷键阅读(Reading和Coding模式随时切换, 避免编码时快捷键冲突)",
-  "version": "1.1.1",
+  "description": "在 VS Code 状态栏或终端伪装窗口低调阅读 txt 小说，支持书架导入/目录批量导入、分类与目录分组、进度跳转、快捷键模式切换和阅读体验配置。",
+  "version": "2.0.0",
   "publisher": "moyuderen",
   "author": {
     "name": "moyuderen",
-    "email": "moyuderen2021@163.com"
+    "email": "moyuderen.git@gmail.com"
   },
   "repository": {
     "type": "git",
@@ -14,7 +14,7 @@
   },
   "bugs": {
     "url": "https://github.com/moyuderen/read-on-bush/issues",
-    "email": "moyuderen2021@163.com"
+    "email": "moyuderen.git@gmail.com"
   },
   "engines": {
     "vscode": "^1.85.0"
@@ -31,10 +31,102 @@
   ],
   "icon": "public/moyu.png",
   "activationEvents": [
-    "onView:bookList"
+    "onView:bookList",
+    "onCommand:readOnBush.openTerminalCamouflage"
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Read On Bush",
+      "properties": {
+        "readOnBush.lineWidth": {
+          "type": "number",
+          "default": 45,
+          "minimum": 10,
+          "maximum": 200,
+          "description": "每个阅读片段的最大字符数"
+        },
+        "readOnBush.defaultReadingMode": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否默认启用阅读快捷键"
+        },
+        "readOnBush.autoRefreshBookList": {
+          "type": "boolean",
+          "default": false,
+          "description": "是否尝试自动刷新书架"
+        },
+        "readOnBush.statusBarPrefix": {
+          "type": "string",
+          "default": "",
+          "description": "状态栏内容前缀"
+        },
+        "readOnBush.showProgress": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否显示阅读进度"
+        },
+        "readOnBush.displayTarget": {
+          "type": "string",
+          "default": "statusBar",
+          "enum": [
+            "statusBar",
+            "terminalCamouflage",
+            "both"
+          ],
+          "enumDescriptions": [
+            "仅在状态栏显示",
+            "仅在终端伪装中显示",
+            "同时在状态栏和终端伪装中显示"
+          ],
+          "description": "阅读内容显示位置"
+        },
+        "readOnBush.terminalCamouflageLineWidth": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 200,
+          "description": "终端伪装中每行正文的最大显示宽度。设置为 0 时根据终端宽度自动计算"
+        },
+        "readOnBush.terminalCamouflageLineCount": {
+          "type": "number",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 10,
+          "description": "终端伪装中展示的正文行数"
+        },
+        "readOnBush.terminalCamouflageStyle": {
+          "type": "string",
+          "default": "buildLog",
+          "enum": [
+            "buildLog",
+            "claudeCli",
+            "serverLog"
+          ],
+          "enumDescriptions": [
+            "构建/Watch 日志样式",
+            "Claude Code CLI 风格",
+            "后端服务日志样式"
+          ],
+          "description": "终端伪装的输出样式"
+        },
+        "readOnBush.bookListGroupBy": {
+          "type": "string",
+          "default": "none",
+          "enum": [
+            "none",
+            "category",
+            "directory"
+          ],
+          "enumDescriptions": [
+            "不分组",
+            "按分类分组",
+            "按文件目录分组"
+          ],
+          "description": "书架分组方式"
+        }
+      }
+    },
     "commands": [
       {
         "command": "readOnBush.helloWorld",
@@ -67,9 +159,34 @@
         "title": "状态栏读书：跳转"
       },
       {
+        "command": "readOnBush.openTerminalCamouflage",
+        "title": "打开终端伪装",
+        "category": "Read On Bush"
+      },
+      {
+        "command": "readOnBush.toggleTerminalCamouflage",
+        "title": "切换终端伪装",
+        "category": "Read On Bush"
+      },
+      {
         "command": "readOnBush.deleteEntry",
         "title": "Delete",
         "icon": "$(trash)"
+      },
+      {
+        "command": "readOnBush.renameBook",
+        "title": "Rename",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "readOnBush.setBookCategory",
+        "title": "Set Category",
+        "icon": "$(tag)"
+      },
+      {
+        "command": "readOnBush.clearBookCategory",
+        "title": "Clear Category",
+        "icon": "$(clear-all)"
       },
       {
         "command": "readOnBush.import",
@@ -77,9 +194,24 @@
         "icon": "$(add)"
       },
       {
+        "command": "readOnBush.importDirectory",
+        "title": "Import Directory",
+        "icon": "$(folder-opened)"
+      },
+      {
         "command": "readOnBush.refreshBookList",
         "title": "Refresh",
         "icon": "$(search-refresh)"
+      },
+      {
+        "command": "readOnBush.sortBookList",
+        "title": "Sort",
+        "icon": "$(sort-precedence)"
+      },
+      {
+        "command": "readOnBush.switchBookListGroupBy",
+        "title": "Group By",
+        "icon": "$(list-tree)"
       }
     ],
     "keybindings": [
@@ -124,17 +256,47 @@
         {
           "command": "readOnBush.deleteEntry",
           "group": "inline",
-          "when": "view == bookList"
+          "when": "view == bookList && viewItem == book"
+        },
+        {
+          "command": "readOnBush.renameBook",
+          "group": "inline",
+          "when": "view == bookList && viewItem == book"
+        },
+        {
+          "command": "readOnBush.setBookCategory",
+          "group": "book@1",
+          "when": "view == bookList && viewItem == book"
+        },
+        {
+          "command": "readOnBush.clearBookCategory",
+          "group": "book@2",
+          "when": "view == bookList && viewItem == book"
         }
       ],
       "view/title": [
         {
           "command": "readOnBush.import",
-          "group": "navigation",
+          "group": "navigation@1",
+          "when": "view == bookList"
+        },
+        {
+          "command": "readOnBush.importDirectory",
+          "group": "navigation@2",
           "when": "view == bookList"
         },
         {
           "command": "readOnBush.refreshBookList",
+          "group": "navigation",
+          "when": "view == bookList"
+        },
+        {
+          "command": "readOnBush.sortBookList",
+          "group": "navigation",
+          "when": "view == bookList"
+        },
+        {
+          "command": "readOnBush.switchBookListGroupBy",
           "group": "navigation",
           "when": "view == bookList"
         }

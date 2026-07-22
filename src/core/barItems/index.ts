@@ -8,6 +8,7 @@ import { setupJumpLineBarItem } from './jumpLine';
 import { setupStartBarItem } from './start';
 import { setupStopBarItem } from './stop';
 import { setupProgressBarItem } from './progress';
+import { setupTerminalCamouflageBarItem } from './terminalCamouflage';
 
 export { readingModeBarItem, codingModeBarItem };
 
@@ -20,5 +21,6 @@ export function setupBars(context: ExtensionContext) {
   setupJumpLineBarItem(context);
   setupStartBarItem(context);
   setupStopBarItem(context);
+  setupTerminalCamouflageBarItem(context);
   setupProgressBarItem(context);
 }
