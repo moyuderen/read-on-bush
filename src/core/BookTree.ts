@@ -37,12 +37,12 @@ export class BookTreeProvider implements vscode.TreeDataProvider<BookTreeItem> {
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   constructor(books: BookData[] = []) {
-    this.books = [];
-    this.setBooks(books);
+    this.books = books.map((book) => new BookTreeItem(book.name, book.id, book.url, book.process));
   }
 
-  setBooks(books: BookData[]): void {
+  updateBooks(books: BookData[]): void {
     this.books = books.map((book) => new BookTreeItem(book.name, book.id, book.url, book.process));
+    this.refresh();
   }
 
   refresh(): void {
