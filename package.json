@@ -31,7 +31,8 @@
   ],
   "icon": "public/moyu.png",
   "activationEvents": [
-    "onView:bookList"
+    "onView:bookList",
+    "onCommand:readOnBush.openTerminalCamouflage"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -64,6 +65,50 @@
           "type": "boolean",
           "default": true,
           "description": "是否显示阅读进度"
+        },
+        "readOnBush.displayTarget": {
+          "type": "string",
+          "default": "statusBar",
+          "enum": [
+            "statusBar",
+            "terminalCamouflage",
+            "both"
+          ],
+          "enumDescriptions": [
+            "仅在状态栏显示",
+            "仅在终端伪装中显示",
+            "同时在状态栏和终端伪装中显示"
+          ],
+          "description": "阅读内容显示位置"
+        },
+        "readOnBush.terminalCamouflageLineWidth": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 200,
+          "description": "终端伪装中每行正文的最大显示宽度。设置为 0 时根据终端宽度自动计算"
+        },
+        "readOnBush.terminalCamouflageLineCount": {
+          "type": "number",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 10,
+          "description": "终端伪装中展示的正文行数"
+        },
+        "readOnBush.terminalCamouflageStyle": {
+          "type": "string",
+          "default": "buildLog",
+          "enum": [
+            "buildLog",
+            "claudeCli",
+            "serverLog"
+          ],
+          "enumDescriptions": [
+            "构建/Watch 日志样式",
+            "Claude Code CLI 风格",
+            "后端服务日志样式"
+          ],
+          "description": "终端伪装的输出样式"
         },
         "readOnBush.bookListGroupBy": {
           "type": "string",
@@ -112,6 +157,16 @@
       {
         "command": "readOnBush.jump",
         "title": "状态栏读书：跳转"
+      },
+      {
+        "command": "readOnBush.openTerminalCamouflage",
+        "title": "打开终端伪装",
+        "category": "Read On Bush"
+      },
+      {
+        "command": "readOnBush.toggleTerminalCamouflage",
+        "title": "切换终端伪装",
+        "category": "Read On Bush"
       },
       {
         "command": "readOnBush.deleteEntry",

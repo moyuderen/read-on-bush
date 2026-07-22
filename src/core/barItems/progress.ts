@@ -2,7 +2,7 @@ import { window, StatusBarAlignment } from 'vscode';
 import type { StatusBarItem, ExtensionContext } from 'vscode';
 import { StatusBarPriority } from '../config';
 import { BookData } from '../Book';
-import { getShowProgress } from '../settings';
+import { getShowProgress, shouldShowStatusBarReading } from '../settings';
 
 export let progressBarItem: StatusBarItem;
 export function setupProgressBarItem(context: ExtensionContext) {
@@ -22,12 +22,12 @@ export function applyProgressVisibility() {
     return;
   }
 
-  if (getShowProgress()) {
-    progressBarItem.show();
+  if (!shouldShowStatusBarReading() || !getShowProgress()) {
+    progressBarItem.hide();
     return;
   }
 
-  progressBarItem.hide();
+  progressBarItem.show();
 }
 
 export function updateProgress(cur: number, total: number, book: BookData) {
