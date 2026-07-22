@@ -1,5 +1,11 @@
 export const AppName = 'readOnBush';
 
+export const LineWidth = {
+  Default: 45,
+  Min: 10,
+  Max: 200
+} as const;
+
 export enum StatusBarPriority {
   Process = 90,
   PrevLine = 80,

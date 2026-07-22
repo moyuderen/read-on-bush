@@ -1,10 +1,14 @@
-import type { BookParser } from '.';
+import type { BookParser, BookParserOptions } from '.';
+import { LineWidth } from '../config';
 
 const readline = require('linebyline');
 
 export class TxtParser implements BookParser {
-  constructor(public url: string, private readonly lineWidth = 45) {
+  private readonly lineWidth: number;
+
+  constructor(public url: string, options: BookParserOptions = {}) {
     this.url = url;
+    this.lineWidth = options.lineWidth ?? LineWidth.Default;
   }
 
   readContent(): Promise<string[]> {

@@ -5,13 +5,17 @@ export interface BookParser {
   readContent(): Promise<string[]>;
 }
 
-const parserFactories: Record<string, (filePath: string) => BookParser> = {
-  '.txt': (filePath: string) => new TxtParser(filePath)
+export type BookParserOptions = {
+  lineWidth?: number;
+};
+
+const parserFactories: Record<string, (filePath: string, options?: BookParserOptions) => BookParser> = {
+  '.txt': (filePath: string, options?: BookParserOptions) => new TxtParser(filePath, options)
 };
 
 export const supportedBookExtensions = Object.keys(parserFactories).map((extension) => extension.slice(1));
 
-export function createBookParser(filePath: string): BookParser {
+export function createBookParser(filePath: string, options: BookParserOptions = {}): BookParser {
   const extension = path.extname(filePath).toLowerCase();
   const parserFactory = parserFactories[extension];
 
@@ -19,7 +23,7 @@ export function createBookParser(filePath: string): BookParser {
     throw new Error(`Unsupported book format: ${extension || 'unknown'}`);
   }
 
-  return parserFactory(filePath);
+  return parserFactory(filePath, options);
 }
 
 export { TxtParser } from './TxtParser';

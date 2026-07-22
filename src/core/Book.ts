@@ -3,6 +3,7 @@ import { updateContent } from './barItems/content';
 import { updateProgress } from './barItems/progress';
 import { ReadBook } from './ReadBook';
 import { createBookParser } from './parsers';
+import { getLineWidth } from './settings';
 
 export type BookData = {
   id: string;
@@ -29,7 +30,7 @@ export class Book {
 
   async init() {
     try {
-      const parser = createBookParser(this.book.url);
+      const parser = createBookParser(this.book.url, { lineWidth: getLineWidth() });
       const contents: string[] = await parser.readContent();
       this.contents = contents;
       // 兼容 分段算法导致的文件最大值改变
