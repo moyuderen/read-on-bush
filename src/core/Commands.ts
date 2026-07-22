@@ -15,6 +15,8 @@ export enum Commands {
   JumpLine = 'readOnBush.jump',
   Start = 'readOnBush.start',
   Stop = 'readOnBush.stop',
+  OpenTerminalCamouflage = 'readOnBush.openTerminalCamouflage',
+  ToggleTerminalCamouflage = 'readOnBush.toggleTerminalCamouflage',
 
   SwitchReadingMode = 'readOnBush.switchReadingMode',
   SwitchCodingMode = 'readOnBush.switchCodingMode'

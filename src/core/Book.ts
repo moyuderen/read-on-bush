@@ -1,7 +1,6 @@
 import message from '../utils/message';
-import { updateContent } from './barItems/content';
-import { updateProgress } from './barItems/progress';
 import { ReadBook } from './ReadBook';
+import type { ReadingDisplayState } from './display';
 import { createBookParser } from './parsers';
 import { getLineWidth } from './settings';
 
@@ -38,11 +37,9 @@ export class Book {
       this.contents = contents;
       // 兼容 分段算法导致的文件最大值改变
       this.book.process = Math.min(this.book.process, Math.max(this.contents.length - 1, 0));
-      const content = contents[this.book.process];
       message(`Switch to 《${this.book.name}》 !`);
-      updateContent(content);
-      updateProgress(this.book.process, this.contents.length, this.book);
       this.inited = true;
+      this.renderCurrentContent();
     } catch (e: any) {
       message.error(e.message || 'Parse book failed !');
       this.inited = false;
@@ -63,11 +60,8 @@ export class Book {
       message('已经是第一页了');
       return;
     }
-    this.book.process--;
-    const content = this.contents[this.book.process];
-    updateContent(content);
-    updateProgress(this.book.process, this.contents.length, this.book);
-    this.app.bookList.updateBookList(this.book.id, this.book.process);
+    const step = this.app.displayManager.getPrevProcessStep(this.getDisplayState());
+    this.setProcess(this.book.process - step);
   }
 
   nextLine() {
@@ -84,11 +78,8 @@ export class Book {
       message('已经是最后一页了');
       return;
     }
-    this.book.process++;
-    const content = this.contents[this.book.process];
-    updateContent(content);
-    updateProgress(this.book.process, this.contents.length, this.book);
-    this.app.bookList.updateBookList(this.book.id, this.book.process);
+    const step = this.app.displayManager.getNextProcessStep(this.getDisplayState());
+    this.setProcess(this.book.process + step);
   }
 
   jumpLine(process: number) {
@@ -101,19 +92,38 @@ export class Book {
       return;
     }
 
-    const maxProcess = Math.max(this.contents.length - 1, 0);
-    this.book.process = Math.min(Math.max(process, 0), maxProcess);
-    const content = this.contents[this.book.process];
-    updateContent(content);
-    updateProgress(this.book.process, this.contents.length, this.book);
-    this.app.bookList.updateBookList(this.book.id, this.book.process);
+    this.setProcess(process);
+  }
+
+  getDisplayState(): ReadingDisplayState {
+    return {
+      content: this.contents[this.book.process] || '',
+      contents: this.contents,
+      book: this.book,
+      process: this.book.process,
+      total: this.contents.length,
+      isReading: this.isReading
+    };
   }
 
   pause() {
     this.isReading = false;
+    this.app.displayManager.pause(this.getDisplayState());
   }
 
   start() {
     this.isReading = true;
+    this.renderCurrentContent();
+  }
+
+  private setProcess(process: number) {
+    const maxProcess = Math.max(this.contents.length - 1, 0);
+    this.book.process = Math.min(Math.max(process, 0), maxProcess);
+    this.renderCurrentContent();
+    this.app.bookList.updateBookList(this.book.id, this.book.process);
+  }
+
+  private renderCurrentContent() {
+    this.app.displayManager.render(this.getDisplayState());
   }
 }

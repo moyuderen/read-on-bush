@@ -4,17 +4,25 @@ import { ReadBook } from './ReadBook';
 import { setupStorage } from '../utils/storage';
 import { setupBars } from './barItems';
 import { applyReadingMode } from './barItems/mode';
-import { refreshContentBarItem } from './barItems/content';
-import { applyProgressVisibility } from './barItems/progress';
 import { setupAutoRefreshBookList, setupViewTitleImport } from './views';
 import {
   affectsReadOnBushConfiguration,
   affectsSetting,
-  getDefaultReadingMode
+  getDefaultReadingMode,
+  type ReadOnBushSettingKey
 } from './settings';
 import message from '../utils/message';
 
 export let app: ReadBook;
+
+const displayRefreshSettingKeys: ReadOnBushSettingKey[] = [
+  'statusBarPrefix',
+  'showProgress',
+  'displayTarget',
+  'terminalCamouflageLineWidth',
+  'terminalCamouflageLineCount',
+  'terminalCamouflageStyle'
+];
 
 function setupConfigurationChangeHandlers(context: ExtensionContext) {
   context.subscriptions.push(
@@ -24,8 +32,9 @@ function setupConfigurationChangeHandlers(context: ExtensionContext) {
       }
 
       const defaultReadingModeChanged = affectsSetting(event, 'defaultReadingMode');
-      const statusBarPrefixChanged = affectsSetting(event, 'statusBarPrefix');
-      const showProgressChanged = affectsSetting(event, 'showProgress');
+      const displayRefreshSettingChanged = displayRefreshSettingKeys.some((key) =>
+        affectsSetting(event, key)
+      );
       const lineWidthChanged = affectsSetting(event, 'lineWidth');
       const bookListGroupByChanged = affectsSetting(event, 'bookListGroupBy');
 
@@ -33,12 +42,8 @@ function setupConfigurationChangeHandlers(context: ExtensionContext) {
         applyReadingMode(getDefaultReadingMode());
       }
 
-      if (statusBarPrefixChanged) {
-        refreshContentBarItem();
-      }
-
-      if (showProgressChanged) {
-        applyProgressVisibility();
+      if (displayRefreshSettingChanged) {
+        app.displayManager.refresh(app.readingBook && app.readingBook.getDisplayState());
       }
 
       if (lineWidthChanged) {
