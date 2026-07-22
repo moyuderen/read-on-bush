@@ -11,6 +11,9 @@ export type BookData = {
   process: number;
   url: string;
   children?: BookData[];
+  category?: string;
+  createdAt?: number;
+  order?: number;
 };
 export class Book {
   public app: ReadBook;

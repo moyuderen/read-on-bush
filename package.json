@@ -64,6 +64,21 @@
           "type": "boolean",
           "default": true,
           "description": "是否显示阅读进度"
+        },
+        "readOnBush.bookListGroupBy": {
+          "type": "string",
+          "default": "none",
+          "enum": [
+            "none",
+            "category",
+            "directory"
+          ],
+          "enumDescriptions": [
+            "不分组",
+            "按分类分组",
+            "按文件目录分组"
+          ],
+          "description": "书架分组方式"
         }
       }
     },
@@ -104,6 +119,21 @@
         "icon": "$(trash)"
       },
       {
+        "command": "readOnBush.renameBook",
+        "title": "Rename",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "readOnBush.setBookCategory",
+        "title": "Set Category",
+        "icon": "$(tag)"
+      },
+      {
+        "command": "readOnBush.clearBookCategory",
+        "title": "Clear Category",
+        "icon": "$(clear-all)"
+      },
+      {
         "command": "readOnBush.import",
         "title": "Import",
         "icon": "$(add)"
@@ -112,6 +142,16 @@
         "command": "readOnBush.refreshBookList",
         "title": "Refresh",
         "icon": "$(search-refresh)"
+      },
+      {
+        "command": "readOnBush.sortBookList",
+        "title": "Sort",
+        "icon": "$(sort-precedence)"
+      },
+      {
+        "command": "readOnBush.switchBookListGroupBy",
+        "title": "Group By",
+        "icon": "$(list-tree)"
       }
     ],
     "keybindings": [
@@ -156,7 +196,22 @@
         {
           "command": "readOnBush.deleteEntry",
           "group": "inline",
-          "when": "view == bookList"
+          "when": "view == bookList && viewItem == book"
+        },
+        {
+          "command": "readOnBush.renameBook",
+          "group": "inline",
+          "when": "view == bookList && viewItem == book"
+        },
+        {
+          "command": "readOnBush.setBookCategory",
+          "group": "book@1",
+          "when": "view == bookList && viewItem == book"
+        },
+        {
+          "command": "readOnBush.clearBookCategory",
+          "group": "book@2",
+          "when": "view == bookList && viewItem == book"
         }
       ],
       "view/title": [
@@ -167,6 +222,16 @@
         },
         {
           "command": "readOnBush.refreshBookList",
+          "group": "navigation",
+          "when": "view == bookList"
+        },
+        {
+          "command": "readOnBush.sortBookList",
+          "group": "navigation",
+          "when": "view == bookList"
+        },
+        {
+          "command": "readOnBush.switchBookListGroupBy",
           "group": "navigation",
           "when": "view == bookList"
         }
