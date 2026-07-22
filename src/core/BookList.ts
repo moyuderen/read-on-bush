@@ -5,20 +5,25 @@ import { BookTreeProvider, BookTreeItem } from './BookTree';
 import { ReadBook } from './ReadBook';
 import { Book, BookData } from './Book';
 import message from '../utils/message';
-import { getStorage, setStorage } from '../utils/storage';
 import { generateId } from '../utils/generateId';
 import { Commands } from './Commands';
+import {
+  BookStorage,
+  GlobalStateBookStorage
+} from './storage/BookStorage';
 
 export class BookList {
   public app: ReadBook;
   public context: ExtensionContext;
   public books: BookData[];
   private readonly bookTreeProvider: BookTreeProvider;
+  private readonly bookStorage: BookStorage;
 
-  constructor(app: ReadBook) {
+  constructor(app: ReadBook, bookStorage: BookStorage = new GlobalStateBookStorage()) {
     this.app = app;
     this.context = app.context;
-    this.books = this.getBooks();
+    this.bookStorage = bookStorage;
+    this.books = this.bookStorage.getBooks();
     this.bookTreeProvider = new BookTreeProvider(this.books);
     this.context.subscriptions.push(
       window.registerTreeDataProvider('bookList', this.bookTreeProvider)
@@ -27,14 +32,7 @@ export class BookList {
   }
 
   getBooks(): BookData[] {
-    const books = getStorage('books');
-    if (!books || books === undefined || books === 'undefined') {
-      this.books = [];
-      setStorage('books', this.books);
-      return this.books;
-    }
-
-    this.books = books;
+    this.books = this.bookStorage.getBooks();
     return this.books;
   }
 
@@ -54,25 +52,18 @@ export class BookList {
   }
 
   updateBookTreeProvider() {
-    this.bookTreeProvider.setBooks(this.books);
-    this.bookTreeProvider.refresh();
+    this.bookTreeProvider.updateBooks(this.books);
   }
 
   deleteBook(id: string) {
-    this.books = this.books.filter((book) => book.id !== id);
+    this.books = this.bookStorage.deleteBook(id);
     this.updateBookTreeProvider();
-    setStorage('books', this.books);
     message(`Delete successful !`);
   }
 
   updateBookList(id: string, process: number) {
-    this.books.forEach((book) => {
-      if (book.id === id) {
-        book.process = process;
-      }
-    });
+    this.books = this.bookStorage.updateBookProcess(id, process);
     this.updateBookTreeProvider();
-    setStorage('books', this.books);
   }
 
   async addBook() {
@@ -92,7 +83,7 @@ export class BookList {
       };
       this.books.push(book);
       this.updateBookTreeProvider();
-      setStorage('books', this.books);
+      this.bookStorage.saveBooks(this.books);
     }
   }
 }
