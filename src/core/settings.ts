@@ -2,12 +2,15 @@ import { workspace } from 'vscode';
 import type { ConfigurationChangeEvent } from 'vscode';
 import { AppName, LineWidth } from './config';
 
+export type BookListGroupBy = 'none' | 'category' | 'directory';
+
 export type ReadOnBushSettings = {
   lineWidth: number;
   defaultReadingMode: boolean;
   autoRefreshBookList: boolean;
   statusBarPrefix: string;
   showProgress: boolean;
+  bookListGroupBy: BookListGroupBy;
 };
 
 export const defaultSettings: ReadOnBushSettings = {
@@ -15,7 +18,8 @@ export const defaultSettings: ReadOnBushSettings = {
   defaultReadingMode: true,
   autoRefreshBookList: false,
   statusBarPrefix: '',
-  showProgress: true
+  showProgress: true,
+  bookListGroupBy: 'none'
 };
 
 export type ReadOnBushSettingKey = keyof ReadOnBushSettings;
@@ -26,6 +30,14 @@ function normalizeLineWidth(lineWidth: number): number {
   }
 
   return Math.min(Math.max(Math.floor(lineWidth), LineWidth.Min), LineWidth.Max);
+}
+
+function normalizeBookListGroupBy(groupBy: string): BookListGroupBy {
+  if (groupBy === 'category' || groupBy === 'directory') {
+    return groupBy;
+  }
+
+  return defaultSettings.bookListGroupBy;
 }
 
 function getConfigurationValue<T extends ReadOnBushSettingKey>(key: T): ReadOnBushSettings[T] {
@@ -52,13 +64,18 @@ export function getShowProgress(): boolean {
   return getConfigurationValue('showProgress');
 }
 
+export function getBookListGroupBy(): BookListGroupBy {
+  return normalizeBookListGroupBy(getConfigurationValue('bookListGroupBy'));
+}
+
 export function getSettings(): ReadOnBushSettings {
   return {
     lineWidth: getLineWidth(),
     defaultReadingMode: getDefaultReadingMode(),
     autoRefreshBookList: getAutoRefreshBookList(),
     statusBarPrefix: getStatusBarPrefix(),
-    showProgress: getShowProgress()
+    showProgress: getShowProgress(),
+    bookListGroupBy: getBookListGroupBy()
   };
 }
 

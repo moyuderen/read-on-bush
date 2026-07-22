@@ -27,6 +27,7 @@ function setupConfigurationChangeHandlers(context: ExtensionContext) {
       const statusBarPrefixChanged = affectsSetting(event, 'statusBarPrefix');
       const showProgressChanged = affectsSetting(event, 'showProgress');
       const lineWidthChanged = affectsSetting(event, 'lineWidth');
+      const bookListGroupByChanged = affectsSetting(event, 'bookListGroupBy');
 
       if (defaultReadingModeChanged) {
         applyReadingMode(getDefaultReadingMode());
@@ -42,6 +43,10 @@ function setupConfigurationChangeHandlers(context: ExtensionContext) {
 
       if (lineWidthChanged) {
         message('Line width will apply the next time a book is opened');
+      }
+
+      if (bookListGroupByChanged) {
+        app.bookList.updateBookTreeProvider();
       }
     })
   );
