@@ -7,6 +7,7 @@ import { Book, BookData } from './Book';
 import message from '../utils/message';
 import { generateId } from '../utils/generateId';
 import { Commands } from './Commands';
+import { supportedBookExtensions } from './parsers';
 import {
   BookStorage,
   GlobalStateBookStorage
@@ -68,9 +69,9 @@ export class BookList {
 
   async addBook() {
     const files = await window.showOpenDialog({
-      title: '选择书籍txt',
+      title: '选择书籍',
       filters: {
-        file: ['txt']
+        file: supportedBookExtensions
       }
     });
     if (files && files.length > 0) {
@@ -81,9 +82,8 @@ export class BookList {
         process: 0,
         url: file.fsPath
       };
-      this.books.push(book);
+      this.books = this.bookStorage.addBook(book);
       this.updateBookTreeProvider();
-      this.bookStorage.saveBooks(this.books);
     }
   }
 }

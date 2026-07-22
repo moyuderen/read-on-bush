@@ -1,8 +1,8 @@
-import { Parse } from './Parse';
 import message from '../utils/message';
 import { updateContent } from './barItems/content';
 import { updateProgress } from './barItems/progress';
 import { ReadBook } from './ReadBook';
+import { createBookParser } from './parsers';
 
 export type BookData = {
   id: string;
@@ -29,8 +29,8 @@ export class Book {
 
   async init() {
     try {
-      const parse = new Parse(this.book.url);
-      const contents: string[] = await parse.readContent();
+      const parser = createBookParser(this.book.url);
+      const contents: string[] = await parser.readContent();
       this.contents = contents;
       // 兼容 分段算法导致的文件最大值改变
       this.book.process = Math.min(this.book.process, this.contents.length);
@@ -40,7 +40,7 @@ export class Book {
       updateProgress(this.book.process, this.contents.length, this.book);
       this.inited = true;
     } catch (e: any) {
-      message.error(e.message || 'Parse txt failed !');
+      message.error(e.message || 'Parse book failed !');
       this.inited = false;
     }
   }
