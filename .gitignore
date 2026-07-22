@@ -130,3 +130,6 @@ dist
 .pnp.*
 
 *.vsix
+
+# Claude local settings
+.claude/

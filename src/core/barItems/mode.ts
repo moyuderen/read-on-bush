@@ -1,9 +1,27 @@
 import type { StatusBarItem, ExtensionContext } from 'vscode';
 import { window, StatusBarAlignment, commands } from 'vscode';
-import { Commands, CustomWhenClauseContext, isReadingMode } from '../Commands';
+import { Commands, CustomWhenClauseContext } from '../Commands';
 import { StatusBarPriority } from '../config';
+import { getDefaultReadingMode } from '../settings';
 
 export let codingModeBarItem: StatusBarItem;
+
+export function applyReadingMode(enabled: boolean): void {
+  commands.executeCommand('setContext', CustomWhenClauseContext.IsReadingMode, enabled);
+
+  if (!readingModeBarItem || !codingModeBarItem) {
+    return;
+  }
+
+  if (enabled) {
+    readingModeBarItem.show();
+    codingModeBarItem.hide();
+    return;
+  }
+
+  readingModeBarItem.hide();
+  codingModeBarItem.show();
+}
 
 function setupCodingModeBarItem(context: ExtensionContext) {
   if (codingModeBarItem) {
@@ -19,9 +37,7 @@ function setupCodingModeBarItem(context: ExtensionContext) {
   codingModeBarItem.tooltip = 'To Reading mode';
   codingModeBarItem.show();
   const activeKeyBindingsStatus = commands.registerCommand(Commands.SwitchReadingMode, () => {
-    commands.executeCommand('setContext', CustomWhenClauseContext.IsReadingMode, isReadingMode);
-    readingModeBarItem.show();
-    codingModeBarItem.hide();
+    applyReadingMode(true);
   });
 
   context.subscriptions.push(activeKeyBindingsStatus);
@@ -42,9 +58,7 @@ function setupReadingModeBarItem(context: ExtensionContext) {
   readingModeBarItem.tooltip = 'To Coding mode';
   readingModeBarItem.show();
   const disableKeyBindingsStatus = commands.registerCommand(Commands.SwitchCodingMode, () => {
-    commands.executeCommand('setContext', CustomWhenClauseContext.IsReadingMode, !isReadingMode);
-    readingModeBarItem.hide();
-    codingModeBarItem.show();
+    applyReadingMode(false);
   });
 
   context.subscriptions.push(disableKeyBindingsStatus);
@@ -54,5 +68,5 @@ export function setupModeBarItem(context: ExtensionContext) {
   setupCodingModeBarItem(context);
   setupReadingModeBarItem(context);
 
-  commands.executeCommand(Commands.SwitchReadingMode);
+  applyReadingMode(getDefaultReadingMode());
 }
