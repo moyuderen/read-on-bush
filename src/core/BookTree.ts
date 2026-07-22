@@ -31,15 +31,19 @@ export class BookTreeItem extends vscode.TreeItem {
 export class BookTreeProvider implements vscode.TreeDataProvider<BookTreeItem> {
   public books: BookTreeItem[];
 
+  private readonly _onDidChangeTreeData = new vscode.EventEmitter<
+    void | BookTreeItem | BookTreeItem[] | null | undefined
+  >();
+  readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+
   constructor(books: BookData[] = []) {
-    this.books = books.map((book) => new BookTreeItem(book.name, book.id, book.url, book.process));
+    this.books = [];
+    this.setBooks(books);
   }
 
-  onDidChangeTreeData?:
-    | vscode.Event<void | BookTreeItem | BookTreeItem[] | null | undefined>
-    | undefined;
-  private _onDidChangeTreeData: vscode.EventEmitter<BookTreeItem | undefined | void> =
-    new vscode.EventEmitter<BookTreeItem | undefined | void>();
+  setBooks(books: BookData[]): void {
+    this.books = books.map((book) => new BookTreeItem(book.name, book.id, book.url, book.process));
+  }
 
   refresh(): void {
     this._onDidChangeTreeData.fire();
@@ -50,19 +54,11 @@ export class BookTreeProvider implements vscode.TreeDataProvider<BookTreeItem> {
   }
 
   getChildren(element?: BookTreeItem | undefined): vscode.ProviderResult<BookTreeItem[]> {
+    if (element) {
+      return [];
+    }
+
     return this.books;
-  }
-
-  getParent?(element: BookTreeItem): vscode.ProviderResult<BookTreeItem> {
-    throw new Error('Method not implemented.');
-  }
-
-  resolveTreeItem?(
-    item: vscode.TreeItem,
-    element: BookTreeItem,
-    token: vscode.CancellationToken
-  ): vscode.ProviderResult<vscode.TreeItem> {
-    throw new Error('Method not implemented.');
   }
 
   onClick(element: BookTreeItem) {

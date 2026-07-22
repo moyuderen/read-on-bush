@@ -5,7 +5,7 @@ import { BookTreeProvider, BookTreeItem } from './BookTree';
 import { ReadBook } from './ReadBook';
 import { Book, BookData } from './Book';
 import message from '../utils/message';
-import { getStorage, setStorage, rmStorage } from '../utils/storage';
+import { getStorage, setStorage } from '../utils/storage';
 import { generateId } from '../utils/generateId';
 import { Commands } from './Commands';
 
@@ -13,28 +13,29 @@ export class BookList {
   public app: ReadBook;
   public context: ExtensionContext;
   public books: BookData[];
+  private readonly bookTreeProvider: BookTreeProvider;
 
   constructor(app: ReadBook) {
     this.app = app;
     this.context = app.context;
     this.books = this.getBooks();
-    this.updateBookTreeProvider();
+    this.bookTreeProvider = new BookTreeProvider(this.books);
+    this.context.subscriptions.push(
+      window.registerTreeDataProvider('bookList', this.bookTreeProvider)
+    );
     this.initCommands();
   }
 
-  getBooks() {
-    // rmStorage('books');
-    if (
-      !getStorage('books') ||
-      getStorage('books') === undefined ||
-      getStorage('books') === 'undefined'
-    ) {
-      setStorage('books', []);
-      return [];
-    }
+  getBooks(): BookData[] {
     const books = getStorage('books');
+    if (!books || books === undefined || books === 'undefined') {
+      this.books = [];
+      setStorage('books', this.books);
+      return this.books;
+    }
+
     this.books = books;
-    return books;
+    return this.books;
   }
 
   initCommands() {
@@ -48,14 +49,13 @@ export class BookList {
   }
 
   openOnBook(book: BookTreeItem) {
-    const { id, name, process, label, url } = book;
+    const { id, name, process, url } = book;
     this.app.readingBook = new Book({ id, name, process, url }, this.app);
   }
 
   updateBookTreeProvider() {
-    const provider = new BookTreeProvider(this.books);
-    provider.refresh();
-    window.registerTreeDataProvider('bookList', provider);
+    this.bookTreeProvider.setBooks(this.books);
+    this.bookTreeProvider.refresh();
   }
 
   deleteBook(id: string) {
