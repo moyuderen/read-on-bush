@@ -35,6 +35,38 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Read On Bush",
+      "properties": {
+        "readOnBush.lineWidth": {
+          "type": "number",
+          "default": 45,
+          "minimum": 10,
+          "maximum": 200,
+          "description": "每个阅读片段的最大字符数"
+        },
+        "readOnBush.defaultReadingMode": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否默认启用阅读快捷键"
+        },
+        "readOnBush.autoRefreshBookList": {
+          "type": "boolean",
+          "default": false,
+          "description": "是否尝试自动刷新书架"
+        },
+        "readOnBush.statusBarPrefix": {
+          "type": "string",
+          "default": "",
+          "description": "状态栏内容前缀"
+        },
+        "readOnBush.showProgress": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否显示阅读进度"
+        }
+      }
+    },
     "commands": [
       {
         "command": "readOnBush.helloWorld",
