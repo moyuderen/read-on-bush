@@ -6,38 +6,42 @@ const BOOKS_STORAGE_KEY = 'books';
 export interface BookStorage {
   getBooks(): BookData[];
   saveBooks(books: BookData[]): void;
+  addBook(book: BookData): BookData[];
   updateBookProcess(id: string, process: number): BookData[];
   deleteBook(id: string): BookData[];
 }
 
 export class GlobalStateBookStorage implements BookStorage {
-  private books: BookData[] = [];
-
   getBooks(): BookData[] {
     const books = getStorage(BOOKS_STORAGE_KEY);
-    this.books = Array.isArray(books) ? books : [];
-    return this.books;
+    return Array.isArray(books) ? books : [];
   }
 
   saveBooks(books: BookData[]): void {
-    this.books = books;
-    setStorage(BOOKS_STORAGE_KEY, this.books);
+    setStorage(BOOKS_STORAGE_KEY, books);
+  }
+
+  addBook(book: BookData): BookData[] {
+    const books = [...this.getBooks(), book];
+    this.saveBooks(books);
+    return books;
   }
 
   updateBookProcess(id: string, process: number): BookData[] {
-    const book = this.books.find((book) => book.id === id);
+    const books = this.getBooks();
+    const book = books.find((book) => book.id === id);
 
     if (book) {
       book.process = process;
     }
 
-    this.saveBooks(this.books);
-    return this.books;
+    this.saveBooks(books);
+    return books;
   }
 
   deleteBook(id: string): BookData[] {
-    this.books = this.books.filter((book) => book.id !== id);
-    this.saveBooks(this.books);
-    return this.books;
+    const books = this.getBooks().filter((book) => book.id !== id);
+    this.saveBooks(books);
+    return books;
   }
 }
