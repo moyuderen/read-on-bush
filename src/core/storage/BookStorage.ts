@@ -7,7 +7,7 @@ export interface BookStorage {
   getBooks(): BookData[];
   saveBooks(books: BookData[]): void;
   addBook(book: BookData): BookData[];
-  addBooks(books: BookData[]): BookData[];
+  addBooks(books: BookData[], existingBooks?: BookData[]): BookData[];
   updateBookProcess(id: string, process: number): BookData[];
   renameBook(id: string, name: string): BookData[];
   updateBookCategory(id: string, category?: string): BookData[];
@@ -60,8 +60,8 @@ export class GlobalStateBookStorage implements BookStorage {
     return this.addBooks([book]);
   }
 
-  addBooks(nextBooks: BookData[]): BookData[] {
-    const books = this.getBooks();
+  addBooks(nextBooks: BookData[], existingBooks?: BookData[]): BookData[] {
+    const books = existingBooks ?? this.getBooks();
     const now = Date.now();
     const maxOrder = books.reduce((order, book) => Math.max(order, book.order ?? -1), -1);
     const normalizedNextBooks = nextBooks.map((book, index) =>

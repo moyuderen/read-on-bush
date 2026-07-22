@@ -43,6 +43,9 @@ export function setupViewTitleImport(context: ExtensionContext) {
     commands.registerCommand(Commands.ImportBook, () => {
       app.bookList.addBook();
     }),
+    commands.registerCommand(Commands.ImportBookDirectory, () => {
+      app.bookList.addBookDirectory();
+    }),
     commands.registerCommand(Commands.RefreshBookList, () => {
       refreshBookList();
     })

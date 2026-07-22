@@ -6,6 +6,7 @@ export enum Commands {
   ClearBookCategory = 'readOnBush.clearBookCategory',
 
   ImportBook = 'readOnBush.import',
+  ImportBookDirectory = 'readOnBush.importDirectory',
   RefreshBookList = 'readOnBush.refreshBookList',
   SortBookList = 'readOnBush.sortBookList',
   SwitchBookListGroupBy = 'readOnBush.switchBookListGroupBy',
