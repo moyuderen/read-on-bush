@@ -34,7 +34,7 @@ export class Book {
       const contents: string[] = await parser.readContent();
       this.contents = contents;
       // 兼容 分段算法导致的文件最大值改变
-      this.book.process = Math.min(this.book.process, this.contents.length);
+      this.book.process = Math.min(this.book.process, Math.max(this.contents.length - 1, 0));
       const content = contents[this.book.process];
       message(`Switch to 《${this.book.name}》 !`);
       updateContent(content);
@@ -77,7 +77,7 @@ export class Book {
       return;
     }
 
-    if (this.book.process >= this.contents.length) {
+    if (this.book.process >= this.contents.length - 1) {
       message('已经是最后一页了');
       return;
     }
@@ -98,7 +98,8 @@ export class Book {
       return;
     }
 
-    this.book.process = process;
+    const maxProcess = Math.max(this.contents.length - 1, 0);
+    this.book.process = Math.min(Math.max(process, 0), maxProcess);
     const content = this.contents[this.book.process];
     updateContent(content);
     updateProgress(this.book.process, this.contents.length, this.book);

@@ -31,7 +31,8 @@ export function applyProgressVisibility() {
 }
 
 export function updateProgress(cur: number, total: number, book: BookData) {
-  progressBarItem.text = `${cur || 0}/${total}`;
-  const percent = total > 0 ? `${((cur / total) * 100).toFixed(2)}%` : '0.00%';
+  const current = total > 0 ? Math.min(cur + 1, total) : 0;
+  progressBarItem.text = `${current}/${total}`;
+  const percent = total > 0 ? `${((current / total) * 100).toFixed(2)}%` : '0.00%';
   progressBarItem.tooltip = `《${book.name}》${percent}`;
 }
