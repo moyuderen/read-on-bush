@@ -6,7 +6,7 @@
   "publisher": "moyuderen",
   "author": {
     "name": "moyuderen",
-    "email": "moyuderen2021@163.com"
+    "email": "moyuderen.git@gmail.com"
   },
   "repository": {
     "type": "git",
@@ -14,7 +14,7 @@
   },
   "bugs": {
     "url": "https://github.com/moyuderen/read-on-bush/issues",
-    "email": "moyuderen2021@163.com"
+    "email": "moyuderen.git@gmail.com"
   },
   "engines": {
     "vscode": "^1.85.0"
