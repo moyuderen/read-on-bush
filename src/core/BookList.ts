@@ -10,7 +10,7 @@ import { generateId } from '../utils/generateId';
 import { getBookGroupName } from './bookGroups';
 import { AppName } from './config';
 import { Commands } from './Commands';
-import { supportedBookExtensions } from './parsers';
+import { isSupportedBookPath, supportedBookExtensions } from './parsers';
 import { getBookListGroupBy, type BookListGroupBy } from './settings';
 import {
   BookStorage,
@@ -144,43 +144,37 @@ export class BookList {
       return;
     }
 
-    const books = this.bookStorage.getBooks();
-    const bookPathKeys = new Set(books.map((book) => this.getBookPathKey(book.url, false)));
-    const nextBooks: BookData[] = [];
-    let skippedCount = 0;
+    this.importBookPaths(
+      files.map((file) => file.fsPath),
+      '所选书籍已在书架中'
+    );
+  }
 
-    for (const file of files) {
-      const filePath = file.fsPath;
-      const filePathKey = this.getBookPathKey(filePath);
+  async addBookDirectory() {
+    const directories = await window.showOpenDialog({
+      title: '选择书籍目录',
+      canSelectFiles: false,
+      canSelectFolders: true,
+      canSelectMany: false,
+      openLabel: '导入目录'
+    });
 
-      if (bookPathKeys.has(filePathKey)) {
-        skippedCount++;
-        continue;
+    if (!directories || directories.length === 0) {
+      return;
+    }
+
+    try {
+      const filePaths = await this.getSupportedBookPaths(directories[0].fsPath);
+
+      if (filePaths.length === 0) {
+        message.warn('所选目录下未找到支持的书籍文件');
+        return;
       }
 
-      bookPathKeys.add(filePathKey);
-      nextBooks.push({
-        name: path.parse(filePath).base,
-        id: generateId(),
-        process: 0,
-        url: filePath
-      });
+      this.importBookPaths(filePaths, '目录中的书籍已在书架中');
+    } catch {
+      message.error('读取目录失败');
     }
-
-    if (nextBooks.length === 0) {
-      message.warn('所选书籍已在书架中');
-      return;
-    }
-
-    this.books = this.bookStorage.addBooks(nextBooks);
-    this.updateBookTreeProvider();
-
-    if (skippedCount > 0) {
-      message(`已导入 ${nextBooks.length} 本书，跳过 ${skippedCount} 个重复路径`);
-      return;
-    }
-
-    message(`已导入 ${nextBooks.length} 本书`);
   }
 
   async renameBook(book: BookTreeItem) {
@@ -297,6 +291,54 @@ export class BookList {
 
     await workspace.getConfiguration(AppName).update('bookListGroupBy', option.value, true);
     message('书架分组方式已更新');
+  }
+
+  private async getSupportedBookPaths(directoryPath: string): Promise<string[]> {
+    const files = await fs.promises.readdir(directoryPath, { withFileTypes: true });
+
+    return files
+      .filter((file) => file.isFile() && isSupportedBookPath(file.name))
+      .sort((left, right) => left.name.localeCompare(right.name, 'zh-CN'))
+      .map((file) => path.join(directoryPath, file.name));
+  }
+
+  private importBookPaths(filePaths: string[], duplicateOnlyMessage: string): void {
+    const books = this.bookStorage.getBooks();
+    const bookPathKeys = new Set(books.map((book) => this.getBookPathKey(book.url, false)));
+    const nextBooks: BookData[] = [];
+    let skippedCount = 0;
+
+    for (const filePath of filePaths) {
+      const filePathKey = this.getBookPathKey(filePath);
+
+      if (bookPathKeys.has(filePathKey)) {
+        skippedCount++;
+        continue;
+      }
+
+      bookPathKeys.add(filePathKey);
+      nextBooks.push({
+        name: path.parse(filePath).base,
+        id: generateId(),
+        process: 0,
+        url: filePath
+      });
+    }
+
+    if (nextBooks.length === 0) {
+      message.warn(duplicateOnlyMessage);
+      return;
+    }
+
+    this.books = this.bookStorage.addBooks(nextBooks, books);
+    this.updateBookTreeProvider();
+
+    if (skippedCount > 0) {
+      message(`已导入 ${nextBooks.length} 本书，跳过 ${skippedCount} 个重复路径`);
+      return;
+    }
+
+    message(`已导入 ${nextBooks.length} 本书`);
   }
 
   private isBookItem(book: BookTreeItem | undefined): book is BookTreeBookItem {

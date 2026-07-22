@@ -139,6 +139,11 @@
         "icon": "$(add)"
       },
       {
+        "command": "readOnBush.importDirectory",
+        "title": "Import Directory",
+        "icon": "$(folder-opened)"
+      },
+      {
         "command": "readOnBush.refreshBookList",
         "title": "Refresh",
         "icon": "$(search-refresh)"
@@ -217,7 +222,12 @@
       "view/title": [
         {
           "command": "readOnBush.import",
-          "group": "navigation",
+          "group": "navigation@1",
+          "when": "view == bookList"
+        },
+        {
+          "command": "readOnBush.importDirectory",
+          "group": "navigation@2",
           "when": "view == bookList"
         },
         {
