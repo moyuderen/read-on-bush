@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { window, commands, workspace } from 'vscode';
+import { window, commands, workspace, env, Uri } from 'vscode';
 import { type ExtensionContext } from 'vscode';
 import { BookTreeProvider, BookTreeItem, BookTreeBookItem } from './BookTree';
 import { ReadBook } from './ReadBook';
@@ -11,6 +11,7 @@ import { generateId } from '../utils/generateId';
 import { getBookGroupName } from './bookGroups';
 import { AppName } from './config';
 import { Commands } from './Commands';
+import { CLOUDCONVERT_URL, summarizeConvertible } from './convertGuide';
 import { toChapterRefs, type EpubExtraction } from './parsers/EpubExtractor';
 import { getBookListGroupBy, type BookListGroupBy } from './settings';
 import {
@@ -211,7 +212,7 @@ export class BookList {
       title: '选择书籍',
       canSelectMany: true,
       filters: {
-        file: this.app.formatRegistry.getSupportedExtensions()
+        '书籍文件': this.app.formatRegistry.getAcknowledgedExtensions()
       }
     });
 
@@ -219,10 +220,8 @@ export class BookList {
       return;
     }
 
-    await this.importBookPaths(
-      files.map((file) => file.fsPath),
-      '所选书籍已在书架中'
-    );
+    const { supported, convertible } = this.partitionByFormat(files.map((file) => file.fsPath));
+    await this.importClassified(supported, convertible, '所选书籍已在书架中');
   }
 
   async addBookDirectory() {
@@ -239,14 +238,14 @@ export class BookList {
     }
 
     try {
-      const filePaths = await this.getSupportedBookPaths(directories[0].fsPath);
+      const { supported, convertible } = await this.getBookPathsInDirectory(directories[0].fsPath);
 
-      if (filePaths.length === 0) {
+      if (supported.length === 0 && convertible.length === 0) {
         message.warn('所选目录下未找到支持的书籍文件');
         return;
       }
 
-      await this.importBookPaths(filePaths, '目录中的书籍已在书架中');
+      await this.importClassified(supported, convertible, '目录中的书籍已在书架中');
     } catch {
       message.error('读取目录失败');
     }
@@ -369,22 +368,29 @@ export class BookList {
     message('书架分组方式已更新');
   }
 
-  private async getSupportedBookPaths(directoryPath: string): Promise<string[]> {
+  private async getBookPathsInDirectory(
+    directoryPath: string
+  ): Promise<{ supported: string[]; convertible: string[] }> {
     const files = await fs.promises.readdir(directoryPath, { withFileTypes: true });
-
-    return files
-      .filter((file) => file.isFile() && this.app.formatRegistry.isSupportedBookPath(file.name))
+    const paths = files
+      .filter((file) => file.isFile())
       .sort((left, right) => left.name.localeCompare(right.name, 'zh-CN'))
       .map((file) => path.join(directoryPath, file.name));
+
+    return this.partitionByFormat(paths);
   }
 
-  private async importBookPaths(filePaths: string[], duplicateOnlyMessage: string): Promise<void> {
+  private async importClassified(
+    supported: string[],
+    convertible: string[],
+    duplicateOnlyMessage: string
+  ): Promise<void> {
     const books = this.bookStorage.getBooks();
     const bookPathKeys = new Set(books.map((book) => this.getBookPathKey(book.url, false)));
     const importTasks: Array<() => Promise<BookData>> = [];
     let skippedCount = 0;
 
-    for (const filePath of filePaths) {
+    for (const filePath of supported) {
       const filePathKey = this.getBookPathKey(filePath);
 
       if (bookPathKeys.has(filePathKey)) {
@@ -398,20 +404,39 @@ export class BookList {
 
     const nextBooks = await this.runInBatches(importTasks, 3);
 
-    if (nextBooks.length === 0) {
+    if (nextBooks.length > 0) {
+      this.books = this.bookStorage.addBooks(nextBooks, books);
+      this.updateBookTreeProvider();
+    }
+
+    // supported 导入结果消息（维持现有语义）。supported 为空时不弹重复提示，
+    // 避免在「只有 convertible」时误报「已在书架中」。
+    if (supported.length > 0 && nextBooks.length === 0) {
       message.warn(duplicateOnlyMessage);
-      return;
-    }
-
-    this.books = this.bookStorage.addBooks(nextBooks, books);
-    this.updateBookTreeProvider();
-
-    if (skippedCount > 0) {
+    } else if (nextBooks.length > 0 && skippedCount > 0) {
       message(`已导入 ${nextBooks.length} 本书，跳过 ${skippedCount} 个重复路径`);
-      return;
+    } else if (nextBooks.length > 0) {
+      message(`已导入 ${nextBooks.length} 本书`);
     }
 
-    message(`已导入 ${nextBooks.length} 本书`);
+    if (convertible.length > 0) {
+      await this.guideConversion(convertible);
+    }
+  }
+
+  /** 按格式分类路径：supported 直接导入、convertible 引导转换、unknown 忽略。分类规则集中在 registry。 */
+  private partitionByFormat(paths: string[]): { supported: string[]; convertible: string[] } {
+    const supported: string[] = [];
+    const convertible: string[] = [];
+    for (const filePath of paths) {
+      const kind = this.app.formatRegistry.classifyPath(filePath);
+      if (kind === 'supported') {
+        supported.push(filePath);
+      } else if (kind === 'convertible') {
+        convertible.push(filePath);
+      }
+    }
+    return { supported, convertible };
   }
 
   private async importBookPath(filePath: string): Promise<BookData> {
@@ -422,6 +447,20 @@ export class BookList {
       filePath,
       context: this.context
     });
+  }
+
+  /** 汇总提示需转换的书籍（mobi/azw3/pdf），引导用户前往 CloudConvert 转 epub。 */
+  private async guideConversion(convertiblePaths: string[]): Promise<void> {
+    const formats = summarizeConvertible(convertiblePaths);
+    const openExternalLabel = '前往 CloudConvert';
+    const action = await window.showInformationMessage(
+      `检测到 ${convertiblePaths.length} 本需转换的书籍（${formats.join('/')}），需先转 epub 才能阅读`,
+      openExternalLabel
+    );
+
+    if (action === openExternalLabel) {
+      await env.openExternal(Uri.parse(CLOUDCONVERT_URL));
+    }
   }
 
   private async runInBatches<T>(tasks: Array<() => Promise<T>>, batchSize: number): Promise<T[]> {

@@ -11,12 +11,19 @@ function getExtension(filePath: string): string {
   return path.extname(filePath).toLowerCase();
 }
 
+export type PathKind = 'supported' | 'convertible' | 'unknown';
+
 export class BookFormatRegistry {
   private readonly providersByExtension = new Map<string, BookFormatProvider>();
+  // 可识别但非原生支持、需引导用户外部转换的扩展名（如 mobi/azw3/pdf）。
+  private readonly convertibleExtensions = new Set<string>();
 
-  constructor(providers: BookFormatProvider[] = []) {
+  constructor(providers: BookFormatProvider[] = [], convertibleExtensions: readonly string[] = []) {
     for (const provider of providers) {
       this.register(provider);
+    }
+    for (const extension of convertibleExtensions) {
+      this.convertibleExtensions.add(normalizeExtension(extension));
     }
   }
 
@@ -52,5 +59,24 @@ export class BookFormatRegistry {
    */
   getProviderForBook(book: BookData): BookFormatProvider | undefined {
     return this.providersByExtension.get(getExtension(book.url));
+  }
+
+  /**
+   * 路径分类：原生支持 / 需引导转换 / 未知。集中「app 响应哪些扩展名」的判断，
+   * 避免调用方各自硬编码 if/else；新增 convertible 格式只需构造时注册。
+   */
+  classifyPath(filePath: string): PathKind {
+    const extension = getExtension(filePath);
+    if (this.providersByExtension.has(extension)) {
+      return 'supported';
+    }
+    return this.convertibleExtensions.has(extension) ? 'convertible' : 'unknown';
+  }
+
+  /** app 会响应的所有扩展名：原生支持 ∪ 需转换。供导入对话框 filter。 */
+  getAcknowledgedExtensions(): string[] {
+    return [...this.providersByExtension.keys(), ...this.convertibleExtensions].map((extension) =>
+      extension.slice(1)
+    );
   }
 }
