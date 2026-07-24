@@ -19,29 +19,28 @@ export type TerminalTemplate = {
 export function getTemplate(style: TerminalCamouflageStyle): TerminalTemplate {
   if (style === 'claudeCli') {
     return {
-      contentPrefix: '  ⎿  ',
+      // Claude Code 的真实输出主体通常没有固定行前缀；正文直接像助手回复一样铺开。
+      contentPrefix: '',
       header: [
-        'claude',
+        '⚠️ 需要确认一下',
         '',
-        '✻ Thinking…',
-        '⎿  Read src/core/display/terminalCamouflageDisplay.ts',
-        '⎿  Read src/core/settings.ts',
-        '⎿  Search(pattern: "terminalCamouflage", path: "src")',
-        '⎿  Update Todos',
-        '',
-        '● I’ll keep the display state centralized and update the terminal renderer next.',
-        '',
-        '✢ Processing…',
+        '我先看了一下当前实现，终端伪装的显示结果是由共享渲染器缓存出来的，所以这段输出看起来更像一次 Claude Code 会话里的回复，而不是普通日志。',
         ''
       ],
       trailing: [
         '',
-        '⎿  Modified src/core/display/terminalCamouflageDisplay.ts',
-        '⎿  Running npm run compile',
-        '⎿  Running npm run lint'
+        '关于下一步，我会先保持现有阅读快捷键不变，只调整可见模板：正文仍然在这里连续输出，底部则保留任务状态、输入框和状态栏。',
+        ''
       ],
-      done: (progress) => `● Update complete${progress}`,
-      footer: 'esc to interrupt · n/p step · j jump · q stop'
+      done: (progress) => `* Sautéed for 8m 6s${progress ? ` · ${progress}` : ''}`,
+      footer: [
+        '                                                               new task? /clear to save 308.4k tokens',
+        '────────────────────────────────────────────────────────────────────────────────────────────────────────',
+        '›',
+        '────────────────────────────────────────────────────────────────────────────────────────────────────────',
+        '[opus-4.8[1m]] ██████░░░░░░░░ 30% | 💰 $16.17 | ⏱ 305m 44s',
+        '▸▸ accept edits on (shift+tab to cycle) · install gh for PR status · ↵ for agents'
+      ].join('\r\n')
     };
   }
 

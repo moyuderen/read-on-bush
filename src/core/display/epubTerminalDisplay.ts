@@ -10,7 +10,7 @@ import {
 import type { EpubBook } from '../EpubBook';
 
 // epub 伪装终端名，区别于 txt 的 'npm: watch'（两终端不串味）
-const epubTerminalName = 'node: server';
+const epubTerminalName = 'Claude Code';
 
 /**
  * epub 专用伪装终端。与 txt 的 TerminalCamouflageDisplay 平行：
