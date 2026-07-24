@@ -6,6 +6,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-07-24
+
+### Changed
+
+- 优化 Claude Code CLI 终端伪装模板，使输出布局更贴近真实 Claude Code 会话，并将 EPUB 伪装终端名称改为 `Claude Code`。
+
 ## [2.2.0] - 2026-07-24
 
 ### Added
