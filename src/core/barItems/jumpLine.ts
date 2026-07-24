@@ -19,13 +19,14 @@ export function setupJumpLineBarItem(context: ExtensionContext) {
     jumpLineBarItem.tooltip = 'Jump line';
     jumpLineBarItem.show();
     commands.registerCommand(Commands.JumpLine, async () => {
-      if (!app.readingBook) {
+      const readingBook = app.readingBook;
+      if (!readingBook) {
         message.warn('请选择要读的书籍！');
         return;
       }
       const value = await window.showInputBox({
         title: '跳转到指定行',
-        placeHolder: `请输入页码 (1-${app.readingBook.contents.length})`,
+        placeHolder: `请输入页码 (1-${readingBook.contents.length})`,
         validateInput: (value: string) => {
           if (value === '') {
             return '请输入正确页码';
@@ -39,7 +40,7 @@ export function setupJumpLineBarItem(context: ExtensionContext) {
             return '请输入正确页码';
           }
 
-          if (+value < 1 || +value > app.readingBook.contents.length) {
+          if (+value < 1 || +value > readingBook.contents.length) {
             return '请输入正确范围的页码';
           }
 
@@ -49,7 +50,7 @@ export function setupJumpLineBarItem(context: ExtensionContext) {
       if (!value) {
         return;
       }
-      app.readingBook.jumpLine(Number(value) - 1);
+      readingBook.jumpLine(Number(value) - 1);
     });
   }
 }

@@ -4,13 +4,14 @@ import { window, commands, workspace } from 'vscode';
 import { type ExtensionContext } from 'vscode';
 import { BookTreeProvider, BookTreeItem, BookTreeBookItem } from './BookTree';
 import { ReadBook } from './ReadBook';
-import { Book, BookData } from './Book';
+import { BookData, type EpubProgress } from './Book';
+import type { BookNavigationTarget } from '../domain/books';
 import message from '../utils/message';
 import { generateId } from '../utils/generateId';
 import { getBookGroupName } from './bookGroups';
 import { AppName } from './config';
 import { Commands } from './Commands';
-import { isSupportedBookPath, supportedBookExtensions } from './parsers';
+import { toChapterRefs, type EpubExtraction } from './parsers/EpubExtractor';
 import { getBookListGroupBy, type BookListGroupBy } from './settings';
 import {
   BookStorage,
@@ -53,7 +54,11 @@ export class BookList {
     this.context = app.context;
     this.bookStorage = bookStorage;
     this.books = this.bookStorage.getBooks();
-    this.bookTreeProvider = new BookTreeProvider(this.books, getBookListGroupBy());
+    this.bookTreeProvider = new BookTreeProvider(
+      this.app.formatRegistry,
+      this.books,
+      getBookListGroupBy()
+    );
     this.context.subscriptions.push(
       window.registerTreeDataProvider('bookList', this.bookTreeProvider)
     );
@@ -69,6 +74,9 @@ export class BookList {
     this.context.subscriptions.push(
       commands.registerCommand(Commands.OpenBook, (event) => {
         this.openOnBook(event);
+      }),
+      commands.registerCommand(Commands.OpenBookOutline, (event) => {
+        this.openBookOutline(event);
       }),
       commands.registerCommand(Commands.DeleteBook, (event) => {
         if (this.isBookItem(event)) {
@@ -98,22 +106,60 @@ export class BookList {
       return;
     }
 
-    if (!fs.existsSync(book.url)) {
-      const action = await window.showWarningMessage(
-        `文件不存在，是否从书架移除《${book.name}》？`,
-        '移除',
-        '保留'
-      );
+    const bookData = await this.getExistingBookForOpen(book.id);
 
-      if (action === '移除') {
-        this.deleteBook(book.id, '已从书架移除');
-      }
-
+    if (!bookData) {
       return;
     }
 
-    const { id, name, process, url, category } = book;
-    this.app.readingBook = new Book({ id, name, process, url, category }, this.app);
+    await this.app.readingSession.open(bookData);
+  }
+
+  async openBookOutline(event: unknown) {
+    const { bookId, target } = (event ?? {}) as {
+      bookId?: string;
+      target?: BookNavigationTarget;
+    };
+
+    if (!bookId || !target) {
+      return;
+    }
+
+    const bookData = await this.getExistingBookForOpen(bookId);
+
+    if (!bookData) {
+      return;
+    }
+
+    if (this.app.readingSession.current?.book.id !== bookData.id) {
+      await this.app.readingSession.open(bookData);
+    }
+
+    await this.app.readingSession.jumpTo(target);
+  }
+
+  private async getExistingBookForOpen(bookId: string): Promise<BookData | undefined> {
+    const bookData = this.books.find((item) => item.id === bookId);
+
+    if (!bookData) {
+      return undefined;
+    }
+
+    if (fs.existsSync(bookData.url)) {
+      return bookData;
+    }
+
+    const action = await window.showWarningMessage(
+      `文件不存在，是否从书架移除《${bookData.name}》？`,
+      '移除',
+      '保留'
+    );
+
+    if (action === '移除') {
+      this.deleteBook(bookData.id, '已从书架移除');
+    }
+
+    return undefined;
   }
 
   updateBookTreeProvider() {
@@ -121,8 +167,13 @@ export class BookList {
   }
 
   deleteBook(id: string, successMessage = 'Delete successful !') {
+    const deletedBook = this.books.find((book) => book.id === id);
     this.books = this.bookStorage.deleteBook(id);
     this.updateBookTreeProvider();
+    if (deletedBook) {
+      const provider = this.app.formatRegistry.getProviderForBook(deletedBook);
+      void provider?.deleteCache?.(deletedBook, this.context);
+    }
     message(successMessage);
   }
 
@@ -131,12 +182,36 @@ export class BookList {
     this.bookTreeProvider.updateBookProcess(id, process);
   }
 
+  updateEpubProgress(id: string, progress: EpubProgress) {
+    this.books = this.bookStorage.updateEpubProgress(id, progress);
+    this.bookTreeProvider.updateEpubProgress(id, progress);
+  }
+
+  syncEpubChapters(id: string, extraction: EpubExtraction): BookData | undefined {
+    const chapters = toChapterRefs(extraction);
+    const existing = this.books.find((book) => book.id === id);
+    const unchanged =
+      existing?.chapters &&
+      existing.chapters.length === chapters.length &&
+      existing.chapters.every(
+        (chapter, index) => chapter.title === chapters[index]?.title
+      );
+
+    if (unchanged) {
+      return existing;
+    }
+
+    this.books = this.bookStorage.updateEpubChapters(id, chapters);
+    this.updateBookTreeProvider();
+    return this.books.find((book) => book.id === id);
+  }
+
   async addBook() {
     const files = await window.showOpenDialog({
       title: '选择书籍',
       canSelectMany: true,
       filters: {
-        file: supportedBookExtensions
+        file: this.app.formatRegistry.getSupportedExtensions()
       }
     });
 
@@ -144,7 +219,7 @@ export class BookList {
       return;
     }
 
-    this.importBookPaths(
+    await this.importBookPaths(
       files.map((file) => file.fsPath),
       '所选书籍已在书架中'
     );
@@ -171,7 +246,7 @@ export class BookList {
         return;
       }
 
-      this.importBookPaths(filePaths, '目录中的书籍已在书架中');
+      await this.importBookPaths(filePaths, '目录中的书籍已在书架中');
     } catch {
       message.error('读取目录失败');
     }
@@ -196,8 +271,9 @@ export class BookList {
     this.books = this.bookStorage.renameBook(book.id, nextName);
     this.updateBookTreeProvider();
 
-    if (this.app.readingBook?.book.id === book.id) {
-      this.app.readingBook.book.name = nextName;
+    const readingBook = this.app.readingBook;
+    if (readingBook?.book.id === book.id) {
+      readingBook.book.name = nextName;
     }
 
     message('重命名成功');
@@ -297,15 +373,15 @@ export class BookList {
     const files = await fs.promises.readdir(directoryPath, { withFileTypes: true });
 
     return files
-      .filter((file) => file.isFile() && isSupportedBookPath(file.name))
+      .filter((file) => file.isFile() && this.app.formatRegistry.isSupportedBookPath(file.name))
       .sort((left, right) => left.name.localeCompare(right.name, 'zh-CN'))
       .map((file) => path.join(directoryPath, file.name));
   }
 
-  private importBookPaths(filePaths: string[], duplicateOnlyMessage: string): void {
+  private async importBookPaths(filePaths: string[], duplicateOnlyMessage: string): Promise<void> {
     const books = this.bookStorage.getBooks();
     const bookPathKeys = new Set(books.map((book) => this.getBookPathKey(book.url, false)));
-    const nextBooks: BookData[] = [];
+    const importTasks: Array<() => Promise<BookData>> = [];
     let skippedCount = 0;
 
     for (const filePath of filePaths) {
@@ -317,13 +393,10 @@ export class BookList {
       }
 
       bookPathKeys.add(filePathKey);
-      nextBooks.push({
-        name: path.parse(filePath).base,
-        id: generateId(),
-        process: 0,
-        url: filePath
-      });
+      importTasks.push(() => this.importBookPath(filePath));
     }
+
+    const nextBooks = await this.runInBatches(importTasks, 3);
 
     if (nextBooks.length === 0) {
       message.warn(duplicateOnlyMessage);
@@ -339,6 +412,26 @@ export class BookList {
     }
 
     message(`已导入 ${nextBooks.length} 本书`);
+  }
+
+  private async importBookPath(filePath: string): Promise<BookData> {
+    const provider = this.app.formatRegistry.getProviderByPath(filePath);
+    return provider.importBook({
+      name: path.parse(filePath).base,
+      id: generateId(),
+      filePath,
+      context: this.context
+    });
+  }
+
+  private async runInBatches<T>(tasks: Array<() => Promise<T>>, batchSize: number): Promise<T[]> {
+    const results: T[] = [];
+
+    for (let index = 0; index < tasks.length; index += batchSize) {
+      results.push(...(await Promise.all(tasks.slice(index, index + batchSize).map((task) => task()))));
+    }
+
+    return results;
   }
 
   private isBookItem(book: BookTreeItem | undefined): book is BookTreeBookItem {

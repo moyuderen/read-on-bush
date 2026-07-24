@@ -212,6 +212,36 @@
         "command": "readOnBush.switchBookListGroupBy",
         "title": "Group By",
         "icon": "$(list-tree)"
+      },
+      {
+        "command": "readOnBush.epub.next",
+        "title": "EPUB 读书：下一页",
+        "category": "Read On Bush"
+      },
+      {
+        "command": "readOnBush.epub.prev",
+        "title": "EPUB 读书：上一页",
+        "category": "Read On Bush"
+      },
+      {
+        "command": "readOnBush.epub.jumpChapter",
+        "title": "EPUB 读书：跳转章节",
+        "category": "Read On Bush"
+      },
+      {
+        "command": "readOnBush.epub.stop",
+        "title": "EPUB 读书：停止",
+        "category": "Read On Bush"
+      },
+      {
+        "command": "readOnBush.epub.viewImage",
+        "title": "EPUB 读书：查看图片",
+        "category": "Read On Bush"
+      },
+      {
+        "command": "readOnBush.openBookOutline",
+        "title": "Open Book Outline",
+        "icon": "$(bookmark)"
       }
     ],
     "keybindings": [
@@ -323,6 +353,8 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "fast-xml-parser": "^5.10.1",
+    "fflate": "^0.8.3",
     "linebyline": "^1.3.0"
   }
 }

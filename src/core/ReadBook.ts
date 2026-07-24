@@ -2,16 +2,25 @@ import { type ExtensionContext } from 'vscode';
 import { BookList } from './BookList';
 import { Book } from './Book';
 import { ReadingDisplayManager } from './display';
+import { EpubReader } from './EpubReader';
+import { createDefaultBookFormatRegistry, type BookFormatRegistry } from '../formats';
+import { ReadingSessionService } from '../app/services';
 
 export class ReadBook {
   public context: ExtensionContext;
   public bookList: BookList;
-  public readingBook!: Book;
+  public readingBook?: Book;
   public displayManager: ReadingDisplayManager;
+  public epubReader: EpubReader;
+  public formatRegistry: BookFormatRegistry;
+  public readingSession: ReadingSessionService;
 
   constructor(context: ExtensionContext) {
     this.context = context;
+    this.formatRegistry = createDefaultBookFormatRegistry();
     this.displayManager = new ReadingDisplayManager(context);
+    this.epubReader = new EpubReader(this);
+    this.readingSession = new ReadingSessionService(this);
     this.bookList = new BookList(this);
   }
 }

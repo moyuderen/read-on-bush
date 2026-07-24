@@ -44,6 +44,7 @@ function setupConfigurationChangeHandlers(context: ExtensionContext) {
 
       if (displayRefreshSettingChanged) {
         app.displayManager.refresh(app.readingBook && app.readingBook.getDisplayState());
+        app.readingSession.refreshSettings();
       }
 
       if (lineWidthChanged) {
