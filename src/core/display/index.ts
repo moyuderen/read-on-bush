@@ -24,6 +24,8 @@ export class ReadingDisplayManager {
     this.terminalCamouflageDisplay = new TerminalCamouflageDisplay(context);
 
     context.subscriptions.push(
+      this.terminalCamouflageDisplay.onDidConcealContent(() => this.statusBarDisplay.hide()),
+      this.terminalCamouflageDisplay.onDidRevealContent(() => this.refresh()),
       commands.registerCommand(Commands.OpenTerminalCamouflage, () => {
         this.revealTerminal();
       }),
@@ -35,14 +37,16 @@ export class ReadingDisplayManager {
 
   render(state: ReadingDisplayState) {
     this.lastState = state;
+    const showTerminalCamouflage = shouldShowTerminalCamouflage();
+    const terminalConcealed = showTerminalCamouflage && !this.terminalCamouflageDisplay.isRealContentMode();
 
-    if (shouldShowStatusBarReading()) {
+    if (shouldShowStatusBarReading() && !terminalConcealed) {
       this.statusBarDisplay.render(state);
     } else {
       this.statusBarDisplay.hide();
     }
 
-    if (shouldShowTerminalCamouflage()) {
+    if (showTerminalCamouflage) {
       this.terminalCamouflageDisplay.render(
         state,
         getShowProgress(),

@@ -2,9 +2,12 @@ import { commands, EventEmitter, window } from 'vscode';
 import type { ExtensionContext, Pseudoterminal, Terminal, TerminalDimensions } from 'vscode';
 import { Commands } from '../Commands';
 import type { TerminalCamouflageStyle } from '../settings';
+import { CamouflageConcealController } from './camouflageConcealController';
+import { handleCamouflageInput } from './camouflageInput';
 import {
   computeEffectiveLineWidth,
   formatCamouflageScreen,
+  formatDebugCamouflageScreen,
   formatTerminalIdleScreen
 } from './camouflageRender';
 import type { EpubBook } from '../EpubBook';
@@ -19,7 +22,9 @@ const epubTerminalName = 'Claude Code';
  */
 export class EpubTerminalDisplay implements Pseudoterminal {
   private readonly writeEmitter = new EventEmitter<string>();
+  private readonly concealEmitter = new EventEmitter<void>();
   readonly onDidWrite = this.writeEmitter.event;
+  readonly onDidConcealContent = this.concealEmitter.event;
 
   private terminal?: Terminal;
   private dimensions?: TerminalDimensions;
@@ -29,6 +34,11 @@ export class EpubTerminalDisplay implements Pseudoterminal {
   private lineCount = 3;
   private pendingOutput?: string;
   private opened = false;
+  private readonly concealController = new CamouflageConcealController({
+    render: () => this.renderOrIdle(),
+    stop: () => commands.executeCommand(Commands.EpubStop),
+    onConceal: () => this.concealEmitter.fire()
+  });
 
   constructor(private readonly context: ExtensionContext) {}
 
@@ -42,6 +52,7 @@ export class EpubTerminalDisplay implements Pseudoterminal {
     this.style = style;
     this.lineWidth = lineWidth;
     this.lineCount = lineCount;
+    this.concealController.reset();
   }
 
   updateSettings(style: TerminalCamouflageStyle, lineWidth: number, lineCount: number): void {
@@ -52,6 +63,7 @@ export class EpubTerminalDisplay implements Pseudoterminal {
 
   unbind(): void {
     this.epubBook = undefined;
+    this.concealController.reset();
     this.write(formatTerminalIdleScreen(this.style));
   }
 
@@ -63,6 +75,10 @@ export class EpubTerminalDisplay implements Pseudoterminal {
     return this.lineCount;
   }
 
+  isRealContentMode(): boolean {
+    return this.concealController.isRealContentMode();
+  }
+
   open(): void {
     this.opened = true;
     this.writeEmitter.fire(this.pendingOutput || formatTerminalIdleScreen(this.style));
@@ -72,6 +88,7 @@ export class EpubTerminalDisplay implements Pseudoterminal {
   close(): void {
     this.opened = false;
     this.terminal = undefined;
+    this.concealController.reset();
   }
 
   setDimensions(dimensions: TerminalDimensions): void {
@@ -80,29 +97,15 @@ export class EpubTerminalDisplay implements Pseudoterminal {
   }
 
   handleInput(data: string): void {
-    if (data === '\x1b[C' || data.toLowerCase() === 'n') {
-      commands.executeCommand(Commands.EpubNext);
-      return;
-    }
-
-    if (data === '\x1b[D' || data.toLowerCase() === 'p') {
-      commands.executeCommand(Commands.EpubPrev);
-      return;
-    }
-
-    if (data.toLowerCase() === 'j') {
-      commands.executeCommand(Commands.EpubJumpChapter);
-      return;
-    }
-
-    if (data.toLowerCase() === 'i') {
-      commands.executeCommand(Commands.EpubViewImage);
-      return;
-    }
-
-    if (data.toLowerCase() === 'q') {
-      commands.executeCommand(Commands.EpubStop);
-    }
+    handleCamouflageInput(data, {
+      next: () => this.executeRealContentCommand(Commands.EpubNext),
+      prev: () => this.executeRealContentCommand(Commands.EpubPrev),
+      jump: () => this.executeRealContentCommand(Commands.EpubJumpChapter),
+      toggleDebug: () => this.toggleDebugContent(),
+      quit: () => this.concealController.handleQuitKey(),
+      viewImage: () => this.executeRealContentCommand(Commands.EpubViewImage),
+      onNonQuitKey: () => this.concealController.clearPendingQuit()
+    });
   }
 
   render(): void {
@@ -111,6 +114,13 @@ export class EpubTerminalDisplay implements Pseudoterminal {
     }
     this.ensureTerminal();
     const effectiveWidth = this.getEffectiveLineWidth();
+    const contentMode = this.concealController.mode;
+
+    if (contentMode === 'debugTemplate') {
+      this.write(formatDebugCamouflageScreen(this.style, effectiveWidth, this.lineCount, this.dimensions?.columns));
+      return;
+    }
+
     const screen = this.epubBook.getScreen(effectiveWidth, this.lineCount);
     const progressLabel =
       screen.images.length > 0 ? `${screen.progressLabel} · [图 i]` : screen.progressLabel;
@@ -124,6 +134,10 @@ export class EpubTerminalDisplay implements Pseudoterminal {
     } else {
       this.write(formatTerminalIdleScreen(this.style));
     }
+  }
+
+  toggleDebugContent(): void {
+    this.concealController.toggleDebugContent();
   }
 
   /** 把焦点拉回伪装终端（看图面板关闭后调用，便于立即再按 i 重开）。 */
@@ -140,6 +154,28 @@ export class EpubTerminalDisplay implements Pseudoterminal {
     this.terminal?.dispose();
     this.terminal = undefined;
     this.opened = false;
+    this.concealController.reset();
+  }
+
+  private executeRealContentCommand(command: Commands): void {
+    if (this.isRealContentMode()) {
+      commands.executeCommand(command);
+    }
+  }
+
+  private renderOrIdle(): void {
+    this.ensureTerminal();
+    if (this.epubBook) {
+      this.render();
+      return;
+    }
+
+    if (this.concealController.mode === 'debugTemplate') {
+      this.write(formatDebugCamouflageScreen(this.style, this.getEffectiveLineWidth(), this.lineCount, this.dimensions?.columns));
+      return;
+    }
+
+    this.write(formatTerminalIdleScreen(this.style));
   }
 
   private ensureTerminal(): void {
