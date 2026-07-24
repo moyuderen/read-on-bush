@@ -1,4 +1,4 @@
-import { type BookData } from '../Book';
+import { type BookData, type ChapterRef, type EpubProgress } from '../Book';
 import { getStorage, setStorage } from '../../utils/storage';
 
 const BOOKS_STORAGE_KEY = 'books';
@@ -9,6 +9,8 @@ export interface BookStorage {
   addBook(book: BookData): BookData[];
   addBooks(books: BookData[], existingBooks?: BookData[]): BookData[];
   updateBookProcess(id: string, process: number): BookData[];
+  updateEpubProgress(id: string, progress: EpubProgress): BookData[];
+  updateEpubChapters(id: string, chapters: ChapterRef[]): BookData[];
   renameBook(id: string, name: string): BookData[];
   updateBookCategory(id: string, category?: string): BookData[];
   deleteBook(id: string): BookData[];
@@ -27,16 +29,8 @@ function normalizeCategory(category?: string): string | undefined {
   return value ? value : undefined;
 }
 
-function isSameBook(left: BookData, right: BookData): boolean {
-  return (
-    left.id === right.id &&
-    left.name === right.name &&
-    left.process === right.process &&
-    left.url === right.url &&
-    left.category === right.category &&
-    left.createdAt === right.createdAt &&
-    left.order === right.order
-  );
+function hasSameNormalization(left: BookData, right: BookData): boolean {
+  return left.createdAt === right.createdAt && left.order === right.order;
 }
 
 export class GlobalStateBookStorage implements BookStorage {
@@ -45,7 +39,7 @@ export class GlobalStateBookStorage implements BookStorage {
     const books = Array.isArray(value) ? (value as BookData[]) : [];
     const normalizedBooks = books.map(normalizeBook);
 
-    if (normalizedBooks.some((book, index) => !isSameBook(book, books[index]))) {
+    if (normalizedBooks.some((book, index) => !hasSameNormalization(book, books[index]))) {
       this.saveBooks(normalizedBooks);
     }
 
@@ -85,6 +79,20 @@ export class GlobalStateBookStorage implements BookStorage {
     return this.updateBook(id, (book) => ({
       ...book,
       process
+    }));
+  }
+
+  updateEpubProgress(id: string, progress: EpubProgress): BookData[] {
+    return this.updateBook(id, (book) => ({
+      ...book,
+      epubProgress: progress
+    }));
+  }
+
+  updateEpubChapters(id: string, chapters: ChapterRef[]): BookData[] {
+    return this.updateBook(id, (book) => ({
+      ...book,
+      chapters
     }));
   }
 
