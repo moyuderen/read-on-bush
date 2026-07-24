@@ -114,7 +114,7 @@ export class EpubTerminalDisplay implements Pseudoterminal {
     const screen = this.epubBook.getScreen(effectiveWidth, this.lineCount);
     const progressLabel =
       screen.images.length > 0 ? `${screen.progressLabel} · [图 i]` : screen.progressLabel;
-    this.write(formatCamouflageScreen(this.style, screen.lines, progressLabel));
+    this.write(formatCamouflageScreen(this.style, screen.lines, progressLabel, this.dimensions?.columns));
   }
 
   reveal(): void {

@@ -8,45 +8,65 @@ export const clearScreen = '\x1b[2J\x1b[H';
 export const minContentWidth = 20;
 export const fallbackContentWidth = 80;
 
+// Claude Code 代码 diff 的 ANSI 配色：增/删/块头/弱化上下文。
+const DIFF_GREEN = '\x1b[32m';
+const DIFF_RED = '\x1b[31m';
+const DIFF_CYAN = '\x1b[36m';
+const DIFF_DIM = '\x1b[2m';
+const DIFF_RESET = '\x1b[0m';
+
+// 各样式的正文行前缀：单一事实源，getTemplate 与 computeEffectiveLineWidth 共用，
+// 避免为了读一个 contentPrefix.length 就重建整份模板。
+const contentPrefixByStyle: Record<TerminalCamouflageStyle, string> = {
+  buildLog: '[12:42:13] info  ',
+  claudeCli: '',
+  serverLog: 'INFO  '
+};
+
 export type TerminalTemplate = {
   contentPrefix: string;
   header: string[];
   trailing: string[];
   done: (progress: string) => string;
-  footer: string;
+  footer: (columns?: number) => string;
 };
 
 export function getTemplate(style: TerminalCamouflageStyle): TerminalTemplate {
   if (style === 'claudeCli') {
     return {
       // Claude Code 的真实输出主体通常没有固定行前缀；正文直接像助手回复一样铺开。
-      contentPrefix: '',
+      contentPrefix: contentPrefixByStyle.claudeCli,
       header: [
-        '⚠️ 需要确认一下',
+        '✻ Planning…',
+        '  ⎿  Read src/features/orders/OrderList.tsx',
+        '  ⎿  Read src/api/orders.ts',
+        '  ⎿  Grep(pattern: "useInfiniteQuery", path: "src")',
         '',
-        '我先看了一下当前实现，终端伪装的显示结果是由共享渲染器缓存出来的，所以这段输出看起来更像一次 Claude Code 会话里的回复，而不是普通日志。',
+        '方案如下，确认后我就开始：',
+        '  1. 订单列表接上分页接口，滚到底自动加载下一页',
+        '  2. 补 loading / 空状态 / 失败重试',
+        '  3. 加单测并跑一遍 lint',
         ''
       ],
       trailing: [
         '',
-        '关于下一步，我会先保持现有阅读快捷键不变，只调整可见模板：正文仍然在这里连续输出，底部则保留任务状态、输入框和状态栏。',
+        '✏️  Updated src/api/orders.ts',
+        `     ${DIFF_CYAN}@@ -24,7 +24,10 @@${DIFF_RESET}`,
+        `   ${DIFF_RED}-  const res = await fetch('/api/orders')${DIFF_RESET}`,
+        `   ${DIFF_GREEN}+  const res = await fetch('/api/orders?page=' + page + '&size=20')${DIFF_RESET}`,
+        `   ${DIFF_GREEN}+  if (!res.ok) throw new Error('订单加载失败')${DIFF_RESET}`,
+        '',
+        `● ${DIFF_DIM}npm test${DIFF_RESET}  ${DIFF_GREEN}✓${DIFF_RESET} 18 passed (2.4s)`,
         ''
       ],
       done: (progress) => `* Sautéed for 8m 6s${progress ? ` · ${progress}` : ''}`,
-      footer: [
-        '                                                               new task? /clear to save 308.4k tokens',
-        '────────────────────────────────────────────────────────────────────────────────────────────────────────',
-        '›',
-        '────────────────────────────────────────────────────────────────────────────────────────────────────────',
-        '[opus-4.8[1m]] ██████░░░░░░░░ 30% | 💰 $16.17 | ⏱ 305m 44s',
-        '▸▸ accept edits on (shift+tab to cycle) · install gh for PR status · ↵ for agents'
-      ].join('\r\n')
+      footer: formatClaudeCliFooter
     };
   }
 
   if (style === 'serverLog') {
     return {
-      contentPrefix: 'INFO  ',
+      contentPrefix: contentPrefixByStyle.serverLog,
       header: [
         'npm run dev',
         '',
@@ -66,12 +86,12 @@ export function getTemplate(style: TerminalCamouflageStyle): TerminalTemplate {
         'INFO  background worker heartbeat ok'
       ],
       done: (progress) => `INFO  request completed${progress}`,
-      footer: 'Press n/p to step, j to jump, q to stop.'
+      footer: () => 'Press n/p to step, j to jump, q to stop.'
     };
   }
 
   return {
-    contentPrefix: '[12:42:13] info  ',
+    contentPrefix: contentPrefixByStyle.buildLog,
     header: [
       '> npm run watch',
       '',
@@ -94,8 +114,26 @@ export function getTemplate(style: TerminalCamouflageStyle): TerminalTemplate {
       '[12:42:22] info  watching for file changes...'
     ],
     done: (progress) => `[12:42:59] done  compiled successfully${progress}`,
-    footer: 'Press n/p to step, j to jump, q to stop.'
+    footer: () => 'Press n/p to step, j to jump, q to stop.'
   };
+}
+
+/**
+ * Claude Code CLI 的底部输入框/状态栏。分隔线与右对齐提示按终端列数自适应，
+ * 不再写死长度——终端宽窄变化时也能铺满，伪装性更强。
+ */
+function formatClaudeCliFooter(columns?: number): string {
+  const width = columns && columns > 0 ? columns : fallbackContentWidth;
+  const divider = '─'.repeat(width);
+  const hint = 'new task? /clear to save 308.4k tokens';
+  return [
+    hint.padStart(width),
+    divider,
+    '›',
+    divider,
+    '[opus-4.8[1m]] ██████░░░░░░░░ 30% | 💰 $16.17 | ⏱ 305m 44s',
+    '▸▸ accept edits on (shift+tab to cycle) · n/p step · j jump · q stop'
+  ].join('\r\n');
 }
 
 export function sanitizeContent(content: string): string {
@@ -155,11 +193,13 @@ export function formatTerminalIdleScreen(style: TerminalCamouflageStyle = 'build
 /**
  * 共享的拼屏原语：给定已经分页好的正文行 + 已经格式化好的进度文案，
  * 套上日志模板拼成一屏。txt 和 epub 都调它——这就是“视觉长相只有一份”。
+ * columns 透传给 footer（仅 claudeCli 用到，用于自适应分隔线宽度）。
  */
 export function formatCamouflageScreen(
   style: TerminalCamouflageStyle,
   contentLines: string[],
-  progressLabel: string
+  progressLabel: string,
+  columns?: number
 ): string {
   const template = getTemplate(style);
   const indent = ' '.repeat(template.contentPrefix.length);
@@ -169,7 +209,7 @@ export function formatCamouflageScreen(
     ...template.trailing,
     template.done(progressLabel),
     '',
-    template.footer
+    template.footer(columns)
   ];
 
   return `${clearScreen}${lines.join('\r\n')}`;
@@ -184,9 +224,8 @@ export function computeEffectiveLineWidth(
   columns: number | undefined,
   style: TerminalCamouflageStyle
 ): number {
-  const template = getTemplate(style);
   const terminalContentWidth = columns
-    ? columns - template.contentPrefix.length - 2
+    ? columns - contentPrefixByStyle[style].length - 2
     : fallbackContentWidth;
   const maxContentWidth = Math.max(minContentWidth, terminalContentWidth);
 
