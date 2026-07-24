@@ -96,12 +96,13 @@ export function formatTerminalCamouflageScreen(
   showProgress: boolean,
   lineWidth: number,
   lineCount: number,
-  style: TerminalCamouflageStyle = 'buildLog'
+  style: TerminalCamouflageStyle = 'buildLog',
+  columns?: number
 ): string {
   const contentLines = getTerminalContentLines(state, lineWidth, lineCount);
   const current = state.total > 0 ? Math.min(state.process + 1, state.total) : 0;
   const progressLabel = showProgress ? `  ${current}/${state.total}` : '';
-  return formatCamouflageScreen(style, contentLines, progressLabel);
+  return formatCamouflageScreen(style, contentLines, progressLabel, columns);
 }
 
 export class TerminalCamouflageDisplay implements Pseudoterminal {
@@ -176,7 +177,8 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
         showProgress,
         this.getEffectiveLineWidth(lineWidth, style),
         lineCount,
-        style
+        style,
+        this.dimensions?.columns
       )
     );
   }
@@ -208,7 +210,8 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
           showProgress,
           this.getEffectiveLineWidth(lineWidth, style),
           lineCount,
-          style
+          style,
+          this.dimensions?.columns
         )
       );
       return;
@@ -257,7 +260,8 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
         this.lastShowProgress,
         this.getEffectiveLineWidth(this.lastLineWidth, this.lastStyle),
         this.lastLineCount,
-        this.lastStyle
+        this.lastStyle,
+        this.dimensions?.columns
       )
     );
   }
