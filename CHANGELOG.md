@@ -6,6 +6,16 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-07-24
+
+### Added
+
+- 导入 mobi/azw3/pdf 时引导用户前往 CloudConvert 转 epub（不自研二进制解析）；目录导入也不再静默丢弃这些格式。
+
+### Changed
+
+- `BookFormatRegistry` 新增 convertible 分类（classifyPath/getAcknowledgedExtensions），集中「app 响应哪些扩展名」的判断，导入对话框 filter 随之包含可转换格式。
+
 ## [2.1.0] - 2026-07-24
 
 ### Added
