@@ -13,7 +13,7 @@ const DIFF_GREEN = '\x1b[32m';
 const DIFF_RED = '\x1b[31m';
 const DIFF_CYAN = '\x1b[36m';
 const DIFF_DIM = '\x1b[2m';
-const DIFF_RESET = '\x1b[0m';
+const ANSI_RESET = '\x1b[0m';
 
 // 各样式的正文行前缀：单一事实源，getTemplate 与 computeEffectiveLineWidth 共用，
 // 避免为了读一个 contentPrefix.length 就重建整份模板。
@@ -21,6 +21,35 @@ const contentPrefixByStyle: Record<TerminalCamouflageStyle, string> = {
   buildLog: '[12:42:13] info  ',
   claudeCli: '',
   serverLog: 'INFO  '
+};
+
+export type TerminalCamouflageContentMode = 'real' | 'debugTemplate';
+
+const debugContentByStyle: Record<TerminalCamouflageStyle, string[]> = {
+  buildLog: [
+    './src/core/display/index.ts 6.21 KiB [built] [code generated]',
+    './src/core/display/camouflageRender.ts 9.88 KiB [built] [code generated]',
+    './src/formats/epub/EpubReadingController.ts 3.14 KiB [built]',
+    'webpack 5.91.0 compiled successfully in 418 ms',
+    'asset extension.js 142 KiB [emitted] [minimized]',
+    'cached modules 76.4 KiB (javascript) 3.12 KiB (runtime)'
+  ],
+  claudeCli: [
+    'I’ll keep the terminal rendering state local to the pseudoterminal and reuse the shared renderer.',
+    '  ⎿  Read src/core/display/terminalCamouflageDisplay.ts',
+    '  ⎿  Read src/core/display/epubTerminalDisplay.ts',
+    '  ⎿  Update q handling to require a second confirmation keypress',
+    'Next I’ll add focused tests for the pure camouflage rendering helpers.',
+    '✓ TypeScript compile and lint checks are ready to run'
+  ],
+  serverLog: [
+    'DEBUG requestId=req_91af route=/api/runtime/events payload normalized in 4ms',
+    'INFO  GET /api/workspaces/current 200 16ms cache=hit',
+    'INFO  POST /api/telemetry/batch 202 11ms queue=local',
+    'DEBUG worker=bookshelf-sync heartbeat ok drift=2ms',
+    'INFO  cache refresh completed keys=24 stale=0',
+    'DEBUG requestId=req_a10c route=/api/features flags resolved in 2ms'
+  ]
 };
 
 export type TerminalTemplate = {
@@ -31,66 +60,60 @@ export type TerminalTemplate = {
   footer: (columns?: number) => string;
 };
 
-export function getTemplate(style: TerminalCamouflageStyle): TerminalTemplate {
-  if (style === 'claudeCli') {
-    return {
-      // Claude Code 的真实输出主体通常没有固定行前缀；正文直接像助手回复一样铺开。
-      contentPrefix: contentPrefixByStyle.claudeCli,
-      header: [
-        '✻ Planning…',
-        '  ⎿  Read src/features/orders/OrderList.tsx',
-        '  ⎿  Read src/api/orders.ts',
-        '  ⎿  Grep(pattern: "useInfiniteQuery", path: "src")',
-        '',
-        '方案如下，确认后我就开始：',
-        '  1. 订单列表接上分页接口，滚到底自动加载下一页',
-        '  2. 补 loading / 空状态 / 失败重试',
-        '  3. 加单测并跑一遍 lint',
-        ''
-      ],
-      trailing: [
-        '',
-        '✏️  Updated src/api/orders.ts',
-        `     ${DIFF_CYAN}@@ -24,7 +24,10 @@${DIFF_RESET}`,
-        `   ${DIFF_RED}-  const res = await fetch('/api/orders')${DIFF_RESET}`,
-        `   ${DIFF_GREEN}+  const res = await fetch('/api/orders?page=' + page + '&size=20')${DIFF_RESET}`,
-        `   ${DIFF_GREEN}+  if (!res.ok) throw new Error('订单加载失败')${DIFF_RESET}`,
-        '',
-        `● ${DIFF_DIM}npm test${DIFF_RESET}  ${DIFF_GREEN}✓${DIFF_RESET} 18 passed (2.4s)`,
-        ''
-      ],
-      done: (progress) => `* Sautéed for 8m 6s${progress ? ` · ${progress}` : ''}`,
-      footer: formatClaudeCliFooter
-    };
-  }
-
-  if (style === 'serverLog') {
-    return {
-      contentPrefix: contentPrefixByStyle.serverLog,
-      header: [
-        'npm run dev',
-        '',
-        'INFO  Server listening on http://localhost:3000',
-        'INFO  Loaded env from .env.local',
-        'INFO  Connected to local workspace cache',
-        'INFO  GET /api/workspaces 200 14ms',
-        'INFO  GET /api/projects/current 200 18ms',
-        'INFO  cache warmed in 38ms',
-        'DEBUG requestId=req_42f8 route=/api/runtime/status',
-        ''
-      ],
-      trailing: [
-        '',
-        'DEBUG requestId=req_42f8 normalized payload in 3ms',
-        'INFO  POST /api/runtime/events 202 9ms',
-        'INFO  background worker heartbeat ok'
-      ],
-      done: (progress) => `INFO  request completed${progress}`,
-      footer: () => 'Press n/p to step, j to jump, q to stop.'
-    };
-  }
-
-  return {
+const terminalTemplates: Record<TerminalCamouflageStyle, TerminalTemplate> = {
+  claudeCli: {
+    // Claude Code 的真实输出主体通常没有固定行前缀；正文直接像助手回复一样铺开。
+    contentPrefix: contentPrefixByStyle.claudeCli,
+    header: [
+      '✻ Planning…',
+      '  ⎿  Read src/features/orders/OrderList.tsx',
+      '  ⎿  Read src/api/orders.ts',
+      '  ⎿  Grep(pattern: "useInfiniteQuery", path: "src")',
+      '',
+      '方案如下，确认后我就开始：',
+      '  1. 订单列表接上分页接口，滚到底自动加载下一页',
+      '  2. 补 loading / 空状态 / 失败重试',
+      '  3. 加单测并跑一遍 lint',
+      ''
+    ],
+    trailing: [
+      '',
+      '✏️  Updated src/api/orders.ts',
+      `     ${DIFF_CYAN}@@ -24,7 +24,10 @@${ANSI_RESET}`,
+      `   ${DIFF_RED}-  const res = await fetch('/api/orders')${ANSI_RESET}`,
+      `   ${DIFF_GREEN}+  const res = await fetch('/api/orders?page=' + page + '&size=20')${ANSI_RESET}`,
+      `   ${DIFF_GREEN}+  if (!res.ok) throw new Error('订单加载失败')${ANSI_RESET}`,
+      '',
+      `● ${DIFF_DIM}npm test${ANSI_RESET}  ${DIFF_GREEN}✓${ANSI_RESET} 18 passed (2.4s)`,
+      ''
+    ],
+    done: (progress) => `* Sautéed for 8m 6s${progress ? ` · ${progress}` : ''}`,
+    footer: formatClaudeCliFooter
+  },
+  serverLog: {
+    contentPrefix: contentPrefixByStyle.serverLog,
+    header: [
+      'npm run dev',
+      '',
+      'INFO  Server listening on http://localhost:3000',
+      'INFO  Loaded env from .env.local',
+      'INFO  Connected to local workspace cache',
+      'INFO  GET /api/workspaces 200 14ms',
+      'INFO  GET /api/projects/current 200 18ms',
+      'INFO  cache warmed in 38ms',
+      'DEBUG requestId=req_42f8 route=/api/runtime/status',
+      ''
+    ],
+    trailing: [
+      '',
+      'DEBUG requestId=req_42f8 normalized payload in 3ms',
+      'INFO  POST /api/runtime/events 202 9ms',
+      'INFO  background worker heartbeat ok'
+    ],
+    done: (progress) => `INFO  request completed${progress}`,
+    footer: () => 'keys: q placeholder · qq stop · d toggle · n/p step · j jump'
+  },
+  buildLog: {
     contentPrefix: contentPrefixByStyle.buildLog,
     header: [
       '> npm run watch',
@@ -114,8 +137,14 @@ export function getTemplate(style: TerminalCamouflageStyle): TerminalTemplate {
       '[12:42:22] info  watching for file changes...'
     ],
     done: (progress) => `[12:42:59] done  compiled successfully${progress}`,
-    footer: () => 'Press n/p to step, j to jump, q to stop.'
-  };
+    footer: () => 'keys: q placeholder · qq stop · d toggle · n/p step · j jump'
+  }
+};
+
+const wrappedDebugLinesCache = new Map<string, string[]>();
+
+export function getTemplate(style: TerminalCamouflageStyle): TerminalTemplate {
+  return terminalTemplates[style];
 }
 
 /**
@@ -127,17 +156,17 @@ function formatClaudeCliFooter(columns?: number): string {
   const divider = '─'.repeat(width);
   const hint = 'new task? /clear to save 308.4k tokens';
   return [
-    hint.padStart(width),
+    rightAlignLine(hint, width),
     divider,
     '›',
     divider,
-    '[opus-4.8[1m]] ██████░░░░░░░░ 30% | 💰 $16.17 | ⏱ 305m 44s',
-    '▸▸ accept edits on (shift+tab to cycle) · n/p step · j jump · q stop'
+    fitLineToWidth('[opus-4.8[1m]] ██████░░░░░░░░ 30% | 💰 $16.17 | ⏱ 305m 44s', width),
+    fitLineToWidth('keys: q placeholder · qq stop · d toggle · n/p · j', width)
   ].join('\r\n');
 }
 
 export function sanitizeContent(content: string): string {
-  return content
+  return stripUnsafeTerminalControls(content)
     .replace(/[\r\n]+/g, ' ')
     .replace(/[ \t\f\v 　]+/g, ' ')
     .trim();
@@ -148,7 +177,7 @@ export function getCharWidth(char: string): number {
 }
 
 export function getTextWidth(text: string): number {
-  return Array.from(text).reduce((width, char) => width + getCharWidth(char), 0);
+  return Array.from(stripUnsafeTerminalControls(text)).reduce((width, char) => width + getCharWidth(char), 0);
 }
 
 export function splitContent(content: string, lineWidth: number): string[] {
@@ -183,6 +212,26 @@ export function splitContent(content: string, lineWidth: number): string[] {
   return lines;
 }
 
+export function getDebugContentLines(
+  style: TerminalCamouflageStyle,
+  lineWidth: number,
+  lineCount: number
+): string[] {
+  return ensureLineCount(
+    getWrappedDebugContentLines(style, lineWidth),
+    Math.max(lineCount, 1)
+  );
+}
+
+export function formatDebugCamouflageScreen(
+  style: TerminalCamouflageStyle,
+  lineWidth: number,
+  lineCount: number,
+  columns?: number
+): string {
+  return formatCamouflageScreen(style, getDebugContentLines(style, lineWidth, lineCount), '', columns);
+}
+
 export function formatTerminalIdleScreen(style: TerminalCamouflageStyle = 'buildLog'): string {
   const template = getTemplate(style);
   const lines = [...template.header, ...template.trailing, template.done('')];
@@ -205,9 +254,11 @@ export function formatCamouflageScreen(
   const indent = ' '.repeat(template.contentPrefix.length);
   const lines = [
     ...template.header,
-    ...contentLines.map((content, index) => `${index === 0 ? template.contentPrefix : indent}${content}`),
+    ...contentLines.map((content, index) =>
+      `${index === 0 ? template.contentPrefix : indent}${stripUnsafeTerminalControls(content)}`
+    ),
     ...template.trailing,
-    template.done(progressLabel),
+    template.done(stripUnsafeTerminalControls(progressLabel)),
     '',
     template.footer(columns)
   ];
@@ -234,4 +285,63 @@ export function computeEffectiveLineWidth(
   }
 
   return Math.max(minContentWidth, Math.min(lineWidth, maxContentWidth));
+}
+
+function rightAlignLine(content: string, width: number): string {
+  return fitLineToWidth(content, width).padStart(width);
+}
+
+function fitLineToWidth(content: string, width: number): string {
+  if (width <= 0) {
+    return '';
+  }
+
+  let result = '';
+  let currentWidth = 0;
+
+  for (const char of Array.from(content)) {
+    const charWidth = getCharWidth(char);
+    if (currentWidth + charWidth > width) {
+      break;
+    }
+
+    result += char;
+    currentWidth += charWidth;
+  }
+
+  return result;
+}
+
+function getWrappedDebugContentLines(style: TerminalCamouflageStyle, lineWidth: number): string[] {
+  const width = Math.max(lineWidth, minContentWidth);
+  const cacheKey = `${style}:${width}`;
+  const cachedLines = wrappedDebugLinesCache.get(cacheKey);
+
+  if (cachedLines) {
+    return cachedLines;
+  }
+
+  const lines = debugContentByStyle[style].flatMap((line) => splitContent(line, width));
+  wrappedDebugLinesCache.set(cacheKey, lines);
+  return lines;
+}
+
+function ensureLineCount(lines: string[], lineCount: number): string[] {
+  if (lines.length >= lineCount) {
+    return lines.slice(0, lineCount);
+  }
+
+  const padded = [...lines];
+  const source = lines.length > 0 ? lines : [''];
+  while (padded.length < lineCount) {
+    padded.push(source[padded.length % source.length]);
+  }
+  return padded;
+}
+
+function stripUnsafeTerminalControls(content: string): string {
+  return content
+    .replace(/\x1b\][^\x07]*(?:\x07|\x1b\\)/g, '')
+    .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, '')
+    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]/g, '');
 }

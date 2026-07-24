@@ -3,18 +3,16 @@ import type { StatusBarItem, ExtensionContext } from 'vscode';
 import { app } from '../index';
 import { getStatusBarPrefix } from '../settings';
 
-const placeholderContent = '';
-
 export let contentBarItem: StatusBarItem;
 
 function getCurrentContent(): string {
   const readingBook = app && app.readingBook;
 
   if (!readingBook) {
-    return placeholderContent;
+    return '';
   }
 
-  return readingBook.contents[readingBook.book.process] || placeholderContent;
+  return readingBook.contents[readingBook.book.process] || '';
 }
 
 export function updateContent(content: string) {
@@ -47,7 +45,7 @@ export function setupContentBarItem(context: ExtensionContext) {
   }
 
   contentBarItem = window.createStatusBarItem();
-  updateContent(placeholderContent);
+  updateContent('');
 
   context.subscriptions.push(contentBarItem);
 }

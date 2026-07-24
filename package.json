@@ -97,7 +97,7 @@
         },
         "readOnBush.terminalCamouflageStyle": {
           "type": "string",
-          "default": "buildLog",
+          "default": "claudeCli",
           "enum": [
             "buildLog",
             "claudeCli",

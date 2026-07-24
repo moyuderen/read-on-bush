@@ -32,7 +32,7 @@ export const defaultSettings: ReadOnBushSettings = {
   displayTarget: 'statusBar',
   terminalCamouflageLineWidth: 0,
   terminalCamouflageLineCount: 3,
-  terminalCamouflageStyle: 'buildLog',
+  terminalCamouflageStyle: 'claudeCli',
   bookListGroupBy: 'none'
 };
 

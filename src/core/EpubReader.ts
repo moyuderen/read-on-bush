@@ -33,6 +33,7 @@ export class EpubReader {
 
   constructor(private readonly app: ReadBook) {
     this.terminal = new EpubTerminalDisplay(app.context);
+    app.context.subscriptions.push(this.terminal.onDidConcealContent(() => this.closeImagePanel()));
     this.initCommands();
   }
 
@@ -129,7 +130,7 @@ export class EpubReader {
       this.closeImagePanel();
       return;
     }
-    if (!this.epubBook) {
+    if (!this.epubBook || !this.terminal.isRealContentMode()) {
       return;
     }
     const images = this.epubBook.getImagesInView(
@@ -163,6 +164,9 @@ export class EpubReader {
       return;
     }
     const bytes = await readEpubImageBytes(book.url, image.zipPath);
+    if (!this.epubBook || this.epubBook.book.id !== book.id || !this.terminal.isRealContentMode()) {
+      return;
+    }
     if (!bytes) {
       message.error('读取图片失败');
       return;
@@ -177,6 +181,11 @@ export class EpubReader {
     );
     panel.webview.html = buildImageHtml(mediaType, base64);
     panel.webview.onDidReceiveMessage((msg) => {
+      if (msg === 'toggleDebugContent') {
+        this.terminal.toggleDebugContent();
+        return;
+      }
+
       if (msg === 'close') {
         this.closeImagePanel();
       }
@@ -252,16 +261,27 @@ function buildImageHtml(mediaType: string, base64: string): string {
 <script>
   const vscode = acquireVsCodeApi();
   let closed = false;
-  const close = () => {
+  const postOnce = (message) => {
     if (closed) {
       return;
     }
     closed = true;
-    vscode.postMessage('close');
+    vscode.postMessage(message);
+  };
+  const close = () => postOnce('close');
+  const handleKeydown = (event) => {
+    if (event.key.toLowerCase() === 'd') {
+      event.preventDefault();
+      event.stopPropagation();
+      postOnce('toggleDebugContent');
+      return;
+    }
+
+    close();
   };
   const focusBody = () => document.body.focus({ preventScroll: true });
-  window.addEventListener('keydown', close, true);
-  document.addEventListener('keydown', close, true);
+  window.addEventListener('keydown', handleKeydown, true);
+  document.addEventListener('keydown', handleKeydown, true);
   document.body.addEventListener('click', close);
   window.addEventListener('load', focusBody);
   setTimeout(focusBody, 0);

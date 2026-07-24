@@ -23,6 +23,7 @@ export type Screen = {
 type ChapterWrapper = (chapterIndex: number) => WrappedChapter;
 
 export function wrapChapter(text: string, lineWidth: number): WrappedChapter {
+  const safe = stripUnsafeTerminalControlsWithOffsets(text);
   const lines: string[] = [];
   const starts: number[] = [];
 
@@ -40,12 +41,13 @@ export function wrapChapter(text: string, lineWidth: number): WrappedChapter {
     lineStart = nextStart;
   };
 
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
+  for (let i = 0; i < safe.text.length; i++) {
+    const ch = safe.text[i];
+    const sourceOffset = safe.offsets[i];
 
     if (ch === '\n') {
       // 段落分隔：结束当前行，下一行从 \n 之后开始；连续 \n 不产生空行
-      flush(i + 1);
+      flush(sourceOffset + 1);
       continue;
     }
 
@@ -53,7 +55,7 @@ export function wrapChapter(text: string, lineWidth: number): WrappedChapter {
 
     if (width + charWidth > lineWidth && buffer.length > 0) {
       // 当前行已满：在此处断行，本字符归属下一行
-      flush(i);
+      flush(sourceOffset);
     }
 
     buffer += ch;
@@ -63,6 +65,47 @@ export function wrapChapter(text: string, lineWidth: number): WrappedChapter {
   flush(text.length);
 
   return { lines, starts };
+}
+
+function stripUnsafeTerminalControlsWithOffsets(text: string): { text: string; offsets: number[] } {
+  const result: string[] = [];
+  const offsets: number[] = [];
+  let i = 0;
+
+  while (i < text.length) {
+    if (text.startsWith('\x1b]', i)) {
+      const nextBell = text.indexOf('\x07', i + 2);
+      const nextSt = text.indexOf('\x1b\\', i + 2);
+      const bellEnd = nextBell === -1 ? Number.POSITIVE_INFINITY : nextBell + 1;
+      const stEnd = nextSt === -1 ? Number.POSITIVE_INFINITY : nextSt + 2;
+      const end = Math.min(bellEnd, stEnd);
+
+      if (Number.isFinite(end)) {
+        i = end;
+        continue;
+      }
+    }
+
+    if (text.startsWith('\x1b[', i)) {
+      const match = /\x1b\[[0-?]*[ -/]*[@-~]/.exec(text.slice(i));
+      if (match?.index === 0) {
+        i += match[0].length;
+        continue;
+      }
+    }
+
+    const ch = text[i];
+    if (/^[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]$/.test(ch) && ch !== '\n') {
+      i++;
+      continue;
+    }
+
+    result.push(ch);
+    offsets.push(i);
+    i++;
+  }
+
+  return { text: result.join(''), offsets };
 }
 
 export function lineIndexForOffset(starts: number[], offset: number): number {

@@ -2,13 +2,17 @@ import { commands, EventEmitter, window } from 'vscode';
 import type { ExtensionContext, Pseudoterminal, Terminal, TerminalDimensions } from 'vscode';
 import { Commands } from '../Commands';
 import type { TerminalCamouflageStyle } from '../settings';
+import { CamouflageConcealController } from './camouflageConcealController';
+import { handleCamouflageInput } from './camouflageInput';
 import type { ReadingDisplayState } from './types';
 import {
   computeEffectiveLineWidth,
   formatCamouflageScreen,
+  formatDebugCamouflageScreen,
   formatTerminalIdleScreen,
   getTextWidth,
-  splitContent
+  splitContent,
+  type TerminalCamouflageContentMode
 } from './camouflageRender';
 
 const terminalName = 'npm: watch';
@@ -97,8 +101,13 @@ export function formatTerminalCamouflageScreen(
   lineWidth: number,
   lineCount: number,
   style: TerminalCamouflageStyle = 'buildLog',
-  columns?: number
+  columns?: number,
+  contentMode: TerminalCamouflageContentMode = 'real'
 ): string {
+  if (contentMode === 'debugTemplate') {
+    return formatDebugCamouflageScreen(style, lineWidth, lineCount, columns);
+  }
+
   const contentLines = getTerminalContentLines(state, lineWidth, lineCount);
   const current = state.total > 0 ? Math.min(state.process + 1, state.total) : 0;
   const progressLabel = showProgress ? `  ${current}/${state.total}` : '';
@@ -107,7 +116,11 @@ export function formatTerminalCamouflageScreen(
 
 export class TerminalCamouflageDisplay implements Pseudoterminal {
   private readonly writeEmitter = new EventEmitter<string>();
+  private readonly concealEmitter = new EventEmitter<void>();
+  private readonly revealContentEmitter = new EventEmitter<void>();
   readonly onDidWrite = this.writeEmitter.event;
+  readonly onDidConcealContent = this.concealEmitter.event;
+  readonly onDidRevealContent = this.revealContentEmitter.event;
 
   private terminal?: Terminal;
   private dimensions?: TerminalDimensions;
@@ -118,6 +131,12 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
   private lastStyle: TerminalCamouflageStyle = 'buildLog';
   private pendingOutput?: string;
   private opened = false;
+  private readonly concealController = new CamouflageConcealController({
+    render: () => this.renderOrIdle(),
+    stop: () => commands.executeCommand(Commands.Stop),
+    onConceal: () => this.concealEmitter.fire(),
+    onReveal: () => this.revealContentEmitter.fire()
+  });
 
   constructor(private readonly context: ExtensionContext) {}
 
@@ -130,6 +149,7 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
   close() {
     this.opened = false;
     this.terminal = undefined;
+    this.concealController.reset();
   }
 
   setDimensions(dimensions: TerminalDimensions) {
@@ -138,24 +158,14 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
   }
 
   handleInput(data: string) {
-    if (data === '\x1b[C' || data.toLowerCase() === 'n') {
-      commands.executeCommand(Commands.NextLine);
-      return;
-    }
-
-    if (data === '\x1b[D' || data.toLowerCase() === 'p') {
-      commands.executeCommand(Commands.PrevLine);
-      return;
-    }
-
-    if (data.toLowerCase() === 'j') {
-      commands.executeCommand(Commands.JumpLine);
-      return;
-    }
-
-    if (data.toLowerCase() === 'q') {
-      commands.executeCommand(Commands.Stop);
-    }
+    handleCamouflageInput(data, {
+      next: () => commands.executeCommand(Commands.NextLine),
+      prev: () => commands.executeCommand(Commands.PrevLine),
+      jump: () => commands.executeCommand(Commands.JumpLine),
+      toggleDebug: () => this.toggleDebugContent(),
+      quit: () => this.concealController.handleQuitKey(),
+      onNonQuitKey: () => this.concealController.clearPendingQuit()
+    });
   }
 
   render(
@@ -171,16 +181,7 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
     this.lastLineCount = lineCount;
     this.lastStyle = style;
     this.ensureTerminal();
-    this.write(
-      formatTerminalCamouflageScreen(
-        state,
-        showProgress,
-        this.getEffectiveLineWidth(lineWidth, style),
-        lineCount,
-        style,
-        this.dimensions?.columns
-      )
-    );
+    this.writeLastState();
   }
 
   pause() {
@@ -188,6 +189,7 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
       return;
     }
 
+    this.concealController.reset();
     this.write(formatTerminalIdleScreen(this.lastStyle));
   }
 
@@ -204,16 +206,7 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
     this.ensureTerminal();
 
     if (this.lastState) {
-      this.write(
-        formatTerminalCamouflageScreen(
-          this.lastState,
-          showProgress,
-          this.getEffectiveLineWidth(lineWidth, style),
-          lineCount,
-          style,
-          this.dimensions?.columns
-        )
-      );
+      this.writeLastState();
       return;
     }
 
@@ -225,6 +218,15 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
     this.terminal?.dispose();
     this.terminal = undefined;
     this.opened = false;
+    this.concealController.reset();
+  }
+
+  toggleDebugContent(): void {
+    this.concealController.toggleDebugContent();
+  }
+
+  isRealContentMode(): boolean {
+    return this.concealController.isRealContentMode();
   }
 
   getNextProcessStep(
@@ -249,8 +251,34 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
     return computeEffectiveLineWidth(lineWidth, this.dimensions?.columns, style);
   }
 
+  private renderOrIdle(): void {
+    this.ensureTerminal();
+
+    if (this.lastState) {
+      this.writeLastState();
+      return;
+    }
+
+    const contentMode = this.concealController.mode;
+    if (contentMode === 'real') {
+      this.write(formatTerminalIdleScreen(this.lastStyle));
+      return;
+    }
+
+    const lineWidth = this.getEffectiveLineWidth(this.lastLineWidth, this.lastStyle);
+    this.write(formatDebugCamouflageScreen(this.lastStyle, lineWidth, this.lastLineCount, this.dimensions?.columns));
+  }
+
   private renderLastState() {
     if (!this.opened || !this.lastState) {
+      return;
+    }
+
+    this.writeLastState();
+  }
+
+  private writeLastState(): void {
+    if (!this.lastState) {
       return;
     }
 
@@ -261,7 +289,8 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
         this.getEffectiveLineWidth(this.lastLineWidth, this.lastStyle),
         this.lastLineCount,
         this.lastStyle,
-        this.dimensions?.columns
+        this.dimensions?.columns,
+        this.concealController.mode
       )
     );
   }
