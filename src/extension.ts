@@ -12,11 +12,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(disposable);
 
-  const app = setup(context);
-
-  if (!app.readingBook) {
-    message('Please select the book you want to read !');
-  }
+  setup(context);
 }
 
 export function deactivate() {}

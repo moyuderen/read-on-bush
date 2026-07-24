@@ -1,9 +1,9 @@
 import { window, MarkdownString } from 'vscode';
 import type { StatusBarItem, ExtensionContext } from 'vscode';
 import { app } from '../index';
-import { getStatusBarPrefix, shouldShowStatusBarReading } from '../settings';
+import { getStatusBarPrefix } from '../settings';
 
-const placeholderContent = 'Please select the book you want to read !';
+const placeholderContent = '';
 
 export let contentBarItem: StatusBarItem;
 
@@ -48,10 +48,6 @@ export function setupContentBarItem(context: ExtensionContext) {
 
   contentBarItem = window.createStatusBarItem();
   updateContent(placeholderContent);
-
-  if (shouldShowStatusBarReading()) {
-    contentBarItem.show();
-  }
 
   context.subscriptions.push(contentBarItem);
 }
