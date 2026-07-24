@@ -6,7 +6,18 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
-暂无。
+## [2.1.0] - 2026-07-24
+
+### Added
+
+- 新增 EPUB 直接阅读：导入 `.epub` 后可在专属伪装终端按章节阅读，支持章节目录、跳章、跨章自动流入、阅读进度（章 + 全书百分比）与按需查看图片。
+- 书架支持 epub：epub 书可展开查看章节，点击章节跳转；导入时提取章节目录并预热缓存。
+- 抽象伪装终端视觉原语（日志模板 / 折行 / 拼屏），txt 与 epub 共享同一套日志伪装长相。
+
+### Changed
+
+- 引入可扩展的多格式架构：`BookFormatProvider`/`Registry` + 通用 domain 类型 + `ReadingSessionService` 统一阅读会话；导入/打开/目录树/缓存清理统一走 provider，未来新增格式（如 pdf/mobi/azw3）只需注册 provider，无需改动核心流程。
+- `BookData` 增加 `format` / `epubProgress` / `chapters` 字段（加法式，不影响 txt）。
 
 ## [2.0.0] - 2026-07-22
 

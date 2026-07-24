@@ -18,6 +18,13 @@ export enum Commands {
   OpenTerminalCamouflage = 'readOnBush.openTerminalCamouflage',
   ToggleTerminalCamouflage = 'readOnBush.toggleTerminalCamouflage',
 
+  EpubNext = 'readOnBush.epub.next',
+  EpubPrev = 'readOnBush.epub.prev',
+  EpubJumpChapter = 'readOnBush.epub.jumpChapter',
+  EpubStop = 'readOnBush.epub.stop',
+  EpubViewImage = 'readOnBush.epub.viewImage',
+  OpenBookOutline = 'readOnBush.openBookOutline',
+
   SwitchReadingMode = 'readOnBush.switchReadingMode',
   SwitchCodingMode = 'readOnBush.switchCodingMode'
 }

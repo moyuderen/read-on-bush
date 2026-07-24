@@ -3,17 +3,10 @@ import { ReadBook } from './ReadBook';
 import type { ReadingDisplayState } from './display';
 import { createBookParser } from './parsers';
 import { getLineWidth } from './settings';
+import type { BookData } from '../domain/books';
 
-export type BookData = {
-  id: string;
-  name: string;
-  process: number;
-  url: string;
-  children?: BookData[];
-  category?: string;
-  createdAt?: number;
-  order?: number;
-};
+export type { BookData, BookFormat, ChapterRef, EpubProgress } from '../domain/books';
+
 export class Book {
   public app: ReadBook;
   public book: BookData;

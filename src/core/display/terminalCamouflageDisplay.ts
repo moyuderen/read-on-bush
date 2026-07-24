@@ -3,149 +3,17 @@ import type { ExtensionContext, Pseudoterminal, Terminal, TerminalDimensions } f
 import { Commands } from '../Commands';
 import type { TerminalCamouflageStyle } from '../settings';
 import type { ReadingDisplayState } from './types';
+import {
+  computeEffectiveLineWidth,
+  formatCamouflageScreen,
+  formatTerminalIdleScreen,
+  getTextWidth,
+  splitContent
+} from './camouflageRender';
 
 const terminalName = 'npm: watch';
-const clearScreen = '\x1b[2J\x1b[H';
-const minContentWidth = 20;
-const fallbackContentWidth = 80;
 
-type TerminalTemplate = {
-  contentPrefix: string;
-  header: string[];
-  trailing: string[];
-  done: (progress: string) => string;
-  footer: string;
-};
-
-function getTemplate(style: TerminalCamouflageStyle): TerminalTemplate {
-  if (style === 'claudeCli') {
-    return {
-      contentPrefix: '  ⎿  ',
-      header: [
-        'claude',
-        '',
-        '✻ Thinking…',
-        '⎿  Read src/core/display/terminalCamouflageDisplay.ts',
-        '⎿  Read src/core/settings.ts',
-        '⎿  Search(pattern: "terminalCamouflage", path: "src")',
-        '⎿  Update Todos',
-        '',
-        '● I’ll keep the display state centralized and update the terminal renderer next.',
-        '',
-        '✢ Processing…',
-        ''
-      ],
-      trailing: [
-        '',
-        '⎿  Modified src/core/display/terminalCamouflageDisplay.ts',
-        '⎿  Running npm run compile',
-        '⎿  Running npm run lint'
-      ],
-      done: (progress) => `● Update complete${progress}`,
-      footer: 'esc to interrupt · n/p step · j jump · q stop'
-    };
-  }
-
-  if (style === 'serverLog') {
-    return {
-      contentPrefix: 'INFO  ',
-      header: [
-        'npm run dev',
-        '',
-        'INFO  Server listening on http://localhost:3000',
-        'INFO  Loaded env from .env.local',
-        'INFO  Connected to local workspace cache',
-        'INFO  GET /api/workspaces 200 14ms',
-        'INFO  GET /api/projects/current 200 18ms',
-        'INFO  cache warmed in 38ms',
-        'DEBUG requestId=req_42f8 route=/api/runtime/status',
-        ''
-      ],
-      trailing: [
-        '',
-        'DEBUG requestId=req_42f8 normalized payload in 3ms',
-        'INFO  POST /api/runtime/events 202 9ms',
-        'INFO  background worker heartbeat ok'
-      ],
-      done: (progress) => `INFO  request completed${progress}`,
-      footer: 'Press n/p to step, j to jump, q to stop.'
-    };
-  }
-
-  return {
-    contentPrefix: '[12:42:13] info  ',
-    header: [
-      '> npm run watch',
-      '',
-      '[12:41:07] Starting compilation in watch mode...',
-      '[12:41:08] File change detected. Starting incremental compilation...',
-      '[12:41:08] Found 0 errors. Watching for file changes.',
-      '',
-      'assets by status 128 KiB [cached] 14 assets',
-      'runtime modules 3.12 KiB 6 modules',
-      'orphan modules 9.61 KiB [orphan] 4 modules',
-      'cacheable modules 48.7 KiB',
-      '  ./src/extension.ts 2.18 KiB [built] [code generated]',
-      '  ./src/core/index.ts 1.67 KiB [built] [code generated]',
-      ''
-    ],
-    trailing: [
-      '',
-      '[12:42:21] info  emitted 4 files to out/',
-      '[12:42:21] info  asset extension.js 42.1 KiB [emitted]',
-      '[12:42:22] info  watching for file changes...'
-    ],
-    done: (progress) => `[12:42:59] done  compiled successfully${progress}`,
-    footer: 'Press n/p to step, j to jump, q to stop.'
-  };
-}
-
-function sanitizeContent(content: string): string {
-  return content
-    .replace(/[\r\n]+/g, ' ')
-    .replace(/[ \t\f\v 　]+/g, ' ')
-    .trim();
-}
-
-function getCharWidth(char: string): number {
-  return /[^\x00-\xff]/.test(char) ? 2 : 1;
-}
-
-function getTextWidth(text: string): number {
-  return Array.from(text).reduce((width, char) => width + getCharWidth(char), 0);
-}
-
-function splitContent(content: string, lineWidth: number): string[] {
-  const sanitized = sanitizeContent(content);
-
-  if (!sanitized) {
-    return [''];
-  }
-
-  const lines: string[] = [];
-  let currentLine = '';
-  let currentWidth = 0;
-
-  for (const char of Array.from(sanitized)) {
-    const charWidth = getCharWidth(char);
-
-    if (currentWidth + charWidth > lineWidth) {
-      lines.push(currentLine.trim());
-      currentLine = char;
-      currentWidth = charWidth;
-      continue;
-    }
-
-    currentLine += char;
-    currentWidth += charWidth;
-  }
-
-  if (currentLine) {
-    lines.push(currentLine.trim());
-  }
-
-  return lines;
-}
+// —— txt 专用分页：在扁平 contents[] 上按 process 游标取一屏（epub 不走这里）——
 
 function getForwardChunkCount(state: ReadingDisplayState, lineWidth: number, lineCount: number): number {
   const targetWidth = lineWidth * lineCount;
@@ -203,13 +71,6 @@ function getTerminalContentLines(state: ReadingDisplayState, lineWidth: number, 
   return splitContent(content, lineWidth).slice(0, lineCount);
 }
 
-export function formatTerminalIdleScreen(style: TerminalCamouflageStyle = 'buildLog'): string {
-  const template = getTemplate(style);
-  const lines = [...template.header, ...template.trailing, template.done('')];
-
-  return `${clearScreen}${lines.join('\r\n')}`;
-}
-
 export function getTerminalNextProcessStep(
   state: ReadingDisplayState,
   lineWidth: number,
@@ -226,6 +87,10 @@ export function getTerminalPrevProcessStep(
   return getBackwardChunkCount(state, lineWidth, lineCount);
 }
 
+/**
+ * txt 的拼屏：算出本屏要显示的行 + txt 的 `current/total` 进度文案，
+ * 再交给共享的 formatCamouflageScreen 画成日志。行为与重构前完全一致。
+ */
 export function formatTerminalCamouflageScreen(
   state: ReadingDisplayState,
   showProgress: boolean,
@@ -233,21 +98,10 @@ export function formatTerminalCamouflageScreen(
   lineCount: number,
   style: TerminalCamouflageStyle = 'buildLog'
 ): string {
-  const template = getTemplate(style);
-  const indent = ' '.repeat(template.contentPrefix.length);
   const contentLines = getTerminalContentLines(state, lineWidth, lineCount);
   const current = state.total > 0 ? Math.min(state.process + 1, state.total) : 0;
-  const progress = showProgress ? `  ${current}/${state.total}` : '';
-  const lines = [
-    ...template.header,
-    ...contentLines.map((content, index) => `${index === 0 ? template.contentPrefix : indent}${content}`),
-    ...template.trailing,
-    template.done(progress),
-    '',
-    template.footer
-  ];
-
-  return `${clearScreen}${lines.join('\r\n')}`;
+  const progressLabel = showProgress ? `  ${current}/${state.total}` : '';
+  return formatCamouflageScreen(style, contentLines, progressLabel);
 }
 
 export class TerminalCamouflageDisplay implements Pseudoterminal {
@@ -389,17 +243,7 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
   }
 
   private getEffectiveLineWidth(lineWidth: number, style: TerminalCamouflageStyle): number {
-    const template = getTemplate(style);
-    const terminalContentWidth = this.dimensions?.columns
-      ? this.dimensions.columns - template.contentPrefix.length - 2
-      : fallbackContentWidth;
-    const maxContentWidth = Math.max(minContentWidth, terminalContentWidth);
-
-    if (lineWidth <= 0) {
-      return maxContentWidth;
-    }
-
-    return Math.max(minContentWidth, Math.min(lineWidth, maxContentWidth));
+    return computeEffectiveLineWidth(lineWidth, this.dimensions?.columns, style);
   }
 
   private renderLastState() {
@@ -438,3 +282,6 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
     this.writeEmitter.fire(text);
   }
 }
+
+// 保留对外 API：idle 屏现在由 camouflageRender 提供
+export { formatTerminalIdleScreen } from './camouflageRender';
