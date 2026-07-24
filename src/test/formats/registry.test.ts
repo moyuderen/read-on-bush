@@ -82,3 +82,47 @@ suite('BookFormatRegistry', () => {
     assert.throws(() => registry.getProviderByPath('/x.pdf'), /Unsupported book format/);
   });
 });
+
+suite('BookFormatRegistry convertible classification', () => {
+  function createRegistry(convertible: string[] = ['mobi', 'azw3', 'pdf']) {
+    return new BookFormatRegistry(
+      [createProvider('txt', ['txt']), createProvider('epub', ['epub'])],
+      convertible
+    );
+  }
+
+  test('classifyPath distinguishes supported / convertible / unknown', () => {
+    const registry = createRegistry();
+    assert.strictEqual(registry.classifyPath('/a/b/book.txt'), 'supported');
+    assert.strictEqual(registry.classifyPath('/a/b/book.epub'), 'supported');
+    assert.strictEqual(registry.classifyPath('/a/b/book.mobi'), 'convertible');
+    assert.strictEqual(registry.classifyPath('/a/b/book.pdf'), 'convertible');
+    assert.strictEqual(registry.classifyPath('/a/b/book.docx'), 'unknown');
+    assert.strictEqual(registry.classifyPath('/a/b/book'), 'unknown');
+  });
+
+  test('supported takes priority when an extension is registered as both', () => {
+    const registry = new BookFormatRegistry(
+      [createProvider('pdf', ['pdf'])],
+      ['mobi', 'pdf']
+    );
+    assert.strictEqual(registry.classifyPath('/a/b/book.pdf'), 'supported');
+    assert.strictEqual(registry.classifyPath('/a/b/book.mobi'), 'convertible');
+  });
+
+  test('getAcknowledgedExtensions unions supported and convertible', () => {
+    const registry = createRegistry(['mobi', 'pdf']);
+    assert.deepStrictEqual(registry.getAcknowledgedExtensions().sort(), [
+      'epub',
+      'mobi',
+      'pdf',
+      'txt'
+    ]);
+  });
+
+  test('defaults to supported/unknown when no convertible registered', () => {
+    const registry = new BookFormatRegistry([createProvider('txt', ['txt'])]);
+    assert.strictEqual(registry.classifyPath('/a/b/book.mobi'), 'unknown');
+    assert.deepStrictEqual(registry.getAcknowledgedExtensions(), ['txt']);
+  });
+});
