@@ -8,12 +8,11 @@ import {
   computeEffectiveLineWidth,
   formatCamouflageScreen,
   formatDebugCamouflageScreen,
-  formatTerminalIdleScreen
+  formatTerminalIdleScreen,
+  getTerminalName,
+  updateTerminalStyle
 } from './camouflageRender';
 import type { EpubBook } from '../EpubBook';
-
-// epub 伪装终端名，区别于 txt 的 'npm: watch'（两终端不串味）
-const epubTerminalName = 'Claude Code';
 
 /**
  * epub 专用伪装终端。与 txt 的 TerminalCamouflageDisplay 平行：
@@ -49,14 +48,14 @@ export class EpubTerminalDisplay implements Pseudoterminal {
     lineCount: number
   ): void {
     this.epubBook = epubBook;
-    this.style = style;
+    this.updateStyle(style);
     this.lineWidth = lineWidth;
     this.lineCount = lineCount;
     this.concealController.reset();
   }
 
   updateSettings(style: TerminalCamouflageStyle, lineWidth: number, lineCount: number): void {
-    this.style = style;
+    this.updateStyle(style);
     this.lineWidth = lineWidth;
     this.lineCount = lineCount;
   }
@@ -163,6 +162,14 @@ export class EpubTerminalDisplay implements Pseudoterminal {
     }
   }
 
+  private updateStyle(style: TerminalCamouflageStyle): void {
+    this.style = updateTerminalStyle(
+      this.style,
+      style,
+      this.terminal ? (title) => this.write(title) : undefined
+    );
+  }
+
   private renderOrIdle(): void {
     this.ensureTerminal();
     if (this.epubBook) {
@@ -183,7 +190,7 @@ export class EpubTerminalDisplay implements Pseudoterminal {
       this.terminal.show(true);
       return;
     }
-    this.terminal = window.createTerminal({ name: epubTerminalName, pty: this });
+    this.terminal = window.createTerminal({ name: getTerminalName(this.style), pty: this });
     this.context.subscriptions.push(this.terminal);
     this.terminal.show(true);
   }

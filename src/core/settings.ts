@@ -4,7 +4,7 @@ import { AppName, LineWidth } from './config';
 
 export const BOOK_LIST_GROUP_BY_OPTIONS = ['none', 'category', 'directory'] as const;
 export const READING_DISPLAY_TARGET_OPTIONS = ['statusBar', 'terminalCamouflage', 'both'] as const;
-export const TERMINAL_CAMOUFLAGE_STYLE_OPTIONS = ['buildLog', 'claudeCli', 'serverLog'] as const;
+export const TERMINAL_CAMOUFLAGE_STYLE_OPTIONS = ['buildLog', 'claudeCli', 'serverLog', 'vite', 'docker'] as const;
 
 export type BookListGroupBy = (typeof BOOK_LIST_GROUP_BY_OPTIONS)[number];
 export type ReadingDisplayTarget = (typeof READING_DISPLAY_TARGET_OPTIONS)[number];
