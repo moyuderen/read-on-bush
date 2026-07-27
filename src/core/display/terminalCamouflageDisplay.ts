@@ -10,12 +10,12 @@ import {
   formatCamouflageScreen,
   formatDebugCamouflageScreen,
   formatTerminalIdleScreen,
+  getTerminalName,
+  updateTerminalStyle,
   getTextWidth,
   splitContent,
   type TerminalCamouflageContentMode
 } from './camouflageRender';
-
-const terminalName = 'npm: watch';
 
 // —— txt 专用分页：在扁平 contents[] 上按 process 游标取一屏（epub 不走这里）——
 
@@ -179,7 +179,7 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
     this.lastShowProgress = showProgress;
     this.lastLineWidth = lineWidth;
     this.lastLineCount = lineCount;
-    this.lastStyle = style;
+    this.updateStyle(style);
     this.ensureTerminal();
     this.writeLastState();
   }
@@ -202,7 +202,7 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
     this.lastShowProgress = showProgress;
     this.lastLineWidth = lineWidth;
     this.lastLineCount = lineCount;
-    this.lastStyle = style;
+    this.updateStyle(style);
     this.ensureTerminal();
 
     if (this.lastState) {
@@ -249,6 +249,14 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
 
   private getEffectiveLineWidth(lineWidth: number, style: TerminalCamouflageStyle): number {
     return computeEffectiveLineWidth(lineWidth, this.dimensions?.columns, style);
+  }
+
+  private updateStyle(style: TerminalCamouflageStyle): void {
+    this.lastStyle = updateTerminalStyle(
+      this.lastStyle,
+      style,
+      this.terminal ? (title) => this.write(title) : undefined
+    );
   }
 
   private renderOrIdle(): void {
@@ -301,7 +309,7 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
       return;
     }
 
-    this.terminal = window.createTerminal({ name: terminalName, pty: this });
+    this.terminal = window.createTerminal({ name: getTerminalName(this.lastStyle), pty: this });
     this.context.subscriptions.push(this.terminal);
     this.terminal.show(true);
   }

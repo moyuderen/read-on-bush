@@ -1,8 +1,8 @@
 {
   "name": "readOnBush",
   "displayName": "Read On Bush",
-  "description": "在 VS Code 状态栏或终端伪装窗口低调阅读 txt 小说，支持书架导入/目录批量导入、分类与目录分组、进度跳转、快捷键模式切换和阅读体验配置。",
-  "version": "2.2.2",
+  "description": "在 VS Code 状态栏或终端伪装窗口低调阅读 txt / epub 小说，支持书架导入/目录批量导入、分类与目录分组、进度跳转、快捷键模式切换和阅读体验配置；导入 mobi/azw3/pdf 时引导前往 CloudConvert 转 epub。",
+  "version": "2.2.3",
   "publisher": "moyuderen",
   "author": {
     "name": "moyuderen",
@@ -26,8 +26,10 @@
     "read",
     "阅读",
     "小说",
+    "epub",
     "摸鱼",
-    "vscode 状态栏"
+    "vscode 状态栏",
+    "终端伪装"
   ],
   "icon": "public/moyu.png",
   "activationEvents": [
@@ -101,12 +103,16 @@
           "enum": [
             "buildLog",
             "claudeCli",
-            "serverLog"
+            "serverLog",
+            "vite",
+            "docker"
           ],
           "enumDescriptions": [
             "构建/Watch 日志样式",
             "Claude Code CLI 风格",
-            "后端服务日志样式"
+            "后端服务日志样式",
+            "Vite 开发服务器样式",
+            "Docker Compose 日志样式"
           ],
           "description": "终端伪装的输出样式"
         },

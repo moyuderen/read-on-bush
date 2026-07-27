@@ -6,6 +6,18 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.2.3] - 2026-07-27
+
+### Added
+
+- 新增 Vite 与 Docker Compose 两种终端伪装样式，并补充更丰富的日志、错误、diff 与调试占位内容。
+- 终端伪装模板支持安全 ANSI 配色，使内置日志和占位内容更接近真实终端输出。
+
+### Changed
+
+- 切换终端伪装样式时同步更新终端标题，避免终端名称与当前伪装模板不一致。
+- 完善 README 与扩展描述，补充 EPUB 阅读、格式转换引导和终端伪装样式说明。
+
 ## [2.2.1] - 2026-07-24
 
 ### Changed
