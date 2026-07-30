@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { commands, window, ViewColumn, type WebviewPanel } from 'vscode';
+import { commands, window } from 'vscode';
 import { Commands } from './Commands';
 import message from '../utils/message';
 import type { BookData } from './Book';
@@ -14,7 +14,8 @@ import {
   type EpubImage
 } from './parsers/EpubExtractor';
 import { EpubCache } from './storage/EpubCache';
-import { EpubTerminalDisplay } from './display/epubTerminalDisplay';
+import { PaginatedTerminalDisplay } from './display/paginatedTerminalDisplay';
+import { ImagePreviewPanel } from './display/imagePanel';
 import {
   getTerminalCamouflageLineCount,
   getTerminalCamouflageLineWidth,
@@ -22,18 +23,26 @@ import {
 } from './settings';
 
 /**
- * epub 阅读控制器：串联 EpubBook（阅读模型）+ EpubTerminalDisplay（自有伪装终端）+
+ * epub 阅读控制器：串联 EpubBook（阅读模型）+ PaginatedTerminalDisplay（epub/pdf 共用的伪装终端）+
  * epub 命令 + 提取缓存加载。与 txt 的 ReadingDisplayManager 角色平行，但 epub 无视
  * 全局 displayTarget——永远走自己的终端。
  */
 export class EpubReader {
   private epubBook?: EpubBook;
-  private readonly terminal: EpubTerminalDisplay;
-  private imagePanel?: WebviewPanel;
+  private readonly terminal: PaginatedTerminalDisplay;
+  private readonly imagePreview = new ImagePreviewPanel();
 
   constructor(private readonly app: ReadBook) {
-    this.terminal = new EpubTerminalDisplay(app.context);
-    app.context.subscriptions.push(this.terminal.onDidConcealContent(() => this.closeImagePanel()));
+    this.terminal = new PaginatedTerminalDisplay(app.context, {
+      next: Commands.EpubNext,
+      prev: Commands.EpubPrev,
+      jump: Commands.EpubJumpChapter,
+      stop: Commands.EpubStop,
+      viewImage: Commands.EpubViewImage
+    });
+    app.context.subscriptions.push(
+      this.terminal.onDidConcealContent(() => this.imagePreview.close())
+    );
     this.initCommands();
   }
 
@@ -67,7 +76,7 @@ export class EpubReader {
     } catch (error) {
       const text = error instanceof Error ? error.message : 'Open epub failed';
       message.error(text);
-      this.closeImagePanel();
+      this.imagePreview.close();
       this.epubBook = undefined;
       this.terminal.unbind();
     }
@@ -116,7 +125,7 @@ export class EpubReader {
   }
 
   stop(showMessage = true): void {
-    this.closeImagePanel();
+    this.imagePreview.close();
     this.epubBook = undefined;
     this.terminal.hide();
     if (showMessage) {
@@ -126,8 +135,8 @@ export class EpubReader {
 
   /** 查看当前屏内的图片：再次触发（如按 i）一键关闭，便于旁有人时迅速隐蔽。 */
   async viewImage(): Promise<void> {
-    if (this.imagePanel) {
-      this.closeImagePanel();
+    if (this.imagePreview.isOpen) {
+      this.imagePreview.close();
       return;
     }
     if (!this.epubBook || !this.terminal.isRealContentMode()) {
@@ -173,39 +182,13 @@ export class EpubReader {
     }
     const base64 = Buffer.from(bytes).toString('base64');
     const mediaType = getSafeImageMediaType(image.mediaType, image.zipPath);
-    const panel = window.createWebviewPanel(
-      'readOnBushEpubImage',
-      `《${book.name}》图片`,
-      ViewColumn.Active,
-      { enableScripts: true }
-    );
-    panel.webview.html = buildImageHtml(mediaType, base64);
-    panel.webview.onDidReceiveMessage((msg) => {
-      if (msg === 'toggleDebugContent') {
-        this.terminal.toggleDebugContent();
-        return;
-      }
-
-      if (msg === 'close') {
-        this.closeImagePanel();
-      }
+    this.imagePreview.show({
+      title: `《${book.name}》图片`,
+      mediaType,
+      base64,
+      onToggleDebug: () => this.terminal.toggleDebugContent(),
+      onRefocus: () => this.focusTerminalSoon()
     });
-    panel.onDidDispose(() => {
-      this.imagePanel = undefined;
-      // 关闭图片后焦点回到伪装终端，否则 i 键落不到终端、无法立即重开
-      this.focusTerminalSoon();
-    });
-    this.imagePanel = panel;
-  }
-
-  private closeImagePanel(): void {
-    const panel = this.imagePanel;
-    if (!panel) {
-      return;
-    }
-    this.imagePanel = undefined;
-    panel.dispose();
-    this.focusTerminalSoon();
   }
 
   private focusTerminalSoon(): void {
@@ -246,46 +229,4 @@ function getSafeImageMediaType(mediaType: string, zipPath: string): string {
   }
 
   return IMAGE_MEDIA_TYPES[zipPath.toLowerCase().match(/\.[^.]+$/)?.[0] ?? ''] ?? 'application/octet-stream';
-}
-
-function buildImageHtml(mediaType: string, base64: string): string {
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body tabindex="0" style="margin:0;background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;cursor:pointer;outline:none">
-<img src="data:${mediaType};base64,${base64}" style="max-width:100%;max-height:100vh;object-fit:contain" />
-<div style="position:fixed;bottom:8px;right:12px;color:#999;font-size:12px;pointer-events:none">按任意键 / 点击关闭</div>
-<script>
-  const vscode = acquireVsCodeApi();
-  let closed = false;
-  const postOnce = (message) => {
-    if (closed) {
-      return;
-    }
-    closed = true;
-    vscode.postMessage(message);
-  };
-  const close = () => postOnce('close');
-  const handleKeydown = (event) => {
-    if (event.key.toLowerCase() === 'd') {
-      event.preventDefault();
-      event.stopPropagation();
-      postOnce('toggleDebugContent');
-      return;
-    }
-
-    close();
-  };
-  const focusBody = () => document.body.focus({ preventScroll: true });
-  window.addEventListener('keydown', handleKeydown, true);
-  document.addEventListener('keydown', handleKeydown, true);
-  document.body.addEventListener('click', close);
-  window.addEventListener('load', focusBody);
-  setTimeout(focusBody, 0);
-</script>
-</body>
-</html>`;
 }

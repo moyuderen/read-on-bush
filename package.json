@@ -1,8 +1,8 @@
 {
   "name": "readOnBush",
   "displayName": "Read On Bush",
-  "description": "在 VS Code 状态栏或终端伪装窗口低调阅读 txt / epub 小说，支持书架导入/目录批量导入、分类与目录分组、进度跳转、快捷键模式切换和阅读体验配置；导入 mobi/azw3/pdf 时引导前往 CloudConvert 转 epub。",
-  "version": "2.2.3",
+  "description": "在 VS Code 状态栏或终端伪装窗口低调阅读 txt / epub / pdf 小说，支持书架导入/目录批量导入、分类与目录分组、进度跳转、PDF 图片预览、快捷键模式切换和阅读体验配置；导入 mobi/azw3 时引导前往 CloudConvert 转 epub。",
+  "version": "2.3.0",
   "publisher": "moyuderen",
   "author": {
     "name": "moyuderen",
@@ -27,6 +27,7 @@
     "阅读",
     "小说",
     "epub",
+    "pdf",
     "摸鱼",
     "vscode 状态栏",
     "终端伪装"
@@ -245,6 +246,31 @@
         "category": "Read On Bush"
       },
       {
+        "command": "readOnBush.pdf.next",
+        "title": "PDF 读书：下一页",
+        "category": "Read On Bush"
+      },
+      {
+        "command": "readOnBush.pdf.prev",
+        "title": "PDF 读书：上一页",
+        "category": "Read On Bush"
+      },
+      {
+        "command": "readOnBush.pdf.jumpPage",
+        "title": "PDF 读书：跳转页面",
+        "category": "Read On Bush"
+      },
+      {
+        "command": "readOnBush.pdf.stop",
+        "title": "PDF 读书：停止",
+        "category": "Read On Bush"
+      },
+      {
+        "command": "readOnBush.pdf.viewImage",
+        "title": "PDF 读书：查看图片",
+        "category": "Read On Bush"
+      },
+      {
         "command": "readOnBush.openBookOutline",
         "title": "Open Book Outline",
         "icon": "$(bookmark)"
@@ -361,6 +387,8 @@
   "dependencies": {
     "fast-xml-parser": "^5.10.1",
     "fflate": "^0.8.3",
-    "linebyline": "^1.3.0"
+    "linebyline": "^1.3.0",
+    "pdfjs-dist": "^3.11.174",
+    "pngjs": "^7.0.0"
   }
 }

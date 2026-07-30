@@ -3,6 +3,7 @@ import path from 'path';
 import { unzipSync } from 'fflate';
 import { XMLParser } from 'fast-xml-parser';
 import type { ChapterRef } from '../../domain/books';
+import { normalizeCjkSpacing, normalizeCjkSpacingWithOffsetMap } from '../textNormalization';
 
 export type EpubImage = {
   zipPath: string;
@@ -351,10 +352,17 @@ function extractChapterText(
   const parsed = contentParser.parse(xhtml) as ContentNode[];
   const ctx: ExtractionContext = { text: '', images: [], firstHeading: undefined };
   walkContent(parsed, ctx, chapterDir, manifest);
-  // 不做按行 trim/过滤：上方 breakParagraph 已保证段落无首尾空白，
-  // 这样图片锚点 charOffset 与存入的章节文本坐标完全一致。
-  const text = ctx.text.trim();
-  return { text, images: ctx.images, firstHeading: ctx.firstHeading };
+  // 不做按行 trim/过滤：上方 breakParagraph 已保证段落无首尾空白。
+  // CJK 空格归一化会改变文本长度，因此同步映射图片锚点，保持 charOffset 与最终文本坐标一致。
+  const leadingTrimmed = ctx.text.length - ctx.text.trimStart().length;
+  const rawText = ctx.text.trim();
+  const normalized = normalizeCjkSpacingWithOffsetMap(rawText);
+  const images = ctx.images.map((image) => ({
+    ...image,
+    charOffset: normalized.mapOffset(image.charOffset - leadingTrimmed)
+  }));
+  const firstHeading = ctx.firstHeading ? normalizeCjkSpacing(ctx.firstHeading) : undefined;
+  return { text: normalized.text, images, firstHeading };
 }
 
 function parseContainerOpfPath(containerXml: string): string | undefined {

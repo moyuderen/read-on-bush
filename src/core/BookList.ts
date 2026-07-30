@@ -4,7 +4,7 @@ import { window, commands, workspace, env, Uri } from 'vscode';
 import { type ExtensionContext } from 'vscode';
 import { BookTreeProvider, BookTreeItem, BookTreeBookItem } from './BookTree';
 import { ReadBook } from './ReadBook';
-import { BookData, type EpubProgress } from './Book';
+import { BookData, type EpubProgress, type PdfProgress } from './Book';
 import type { BookNavigationTarget } from '../domain/books';
 import message from '../utils/message';
 import { generateId } from '../utils/generateId';
@@ -13,6 +13,7 @@ import { AppName } from './config';
 import { Commands } from './Commands';
 import { CLOUDCONVERT_URL, summarizeConvertible } from './convertGuide';
 import { toChapterRefs, type EpubExtraction } from './parsers/EpubExtractor';
+import { toPageRefs, type PdfExtraction } from './parsers/PdfExtractor';
 import { getBookListGroupBy, type BookListGroupBy } from './settings';
 import {
   BookStorage,
@@ -188,6 +189,11 @@ export class BookList {
     this.bookTreeProvider.updateEpubProgress(id, progress);
   }
 
+  updatePdfProgress(id: string, progress: PdfProgress) {
+    this.books = this.bookStorage.updatePdfProgress(id, progress);
+    this.bookTreeProvider.updatePdfProgress(id, progress);
+  }
+
   syncEpubChapters(id: string, extraction: EpubExtraction): BookData | undefined {
     const chapters = toChapterRefs(extraction);
     const existing = this.books.find((book) => book.id === id);
@@ -203,6 +209,24 @@ export class BookList {
     }
 
     this.books = this.bookStorage.updateEpubChapters(id, chapters);
+    this.updateBookTreeProvider();
+    return this.books.find((book) => book.id === id);
+  }
+
+  /** 同步 pdf 页大纲到书架树（BookData.chapters 字段同时承载 epub 章节与 pdf 页大纲）。 */
+  syncPdfPages(id: string, extraction: PdfExtraction): BookData | undefined {
+    const pages = toPageRefs(extraction);
+    const existing = this.books.find((book) => book.id === id);
+    const unchanged =
+      existing?.chapters &&
+      existing.chapters.length === pages.length &&
+      existing.chapters.every((chapter, index) => chapter.title === pages[index]?.title);
+
+    if (unchanged) {
+      return existing;
+    }
+
+    this.books = this.bookStorage.updateEpubChapters(id, pages);
     this.updateBookTreeProvider();
     return this.books.find((book) => book.id === id);
   }

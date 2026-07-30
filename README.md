@@ -1,8 +1,8 @@
 # Read On Bush
 
-Read On Bush 是一个适合在 VS Code 中低调阅读 txt / epub 小说的扩展。你可以把阅读内容展示在状态栏，也可以打开“终端伪装”窗口，把正文混入构建日志、Claude Code CLI 或服务日志风格的输出中；同时内置书架管理、目录批量导入、分类/目录分组、进度跳转、EPUB 章节阅读和快捷键阅读模式，导入 mobi/azw3/pdf 时还会引导你转为 epub。
+Read On Bush 是一个适合在 VS Code 中低调阅读 txt / epub / pdf 小说的扩展。你可以把阅读内容展示在状态栏，也可以打开“终端伪装”窗口，把正文混入构建日志、Claude Code CLI 或服务日志风格的输出中；同时内置书架管理、目录批量导入、分类/目录分组、进度跳转、EPUB 章节阅读、PDF 分页阅读（含图片预览）和快捷键阅读模式，导入 mobi/azw3 时还会引导你转为 epub。
 
-> 当前支持 `.txt` 与 `.epub` 文件。
+> 当前支持 `.txt`、`.epub` 与 `.pdf` 文件。
 
 ## 功能亮点
 
@@ -12,7 +12,8 @@ Read On Bush 是一个适合在 VS Code 中低调阅读 txt / epub 小说的扩�
 - **书架管理**：支持导入单本 txt、按目录批量导入、刷新书架、删除、重命名、设置/清除分类。
 - **书架整理**：支持排序，并可按无分组、分类、文件目录三种方式展示书架。
 - **EPUB 阅读**：导入 `.epub` 后在专属伪装终端按章节阅读，支持章节目录、跳章、跨章自动流入、阅读进度（章 + 全书百分比）与按需查看图片。
-- **格式转换引导**：导入 `mobi` / `azw3` / `pdf` 时自动提示并引导前往 [CloudConvert](https://cloudconvert.com) 转为 epub。
+- **PDF 阅读**：导入 `.pdf` 后在专属伪装终端按页阅读，支持页面目录、跳页、跨页自动流入、阅读进度（第 N 页 + 全书百分比）与按需查看页面内插图。
+- **格式转换引导**：导入 `mobi` / `azw3` 时自动提示并引导前往 [CloudConvert](https://cloudconvert.com) 转为 epub。
 - **阅读体验配置**：可配置状态栏片段长度、终端正文宽度/行数、状态栏前缀、是否显示进度、默认是否启用阅读快捷键等。
 - **快捷键模式切换**：通过 Reading / Coding 模式切换阅读快捷键，避免编码时和常用快捷键冲突。
 
@@ -107,11 +108,30 @@ Read On Bush 是一个适合在 VS Code 中低调阅读 txt / epub 小说的扩�
   - 模板占位下会自动关闭图片窗口，且 `i` 不会打开真实图片
 - 进度按「第 N 章 · 全书 X%」展示；首次打开会解析并缓存全书（按文件修改时间失效），之后秒开。
 
-### 1.7 转换其他格式（mobi / azw3 / pdf）
+### 1.7 阅读 PDF
 
-Read On Bush 原生支持 `.txt` 与 `.epub`。导入 `mobi` / `azw3` / `pdf` 时（无论单本导入还是按目录批量导入），扩展不会静默丢弃这些文件，而是弹窗提示需要先转 epub，并提供 **前往 CloudConvert** 按钮一键打开 [cloudconvert.com](https://cloudconvert.com)：
+除 txt / epub 外，Read On Bush 也支持直接导入并阅读 `.pdf`：
 
-- 这些格式属于 Amazon 专有二进制或定版式排版，扩展不自研解析，统一引导你转成 epub 后再导入阅读。
+- 在书架视图点 **Import** 选择 `.pdf`（或 **Import Directory** 批量导入），导入时会提取每页文本与页面图片元信息。
+- 书架中的 pdf 书可**展开**查看页面目录，点击某页即可跳转。
+- 打开 pdf 后会在专属的终端伪装窗口中阅读，**与 txt / epub 的伪装终端相互独立**，且不受 `displayTarget` 配置影响。
+- 终端内按键：
+  - 下一页：`Right` 或 `n`（跨页自动流入）
+  - 上一页：`Left` 或 `p`
+  - 跳转页面：`j`
+  - 查看/关闭当前页图片：`i` 切换（仅当当前页含图片时，进度处会显示 `[图 i]` 标记）；图片窗口内**按任意键或点击**可一键关闭，便于旁有人时迅速隐蔽
+  - 切换模板调试文案：`d`（真实内容 ↔ 模板占位）
+  - 快速切到模板占位：`q`
+  - 连续两次 `q q`：停止阅读
+  - 模板占位下会自动关闭图片窗口，且 `i` 不会打开真实图片
+- 进度按「第 N 页 · 全书 X%」展示；首次打开会解析并缓存全书（按文件修改时间失效），之后秒开。
+- 图片为按需解码（纯 JS，无需额外原生依赖）；个别含罕见编码或色彩空间的图片可能无法显示，但不影响阅读正文。
+
+### 1.8 转换其他格式（mobi / azw3）
+
+Read On Bush 原生支持 `.txt`、`.epub` 与 `.pdf`。导入 `mobi` / `azw3` 时（无论单本导入还是按目录批量导入），扩展不会静默丢弃这些文件，而是弹窗提示需要先转 epub，并提供 **前往 CloudConvert** 按钮一键打开 [cloudconvert.com](https://cloudconvert.com)：
+
+- 这些格式属于 Amazon 专有二进制，扩展不自研解析，统一引导你转成 epub 后再导入阅读。
 - 转换完成后，把生成的 `.epub` 重新通过 **Import** 或 **Import Directory** 导入即可。
 
 ## 2. 快捷键
@@ -150,6 +170,11 @@ Read On Bush 原生支持 `.txt` 与 `.epub`。导入 `mobi` / `azw3` / `pdf` �
 | `readOnBush.epub.jumpChapter` | EPUB 读书：跳转章节 |
 | `readOnBush.epub.viewImage` | EPUB 读书：查看图片 |
 | `readOnBush.epub.stop` | EPUB 读书：停止 |
+| `readOnBush.pdf.next` | PDF 读书：下一页 |
+| `readOnBush.pdf.prev` | PDF 读书：上一页 |
+| `readOnBush.pdf.jumpPage` | PDF 读书：跳转页面 |
+| `readOnBush.pdf.viewImage` | PDF 读书：查看图片 |
+| `readOnBush.pdf.stop` | PDF 读书：停止 |
 
 ## 4. 配置项
 

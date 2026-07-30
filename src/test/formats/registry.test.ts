@@ -1,5 +1,6 @@
 import * as assert from 'assert';
 import { BookFormatRegistry } from '../../formats/registry';
+import { createDefaultBookFormatRegistry } from '../../formats';
 import type { BookFormatProvider } from '../../formats/types';
 
 function createProvider(
@@ -124,5 +125,18 @@ suite('BookFormatRegistry convertible classification', () => {
     const registry = new BookFormatRegistry([createProvider('txt', ['txt'])]);
     assert.strictEqual(registry.classifyPath('/a/b/book.mobi'), 'unknown');
     assert.deepStrictEqual(registry.getAcknowledgedExtensions(), ['txt']);
+  });
+});
+
+suite('createDefaultBookFormatRegistry app defaults', () => {
+  test('pdf is natively supported; mobi/azw3 remain convertible', () => {
+    const registry = createDefaultBookFormatRegistry();
+
+    assert.strictEqual(registry.classifyPath('/a/b/book.txt'), 'supported');
+    assert.strictEqual(registry.classifyPath('/a/b/book.epub'), 'supported');
+    assert.strictEqual(registry.classifyPath('/a/b/book.pdf'), 'supported');
+    assert.strictEqual(registry.classifyPath('/a/b/book.mobi'), 'convertible');
+    assert.strictEqual(registry.classifyPath('/a/b/book.azw3'), 'convertible');
+    assert.deepStrictEqual(registry.getSupportedExtensions().sort(), ['epub', 'pdf', 'txt']);
   });
 });

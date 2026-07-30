@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { type BookData, type ChapterRef, type EpubProgress } from './Book';
+import { type BookData, type ChapterRef, type EpubProgress, type PdfProgress } from './Book';
 import type { BookNavigationTarget } from '../domain/books';
 import { getBookGroupName } from './bookGroups';
 import { Commands } from './Commands';
@@ -103,7 +103,7 @@ function createBookTreeItem(book: BookData, registry: BookFormatRegistry): BookT
     book.process,
     book.category,
     book.chapters,
-    book.epubProgress?.chapterIndex,
+    book.pdfProgress?.pageIndex ?? book.epubProgress?.chapterIndex,
     !!provider?.getOutline
   );
 }
@@ -149,6 +149,19 @@ export class BookTreeProvider implements vscode.TreeDataProvider<BookTreeItem> {
 
     book.bookData.epubProgress = progress;
     book.setCurrentChapter(progress.chapterIndex);
+    this._onDidChangeTreeData.fire(book);
+  }
+
+  /** pdf 进度变化：只在跨页时刷新书籍行与目录高亮，页内翻页不重建整棵树。 */
+  updatePdfProgress(id: string, progress: PdfProgress): void {
+    const book = this.findBookItem(id, this.books);
+
+    if (!book || book.currentChapterIndex === progress.pageIndex) {
+      return;
+    }
+
+    book.bookData.pdfProgress = progress;
+    book.setCurrentChapter(progress.pageIndex);
     this._onDidChangeTreeData.fire(book);
   }
 

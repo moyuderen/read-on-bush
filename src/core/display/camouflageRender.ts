@@ -97,7 +97,7 @@ const builtinTemplates: Record<TerminalCamouflageStyle, TerminalTemplate> = {
       `   ${DIFF_RED}-  this.panel.webview.html = html${ANSI_RESET}`,
       `   ${DIFF_GREEN}+  this.panel.webview.html = renderScreen(state, columns)${ANSI_RESET}`,
       paint('  ⎿  Read src/core/display/terminalCamouflageDisplay.ts', ANSI_DIM),
-      paint('  ⎿  Read src/core/display/epubTerminalDisplay.ts', ANSI_DIM),
+      paint('  ⎿  Read src/core/display/paginatedTerminalDisplay.ts', ANSI_DIM),
       paint('  ⎿  Update q handling to require a second confirmation keypress', ANSI_DIM),
       `${DIFF_DIM}stderr:${ANSI_RESET} eslint src --ext ts completed with 0 warnings`,
       paint('✓ TypeScript compile and lint checks are ready to run', ANSI_GREEN)
