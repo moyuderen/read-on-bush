@@ -6,6 +6,25 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-07-30
+
+### Added
+
+- 新增 PDF 原生导入与阅读：按页提取文本、展示页面目录、支持跳页和持久化阅读进度。
+- 新增 PDF 页面图片预览，按需解码并在快速隐藏时同步关闭图片窗口。
+- 新增 PDF 提取缓存、中文排版空格归一化，以及 PDF 格式 provider 和回归测试。
+
+### Changed
+
+- EPUB 与 PDF 复用分页伪装终端和图片预览面板，统一终端阅读交互。
+- PDF 从“需转换格式”调整为原生支持格式，CloudConvert 引导仅保留 mobi / azw3。
+
+### Fixed
+
+- 修复 PDF 二进制数据以 Node `Buffer` 传入 pdfjs 导致导入失败的问题。
+- 修复 PDF 页边界提前显示下一页图片，以及空白页/纯图片页被跳过的问题。
+- 增强 pdfjs 扩展宿主兼容性和 PDF 缓存校验，避免全局状态残留与损坏缓存崩溃。
+
 ## [2.2.3] - 2026-07-27
 
 ### Added

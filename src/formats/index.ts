@@ -1,10 +1,15 @@
 import { BookFormatRegistry } from './registry';
 import { EpubProvider } from './epub/EpubProvider';
+import { PdfProvider } from './pdf/PdfProvider';
 import { TxtProvider } from './txt/TxtProvider';
 
 export function createDefaultBookFormatRegistry(): BookFormatRegistry {
-  // mobi/azw3 是 Amazon 专有二进制、pdf 是定版式——不自研解析，改为引导用户去 CloudConvert 转 epub。
-  return new BookFormatRegistry([new TxtProvider(), new EpubProvider()], ['mobi', 'azw3', 'pdf']);
+  // mobi/azw3 是 Amazon 专有二进制——不自研解析，改为引导用户去 CloudConvert 转 epub。
+  // pdf 由 PdfProvider 原生支持（pdfjs 抽取文本 + 图片）。
+  return new BookFormatRegistry(
+    [new TxtProvider(), new EpubProvider(), new PdfProvider()],
+    ['mobi', 'azw3']
+  );
 }
 
 export type { BookFormatProvider, BookReaderController } from './types';

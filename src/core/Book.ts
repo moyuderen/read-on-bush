@@ -5,7 +5,7 @@ import { createBookParser } from './parsers';
 import { getLineWidth } from './settings';
 import type { BookData } from '../domain/books';
 
-export type { BookData, BookFormat, ChapterRef, EpubProgress } from '../domain/books';
+export type { BookData, BookFormat, ChapterRef, EpubProgress, PdfProgress } from '../domain/books';
 
 export class Book {
   public app: ReadBook;

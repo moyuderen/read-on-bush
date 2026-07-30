@@ -1,4 +1,4 @@
-import { type BookData, type ChapterRef, type EpubProgress } from '../Book';
+import { type BookData, type ChapterRef, type EpubProgress, type PdfProgress } from '../Book';
 import { getStorage, setStorage } from '../../utils/storage';
 
 const BOOKS_STORAGE_KEY = 'books';
@@ -10,6 +10,7 @@ export interface BookStorage {
   addBooks(books: BookData[], existingBooks?: BookData[]): BookData[];
   updateBookProcess(id: string, process: number): BookData[];
   updateEpubProgress(id: string, progress: EpubProgress): BookData[];
+  updatePdfProgress(id: string, progress: PdfProgress): BookData[];
   updateEpubChapters(id: string, chapters: ChapterRef[]): BookData[];
   renameBook(id: string, name: string): BookData[];
   updateBookCategory(id: string, category?: string): BookData[];
@@ -86,6 +87,13 @@ export class GlobalStateBookStorage implements BookStorage {
     return this.updateBook(id, (book) => ({
       ...book,
       epubProgress: progress
+    }));
+  }
+
+  updatePdfProgress(id: string, progress: PdfProgress): BookData[] {
+    return this.updateBook(id, (book) => ({
+      ...book,
+      pdfProgress: progress
     }));
   }
 

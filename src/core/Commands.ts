@@ -23,6 +23,13 @@ export enum Commands {
   EpubJumpChapter = 'readOnBush.epub.jumpChapter',
   EpubStop = 'readOnBush.epub.stop',
   EpubViewImage = 'readOnBush.epub.viewImage',
+
+  PdfNext = 'readOnBush.pdf.next',
+  PdfPrev = 'readOnBush.pdf.prev',
+  PdfJumpPage = 'readOnBush.pdf.jumpPage',
+  PdfStop = 'readOnBush.pdf.stop',
+  PdfViewImage = 'readOnBush.pdf.viewImage',
+
   OpenBookOutline = 'readOnBush.openBookOutline',
 
   SwitchReadingMode = 'readOnBush.switchReadingMode',

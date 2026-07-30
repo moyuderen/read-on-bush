@@ -7,9 +7,15 @@ export type ChapterRef = {
 };
 
 // epub 专用进度：章锚定 + 章内字符偏移（绑定源文本，不随显示配置漂）。
-// 未来若引入通用进度模型（PDF 页码 / 定位符等），再在此扩展。
 export type EpubProgress = {
   chapterIndex: number;
+  charOffset: number;
+};
+
+// pdf 专用进度：页锚定 + 页内字符偏移。复用 epub 分页引擎——一页当作一个分页「章节」，
+// 故结构同 EpubProgress（pageIndex ↔ chapterIndex），单独命名仅为语义清晰。
+export type PdfProgress = {
+  pageIndex: number;
   charOffset: number;
 };
 
@@ -24,6 +30,7 @@ export type BookData = {
   order?: number;
   format?: BookFormat;
   epubProgress?: EpubProgress;
+  pdfProgress?: PdfProgress;
   chapters?: ChapterRef[];
 };
 
