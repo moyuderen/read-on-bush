@@ -80,20 +80,59 @@ suite('camouflageRender conceal helpers', () => {
   test('formatCamouflageScreen keeps Claude CLI footer art within terminal width', () => {
     const width = 24;
     const lines = formatCamouflageScreen('claudeCli', ['content'], '', width).split('\r\n');
-    // 末尾 5 行是 claudeCli 的输入框装饰（按宽度自适应），第 6 行是固定按键提示（不裁剪）。
-    const footerArt = lines.slice(-6, -1);
+    // 末尾 4 行是 claudeCli 的输入框装饰，状态栏保持在面板最后。
+    const footerArt = lines.slice(-4);
 
-    assert.strictEqual(footerArt[0].length <= width, true);
-    assert.strictEqual(footerArt[1].length, width);
-    assert.strictEqual(footerArt[3].length, width);
-    assert.strictEqual(getTextWidth(footerArt[4]) <= width, true);
-    assert.strictEqual(lines[lines.length - 1], KEYS_HINT);
+    assert.strictEqual(footerArt[0].length, width);
+    assert.strictEqual(footerArt[2].length, width);
+    assert.strictEqual(getTextWidth(footerArt[3]) <= width, true);
+    assert.notStrictEqual(lines[lines.length - 1], KEYS_HINT);
   });
 
-  test('key hint is always appended and reflects real keybindings', () => {
+  test('Claude CLI summary and status bar follow reading progress', () => {
+    const lines = formatCamouflageScreen(
+      'claudeCli',
+      ['content'],
+      '  草船借箭 · 全书 78%',
+      120
+    ).split('\r\n');
+    const summary = lines.find((line) => line.startsWith('* Sautéed for'));
+    const status = lines.find((line) => line.startsWith('[opus-4.8[1m]]'));
+
+    assert.strictEqual(summary?.includes('草船借箭 · 78%'), true);
+    assert.strictEqual(summary?.includes('全书'), false);
+    assert.strictEqual(summary?.includes('new task? /clear to save 308.4k tokens'), true);
+    assert.strictEqual(status?.includes('███████████░░░ 78%'), true);
+
+    const narrowSummary = formatCamouflageScreen(
+      'claudeCli',
+      ['content'],
+      '  草船借箭 · 全书 78%',
+      24
+    ).split('\r\n').find((line) => line.startsWith('* '));
+    assert.strictEqual(narrowSummary?.includes('草船借箭 · 78%'), true);
+
+    const lowProgressStatus = formatCamouflageScreen('claudeCli', ['content'], '  草船借箭 · 全书 7%', 120);
+    assert.strictEqual(lowProgressStatus.includes('██░░░░░░░░░░░░ 7%'), true);
+
+    const txtStatus = formatCamouflageScreen('claudeCli', ['content'], '  3/10', 120);
+    assert.strictEqual(txtStatus.includes('████░░░░░░░░░░ 30%'), true);
+  });
+
+  test('key hint is rendered in a style-appropriate position', () => {
     for (const style of styles) {
-      const lines = formatCamouflageScreen(style, ['x'], '  1/2').split('\r\n');
-      assert.strictEqual(lines[lines.length - 1], KEYS_HINT, `${style} should end with key hint`);
+      const lines = formatCamouflageScreen(style, ['x'], '  1/2', 120).split('\r\n');
+      if (style === 'claudeCli') {
+        const lintIndex = lines.findIndex((line) => line.includes('npm run lint'));
+        const hintIndex = lines.findIndex((line) => line.includes('q hide · qq quit'));
+        const doneIndex = lines.findIndex((line) => line.startsWith('* Sautéed'));
+
+        assert.strictEqual(hintIndex > lintIndex, true);
+        assert.strictEqual(hintIndex < doneIndex, true);
+        assert.notStrictEqual(lines[lines.length - 1], KEYS_HINT);
+      } else {
+        assert.strictEqual(lines[lines.length - 1], KEYS_HINT, `${style} should end with key hint`);
+      }
     }
   });
 

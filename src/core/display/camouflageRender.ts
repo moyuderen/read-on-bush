@@ -41,11 +41,10 @@ export type TerminalTemplate = {
   contentPrefix: string;
   header: string[];
   trailing: string[];
-  // 完成/进度行。
-  done: (progress: string) => string;
-  // 底部装饰：仅装饰用途；按键提示(KEYS_HINT)由 formatCamouflageScreen 固定追加，不在此处。
-  // claudeCli 用于自适应分隔线宽度；其余样式省略。
-  footer?: (columns?: number) => string;
+  // 完成/进度行。columns 仅供需要自适应排版的模版使用。
+  done: (progress: string, columns?: number) => string;
+  // 底部装饰。progress 用于让模版内的装饰进度与真实阅读进度联动。
+  footer?: (progress: string, columns?: number) => string;
   // 快速隐藏(q/d)时展示的假正文行：随样式内置。
   debugContent: string[];
 };
@@ -80,16 +79,11 @@ const builtinTemplates: Record<TerminalCamouflageStyle, TerminalTemplate> = {
       `   ${DIFF_GREEN}+  const res = await fetch('/api/orders?' + params.toString())${ANSI_RESET}`,
       `   ${DIFF_GREEN}+  if (!res.ok) throw new Error('订单加载失败')${ANSI_RESET}`,
       '',
-      paint('✏️  Updated src/features/orders/OrderList.tsx', ANSI_YELLOW),
-      `     ${DIFF_CYAN}@@ -88,6 +91,10 @@${ANSI_RESET}`,
-      `   ${DIFF_GREEN}+  if (isError) return <RetryPanel onRetry={refetch} />${ANSI_RESET}`,
-      `   ${DIFF_GREEN}+  if (!orders.length) return <EmptyState title="暂无订单" />${ANSI_RESET}`,
-      '',
       `● ${DIFF_DIM}npm test -- --runInBand orders${ANSI_RESET}  ${DIFF_GREEN}✓${ANSI_RESET} 18 passed (2.4s)`,
       `● ${DIFF_DIM}npm run lint${ANSI_RESET}  ${DIFF_GREEN}✓${ANSI_RESET} no issues`,
       ''
     ],
-    done: (progress) => `* Sautéed for 8m 6s${progress ? ` · ${progress}` : ''}`,
+    done: formatClaudeCliDone,
     footer: formatClaudeCliFooter,
     debugContent: [
       paint('I’ll keep the terminal rendering state local to the pseudoterminal and reuse the shared renderer.', ANSI_DIM),
@@ -287,20 +281,68 @@ export function updateTerminalStyle(
 const wrappedDebugLinesCache = new Map<string, string[]>();
 
 /**
- * Claude Code CLI 的底部输入框/状态栏装饰（不含按键提示——KEYS_HINT 由 formatCamouflageScreen 统一追加）。
- * 分隔线与右对齐按终端列数自适应，终端宽窄变化时也能铺满，伪装性更强。
+ * Claude Code CLI 的完成行：左侧保留阅读进度，右侧放 /clear 提示；宽度不足时优先保留左侧。
  */
-function formatClaudeCliFooter(columns?: number): string {
+function formatClaudeCliDone(progress: string, columns?: number): string {
+  const width = columns && columns > 0 ? columns : fallbackContentWidth;
+  const readingProgress = formatClaudeCliReadingProgress(progress);
+  const summary = `* Sautéed for 8m 6s${readingProgress ? ` · ${readingProgress}` : ''}`;
+  const visibleSummary =
+    readingProgress && getTextWidth(summary) > width ? `* ${readingProgress}` : summary;
+  return joinLeftAndRight(visibleSummary, 'new task? /clear to save 308.4k tokens', width);
+}
+
+/**
+ * Claude Code CLI 的底部输入框/状态栏装饰（不含按键提示——KEYS_HINT 由 formatCamouflageScreen 统一追加）。
+ * 状态栏百分比和进度条从阅读进度文案计算，翻页时同步刷新。
+ */
+function formatClaudeCliFooter(progress: string, columns?: number): string {
   const width = columns && columns > 0 ? columns : fallbackContentWidth;
   const divider = '─'.repeat(width);
-  const hint = 'new task? /clear to save 308.4k tokens';
-  return [
-    rightAlignLine(hint, width),
-    divider,
-    '›',
-    divider,
-    fitLineToWidth('[opus-4.8[1m]] ██████░░░░░░░░ 30% | 💰 $16.17 | ⏱ 305m 44s', width)
-  ].join('\r\n');
+  const percent = getReadingProgressPercent(progress) ?? 30;
+  const totalBlocks = 14;
+  const minVisibleBlocks = percent > 0 ? 2 : 0;
+  const filledBlocks = Math.min(
+    totalBlocks,
+    Math.max(minVisibleBlocks, Math.round((percent / 100) * totalBlocks))
+  );
+  const progressBar = `${'█'.repeat(filledBlocks)}${'░'.repeat(totalBlocks - filledBlocks)}`;
+  const status = `[opus-4.8[1m]] ${progressBar} ${percent}% | 💰 $16.17 | ⏱ 305m 44s`;
+
+  return [divider, '›', divider, fitLineToWidth(status, width)].join('\r\n');
+}
+
+function formatClaudeCliShortcutHint(columns?: number): string {
+  const width = columns && columns > 0 ? columns : fallbackContentWidth;
+  return paint(
+    fitLineToWidth('  ⎿  q hide · qq quit · d toggle · n/p step · j jump · i image', width),
+    ANSI_DIM
+  );
+}
+
+function formatClaudeCliReadingProgress(progress: string): string {
+  return progress.trim().replace(/全书\s+(?=\d+(?:\.\d+)?\s*%)/g, '');
+}
+
+function getReadingProgressPercent(progress: string): number | undefined {
+  const percentMatches = Array.from(progress.matchAll(/(\d+(?:\.\d+)?)\s*%/g));
+  const percentMatch = percentMatches[percentMatches.length - 1];
+  if (percentMatch) {
+    return Math.min(Math.max(Math.round(Number(percentMatch[1])), 0), 100);
+  }
+
+  const ratioMatch = /(\d+)\s*\/\s*(\d+)/.exec(progress);
+  if (!ratioMatch) {
+    return undefined;
+  }
+
+  const current = Number(ratioMatch[1]);
+  const total = Number(ratioMatch[2]);
+  if (total <= 0) {
+    return 0;
+  }
+
+  return Math.min(Math.max(Math.round((current / total) * 100), 0), 100);
 }
 
 export function sanitizeContent(content: string): string {
@@ -417,7 +459,7 @@ export function formatTerminalIdleScreen(style: TerminalCamouflageStyle = 'build
  * 共享的拼屏原语：给定已经分页好的正文行 + 已经格式化好的进度文案，
  * 套上日志模板拼成一屏。txt 和 epub 都调它——这就是“视觉长相只有一份”。
  * columns 透传给 footer（仅 claudeCli 用到，用于自适应分隔线宽度）。
- * KEYS_HINT 固定追加在最后，始终展示真实按键。
+ * claudeCli 的按键提示伪装成测试输出后的弱化信息，其余样式仍固定追加在最后。
  */
 export function formatCamouflageScreen(
   style: TerminalCamouflageStyle,
@@ -443,8 +485,9 @@ function formatCamouflageScreenInternal(
 ): string {
   const template = getTemplate(style);
   const indent = ' '.repeat(template.contentPrefix.length);
-  const doneLine = template.done(stripUnsafeTerminalControls(progressLabel));
-  const footer = template.footer?.(columns);
+  const progress = stripUnsafeTerminalControls(progressLabel);
+  const doneLine = template.done(progress, columns);
+  const footer = template.footer?.(progress, columns);
 
   const lines = [
     ...template.header,
@@ -452,10 +495,11 @@ function formatCamouflageScreenInternal(
       `${index === 0 ? template.contentPrefix : indent}${sanitizeLine(content)}`
     ),
     ...template.trailing,
+    ...(style === 'claudeCli' ? [formatClaudeCliShortcutHint(columns)] : []),
     doneLine,
     '',
     ...(footer ? [footer] : []),
-    KEYS_HINT
+    ...(style === 'claudeCli' ? [] : [KEYS_HINT])
   ];
 
   return `${clearScreen}${lines.join('\r\n')}`;
@@ -483,8 +527,16 @@ export function computeEffectiveLineWidth(
   return Math.max(minContentWidth, Math.min(lineWidth, maxContentWidth));
 }
 
-function rightAlignLine(content: string, width: number): string {
-  return fitLineToWidth(content, width).padStart(width);
+function joinLeftAndRight(left: string, right: string, width: number): string {
+  const fittedLeft = fitLineToWidth(left, width);
+  const remainingWidth = width - getTextWidth(fittedLeft);
+  if (remainingWidth <= 1) {
+    return fittedLeft;
+  }
+
+  const fittedRight = fitLineToWidth(right, remainingWidth - 1);
+  const gap = Math.max(1, width - getTextWidth(fittedLeft) - getTextWidth(fittedRight));
+  return `${fittedLeft}${' '.repeat(gap)}${fittedRight}`;
 }
 
 function fitLineToWidth(content: string, width: number): string {
