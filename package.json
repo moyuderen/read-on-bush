@@ -2,7 +2,7 @@
   "name": "readOnBush",
   "displayName": "Read On Bush",
   "description": "在 VS Code 状态栏或终端伪装窗口低调阅读 txt / epub / pdf 小说，支持书架导入/目录批量导入、分类与目录分组、进度跳转、PDF 图片预览、快捷键模式切换和阅读体验配置；导入 mobi/azw3 时引导前往 CloudConvert 转 epub。",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "publisher": "moyuderen",
   "author": {
     "name": "moyuderen",
