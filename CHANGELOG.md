@@ -6,6 +6,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-07-31
+
+### Changed
+
+- 拆分终端伪装模板实现，统一底部渲染接口，保持各伪装样式行为一致。
+
 ## [2.3.0] - 2026-07-30
 
 ### Added
