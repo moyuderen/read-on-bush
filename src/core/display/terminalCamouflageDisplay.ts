@@ -1,17 +1,17 @@
 import { commands, EventEmitter, window } from 'vscode';
 import type { ExtensionContext, Pseudoterminal, Terminal, TerminalDimensions } from 'vscode';
 import { Commands } from '../Commands';
-import type { TerminalCamouflageStyle } from '../settings';
+import type { ResolvedTerminalTemplate } from './camouflageTemplates';
 import { CamouflageConcealController } from './camouflageConcealController';
 import { handleCamouflageInput } from './camouflageInput';
 import type { ReadingDisplayState } from './types';
 import {
-  computeEffectiveLineWidth,
-  formatCamouflageScreen,
-  formatDebugCamouflageScreen,
-  formatTerminalIdleScreen,
-  getTerminalName,
-  updateTerminalStyle,
+  computeResolvedEffectiveLineWidth,
+  formatResolvedCamouflageScreen,
+  formatResolvedDebugCamouflageScreen,
+  formatResolvedTerminalIdleScreen,
+  resolveBuiltinTemplate,
+  updateTerminalTemplate,
   getTextWidth,
   splitContent,
   type TerminalCamouflageContentMode
@@ -100,18 +100,18 @@ export function formatTerminalCamouflageScreen(
   showProgress: boolean,
   lineWidth: number,
   lineCount: number,
-  style: TerminalCamouflageStyle = 'buildLog',
+  template: ResolvedTerminalTemplate = resolveBuiltinTemplate('buildLog'),
   columns?: number,
   contentMode: TerminalCamouflageContentMode = 'real'
 ): string {
   if (contentMode === 'debugTemplate') {
-    return formatDebugCamouflageScreen(style, lineWidth, lineCount, columns);
+    return formatResolvedDebugCamouflageScreen(template, lineWidth, lineCount, columns);
   }
 
   const contentLines = getTerminalContentLines(state, lineWidth, lineCount);
   const current = state.total > 0 ? Math.min(state.process + 1, state.total) : 0;
   const progressLabel = showProgress ? `  ${current}/${state.total}` : '';
-  return formatCamouflageScreen(style, contentLines, progressLabel, columns);
+  return formatResolvedCamouflageScreen(template, contentLines, progressLabel, columns);
 }
 
 export class TerminalCamouflageDisplay implements Pseudoterminal {
@@ -128,7 +128,7 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
   private lastShowProgress = false;
   private lastLineWidth = 0;
   private lastLineCount = 3;
-  private lastStyle: TerminalCamouflageStyle = 'buildLog';
+  private lastTemplate: ResolvedTerminalTemplate = resolveBuiltinTemplate('buildLog');
   private pendingOutput?: string;
   private opened = false;
   private readonly concealController = new CamouflageConcealController({
@@ -142,7 +142,7 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
 
   open() {
     this.opened = true;
-    this.writeEmitter.fire(this.pendingOutput || formatTerminalIdleScreen(this.lastStyle));
+    this.writeEmitter.fire(this.pendingOutput || formatResolvedTerminalIdleScreen(this.lastTemplate));
     this.pendingOutput = undefined;
   }
 
@@ -173,13 +173,13 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
     showProgress: boolean,
     lineWidth: number,
     lineCount: number,
-    style: TerminalCamouflageStyle
+    template: ResolvedTerminalTemplate
   ) {
     this.lastState = state;
     this.lastShowProgress = showProgress;
     this.lastLineWidth = lineWidth;
     this.lastLineCount = lineCount;
-    this.updateStyle(style);
+    this.updateTemplate(template);
     this.ensureTerminal();
     this.writeLastState();
   }
@@ -190,19 +190,19 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
     }
 
     this.concealController.reset();
-    this.write(formatTerminalIdleScreen(this.lastStyle));
+    this.write(formatResolvedTerminalIdleScreen(this.lastTemplate));
   }
 
   reveal(
     showProgress: boolean,
     lineWidth: number,
     lineCount: number,
-    style: TerminalCamouflageStyle
+    template: ResolvedTerminalTemplate
   ) {
     this.lastShowProgress = showProgress;
     this.lastLineWidth = lineWidth;
     this.lastLineCount = lineCount;
-    this.updateStyle(style);
+    this.updateTemplate(template);
     this.ensureTerminal();
 
     if (this.lastState) {
@@ -210,7 +210,7 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
       return;
     }
 
-    this.write(formatTerminalIdleScreen(style));
+    this.write(formatResolvedTerminalIdleScreen(template));
   }
 
   hide() {
@@ -233,28 +233,31 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
     state: ReadingDisplayState,
     lineWidth: number,
     lineCount: number,
-    style: TerminalCamouflageStyle
+    template: ResolvedTerminalTemplate
   ): number {
-    return getTerminalNextProcessStep(state, this.getEffectiveLineWidth(lineWidth, style), lineCount);
+    return getTerminalNextProcessStep(state, this.getEffectiveLineWidth(lineWidth, template), lineCount);
   }
 
   getPrevProcessStep(
     state: ReadingDisplayState,
     lineWidth: number,
     lineCount: number,
-    style: TerminalCamouflageStyle
+    template: ResolvedTerminalTemplate
   ): number {
-    return getTerminalPrevProcessStep(state, this.getEffectiveLineWidth(lineWidth, style), lineCount);
+    return getTerminalPrevProcessStep(state, this.getEffectiveLineWidth(lineWidth, template), lineCount);
   }
 
-  private getEffectiveLineWidth(lineWidth: number, style: TerminalCamouflageStyle): number {
-    return computeEffectiveLineWidth(lineWidth, this.dimensions?.columns, style);
+  private getEffectiveLineWidth(
+    lineWidth: number,
+    template: ResolvedTerminalTemplate
+  ): number {
+    return computeResolvedEffectiveLineWidth(lineWidth, this.dimensions?.columns, template);
   }
 
-  private updateStyle(style: TerminalCamouflageStyle): void {
-    this.lastStyle = updateTerminalStyle(
-      this.lastStyle,
-      style,
+  private updateTemplate(template: ResolvedTerminalTemplate): void {
+    this.lastTemplate = updateTerminalTemplate(
+      this.lastTemplate,
+      template,
       this.terminal ? (title) => this.write(title) : undefined
     );
   }
@@ -269,12 +272,19 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
 
     const contentMode = this.concealController.mode;
     if (contentMode === 'real') {
-      this.write(formatTerminalIdleScreen(this.lastStyle));
+      this.write(formatResolvedTerminalIdleScreen(this.lastTemplate));
       return;
     }
 
-    const lineWidth = this.getEffectiveLineWidth(this.lastLineWidth, this.lastStyle);
-    this.write(formatDebugCamouflageScreen(this.lastStyle, lineWidth, this.lastLineCount, this.dimensions?.columns));
+    const lineWidth = this.getEffectiveLineWidth(this.lastLineWidth, this.lastTemplate);
+    this.write(
+      formatResolvedDebugCamouflageScreen(
+        this.lastTemplate,
+        lineWidth,
+        this.lastLineCount,
+        this.dimensions?.columns
+      )
+    );
   }
 
   private renderLastState() {
@@ -294,9 +304,9 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
       formatTerminalCamouflageScreen(
         this.lastState,
         this.lastShowProgress,
-        this.getEffectiveLineWidth(this.lastLineWidth, this.lastStyle),
+        this.getEffectiveLineWidth(this.lastLineWidth, this.lastTemplate),
         this.lastLineCount,
-        this.lastStyle,
+        this.lastTemplate,
         this.dimensions?.columns,
         this.concealController.mode
       )
@@ -309,7 +319,10 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
       return;
     }
 
-    this.terminal = window.createTerminal({ name: getTerminalName(this.lastStyle), pty: this });
+    this.terminal = window.createTerminal({
+      name: this.lastTemplate.template.terminalName,
+      pty: this
+    });
     this.context.subscriptions.push(this.terminal);
     this.terminal.show(true);
   }
@@ -323,6 +336,3 @@ export class TerminalCamouflageDisplay implements Pseudoterminal {
     this.writeEmitter.fire(text);
   }
 }
-
-// 保留对外 API：idle 屏现在由 camouflageRender 提供
-export { formatTerminalIdleScreen } from './camouflageRender';

@@ -9,9 +9,11 @@ import {
   affectsReadOnBushConfiguration,
   affectsSetting,
   getDefaultReadingMode,
+  getTerminalCamouflageStyle,
   type ReadOnBushSettingKey
 } from './settings';
 import message from '../utils/message';
+import { setupCustomTemplateEditor } from './display/terminalCamouflageTemplateEditor';
 
 export let app: ReadBook;
 
@@ -32,9 +34,13 @@ function setupConfigurationChangeHandlers(context: ExtensionContext) {
       }
 
       const defaultReadingModeChanged = affectsSetting(event, 'defaultReadingMode');
-      const displayRefreshSettingChanged = displayRefreshSettingKeys.some((key) =>
-        affectsSetting(event, key)
+      const customTemplateChanged = affectsSetting(
+        event,
+        'terminalCamouflageCustomTemplate'
       );
+      const displayRefreshSettingChanged =
+        displayRefreshSettingKeys.some((key) => affectsSetting(event, key)) ||
+        (customTemplateChanged && getTerminalCamouflageStyle() === 'custom');
       const lineWidthChanged = affectsSetting(event, 'lineWidth');
       const bookListGroupByChanged = affectsSetting(event, 'bookListGroupBy');
 
@@ -61,6 +67,7 @@ function setupConfigurationChangeHandlers(context: ExtensionContext) {
 export function setup(context: ExtensionContext) {
   setupStorage(context);
   setupBars(context);
+  setupCustomTemplateEditor(context);
 
   app = new ReadBook(context);
 

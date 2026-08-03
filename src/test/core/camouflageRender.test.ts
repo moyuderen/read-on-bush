@@ -1,21 +1,26 @@
 import * as assert from 'assert';
 import {
   KEYS_HINT,
-  formatCamouflageScreen,
-  formatDebugCamouflageScreen,
-  formatTerminalTitle,
-  getDebugContentLines,
-  getTerminalName,
-  getTextWidth
+  formatResolvedCamouflageScreen,
+  formatResolvedDebugCamouflageScreen,
+  formatResolvedTerminalTitle,
+  getResolvedDebugContentLines,
+  getTextWidth,
+  resolveBuiltinTemplate
 } from '../../core/display/camouflageRender';
-import { TERMINAL_CAMOUFLAGE_STYLE_OPTIONS } from '../../core/settings';
-import type { TerminalCamouflageStyle } from '../../core/settings';
+import { BUILTIN_TERMINAL_CAMOUFLAGE_STYLE_OPTIONS } from '../../core/settings';
+import type { BuiltinTerminalCamouflageStyle } from '../../core/settings';
+
+const resolve = (style: BuiltinTerminalCamouflageStyle) => resolveBuiltinTemplate(style);
 
 suite('camouflageRender conceal helpers', () => {
-  const styles: readonly TerminalCamouflageStyle[] = TERMINAL_CAMOUFLAGE_STYLE_OPTIONS;
+  const styles: readonly BuiltinTerminalCamouflageStyle[] =
+    BUILTIN_TERMINAL_CAMOUFLAGE_STYLE_OPTIONS;
 
   test('getDebugContentLines returns style-specific bounded debug content', () => {
-    const outputs = styles.map((style) => getDebugContentLines(style, 36, 3));
+    const outputs = styles.map((style) =>
+      getResolvedDebugContentLines(resolve(style), 36, 3)
+    );
 
     for (const lines of outputs) {
       assert.strictEqual(lines.length, 3);
@@ -31,32 +36,36 @@ suite('camouflageRender conceal helpers', () => {
   });
 
   test('getDebugContentLines pads to the requested line count', () => {
-    const lines = getDebugContentLines('buildLog', 120, 10);
+    const lines = getResolvedDebugContentLines(resolve('buildLog'), 120, 10);
 
     assert.strictEqual(lines.length, 10);
     assert.strictEqual(lines.every((line) => getTextWidth(line) <= 120), true);
   });
 
   test('formatDebugCamouflageScreen renders concealed lines without real progress', () => {
-    const screen = formatDebugCamouflageScreen('claudeCli', 50, 2);
+    const screen = formatResolvedDebugCamouflageScreen(resolve('claudeCli'), 50, 2);
 
     assert.strictEqual(screen.includes('1/9'), false);
     assert.strictEqual(screen.includes('I’ll keep the terminal rendering state local'), true);
   });
 
   test('debug camouflage keeps trusted template colors while real content strips controls', () => {
-    const debugScreen = formatDebugCamouflageScreen('serverLog', 80, 3);
+    const debugScreen = formatResolvedDebugCamouflageScreen(resolve('serverLog'), 80, 3);
     assert.strictEqual(/\x1b\[(?:31|32|33|36|2)m/.test(debugScreen), true);
 
-    const realScreen = formatCamouflageScreen('serverLog', ['real\x1b[31mred'], '\x1b[32m  1/2');
+    const realScreen = formatResolvedCamouflageScreen(
+      resolve('serverLog'),
+      ['real\x1b[31mred'],
+      '\x1b[32m  1/2'
+    );
     assert.strictEqual(realScreen.includes('realred'), true);
     assert.strictEqual(realScreen.includes('\x1b[31mred'), false);
     assert.strictEqual(realScreen.includes('\x1b[32m  1/2'), false);
   });
 
   test('formatCamouflageScreen strips unsafe terminal control sequences from content and progress', () => {
-    const screen = formatCamouflageScreen(
-      'buildLog',
+    const screen = formatResolvedCamouflageScreen(
+      resolve('buildLog'),
       ['safe\x1b[2J\x1b]8;;https://example.com\x07link\x1b]8;;\x07text'],
       '  chapter\x1b[2J · 20%'
     );
@@ -69,17 +78,22 @@ suite('camouflageRender conceal helpers', () => {
   });
 
   test('terminal title matches the selected camouflage style', () => {
-    assert.strictEqual(getTerminalName('buildLog'), 'npm: watch');
-    assert.strictEqual(getTerminalName('claudeCli'), 'Claude Code');
-    assert.strictEqual(getTerminalName('serverLog'), 'dev server');
-    assert.strictEqual(getTerminalName('vite'), 'vite');
-    assert.strictEqual(getTerminalName('docker'), 'docker compose');
-    assert.strictEqual(formatTerminalTitle('vite'), '\x1b]0;vite\x07');
+    assert.strictEqual(resolve('buildLog').template.terminalName, 'npm: watch');
+    assert.strictEqual(resolve('claudeCli').template.terminalName, 'Claude Code');
+    assert.strictEqual(resolve('serverLog').template.terminalName, 'dev server');
+    assert.strictEqual(resolve('vite').template.terminalName, 'vite');
+    assert.strictEqual(resolve('docker').template.terminalName, 'docker compose');
+    assert.strictEqual(formatResolvedTerminalTitle(resolve('vite')), '\x1b]0;vite\x07');
   });
 
   test('formatCamouflageScreen keeps Claude CLI footer art within terminal width', () => {
     const width = 24;
-    const lines = formatCamouflageScreen('claudeCli', ['content'], '', width).split('\r\n');
+    const lines = formatResolvedCamouflageScreen(
+      resolve('claudeCli'),
+      ['content'],
+      '',
+      width
+    ).split('\r\n');
     // 末尾 4 行是 claudeCli 的输入框装饰，状态栏保持在面板最后。
     const footerArt = lines.slice(-4);
 
@@ -90,8 +104,8 @@ suite('camouflageRender conceal helpers', () => {
   });
 
   test('Claude CLI summary and status bar follow reading progress', () => {
-    const lines = formatCamouflageScreen(
-      'claudeCli',
+    const lines = formatResolvedCamouflageScreen(
+      resolve('claudeCli'),
       ['content'],
       '  草船借箭 · 全书 78%',
       120
@@ -104,24 +118,34 @@ suite('camouflageRender conceal helpers', () => {
     assert.strictEqual(summary?.includes('new task? /clear to save 308.4k tokens'), true);
     assert.strictEqual(status?.includes('███████████░░░ 78%'), true);
 
-    const narrowSummary = formatCamouflageScreen(
-      'claudeCli',
+    const narrowSummary = formatResolvedCamouflageScreen(
+      resolve('claudeCli'),
       ['content'],
       '  草船借箭 · 全书 78%',
       24
     ).split('\r\n').find((line) => line.startsWith('* '));
     assert.strictEqual(narrowSummary?.includes('草船借箭 · 78%'), true);
 
-    const lowProgressStatus = formatCamouflageScreen('claudeCli', ['content'], '  草船借箭 · 全书 7%', 120);
+    const lowProgressStatus = formatResolvedCamouflageScreen(
+      resolve('claudeCli'),
+      ['content'],
+      '  草船借箭 · 全书 7%',
+      120
+    );
     assert.strictEqual(lowProgressStatus.includes('██░░░░░░░░░░░░ 7%'), true);
 
-    const txtStatus = formatCamouflageScreen('claudeCli', ['content'], '  3/10', 120);
+    const txtStatus = formatResolvedCamouflageScreen(
+      resolve('claudeCli'),
+      ['content'],
+      '  3/10',
+      120
+    );
     assert.strictEqual(txtStatus.includes('████░░░░░░░░░░ 30%'), true);
   });
 
   test('key hint is rendered in a style-appropriate position', () => {
     for (const style of styles) {
-      const lines = formatCamouflageScreen(style, ['x'], '  1/2', 120).split('\r\n');
+      const lines = formatResolvedCamouflageScreen(resolve(style), ['x'], '  1/2', 120).split('\r\n');
       if (style === 'claudeCli') {
         const lintIndex = lines.findIndex((line) => line.includes('npm run lint'));
         const hintIndex = lines.findIndex((line) => line.includes('q hide · qq quit'));
@@ -137,12 +161,12 @@ suite('camouflageRender conceal helpers', () => {
   });
 
   test('vite and docker presets render their signature look', () => {
-    const vite = formatCamouflageScreen('vite', ['hello world'], '', 80);
+    const vite = formatResolvedCamouflageScreen(resolve('vite'), ['hello world'], '', 80);
     assert.strictEqual(vite.includes('[vite]'), true);
     assert.strictEqual(vite.includes('VITE v5.4.10'), true);
     assert.strictEqual(vite.includes('optimized'), true);
 
-    const docker = formatCamouflageScreen('docker', ['hello world'], '', 80);
+    const docker = formatResolvedCamouflageScreen(resolve('docker'), ['hello world'], '', 80);
     assert.strictEqual(docker.includes('app-api-1  | '), true);
     assert.strictEqual(docker.includes('docker compose up'), true);
   });

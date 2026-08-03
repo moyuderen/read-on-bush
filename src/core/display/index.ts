@@ -7,11 +7,13 @@ import {
   getShowProgress,
   getTerminalCamouflageLineCount,
   getTerminalCamouflageLineWidth,
-  getTerminalCamouflageStyle,
+  getTerminalCamouflageTemplateSettings,
   shouldShowStatusBarReading,
   shouldShowTerminalCamouflage
 } from '../settings';
 import { StatusBarDisplay } from './statusBarDisplay';
+import type { ResolvedTerminalTemplate } from './camouflageTemplates';
+import type { CamouflageTemplateService } from './camouflageTemplateService';
 import { TerminalCamouflageDisplay } from './terminalCamouflageDisplay';
 import type { ReadingDisplayState } from './types';
 
@@ -20,7 +22,10 @@ export class ReadingDisplayManager {
   private readonly terminalCamouflageDisplay: TerminalCamouflageDisplay;
   private lastState?: ReadingDisplayState;
 
-  constructor(context: ExtensionContext) {
+  constructor(
+    context: ExtensionContext,
+    private readonly templateService: CamouflageTemplateService
+  ) {
     this.terminalCamouflageDisplay = new TerminalCamouflageDisplay(context);
 
     context.subscriptions.push(
@@ -52,7 +57,7 @@ export class ReadingDisplayManager {
         getShowProgress(),
         getTerminalCamouflageLineWidth(),
         getTerminalCamouflageLineCount(),
-        getTerminalCamouflageStyle()
+        this.getResolvedTemplate()
       );
     } else {
       this.terminalCamouflageDisplay.hide();
@@ -80,14 +85,14 @@ export class ReadingDisplayManager {
     const showProgress = getShowProgress();
     const lineWidth = getTerminalCamouflageLineWidth();
     const lineCount = getTerminalCamouflageLineCount();
-    const style = getTerminalCamouflageStyle();
+    const template = this.getResolvedTemplate();
 
     if (this.lastState && this.lastState.isReading) {
-      this.terminalCamouflageDisplay.render(this.lastState, showProgress, lineWidth, lineCount, style);
+      this.terminalCamouflageDisplay.render(this.lastState, showProgress, lineWidth, lineCount, template);
       return;
     }
 
-    this.terminalCamouflageDisplay.reveal(showProgress, lineWidth, lineCount, style);
+    this.terminalCamouflageDisplay.reveal(showProgress, lineWidth, lineCount, template);
   }
 
   getNextProcessStep(state: ReadingDisplayState): number {
@@ -99,7 +104,7 @@ export class ReadingDisplayManager {
       state,
       getTerminalCamouflageLineWidth(),
       getTerminalCamouflageLineCount(),
-      getTerminalCamouflageStyle()
+      this.getResolvedTemplate()
     );
   }
 
@@ -112,8 +117,12 @@ export class ReadingDisplayManager {
       state,
       getTerminalCamouflageLineWidth(),
       getTerminalCamouflageLineCount(),
-      getTerminalCamouflageStyle()
+      this.getResolvedTemplate()
     );
+  }
+
+  private getResolvedTemplate(): ResolvedTerminalTemplate {
+    return this.templateService.resolve(getTerminalCamouflageTemplateSettings());
   }
 
   private async toggleTerminalCamouflage() {

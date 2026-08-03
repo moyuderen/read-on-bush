@@ -1,5 +1,8 @@
 import * as assert from 'assert';
-import { formatCamouflageScreen } from '../../core/display/camouflageRender';
+import {
+  formatResolvedCamouflageScreen,
+  resolveBuiltinTemplate
+} from '../../core/display/camouflageRender';
 import { buildProgressLabel, wrapChapter } from '../../core/epubPagination';
 import type { EpubExtraction } from '../../core/parsers/EpubExtractor';
 
@@ -18,7 +21,11 @@ suite('epubPagination terminal safety', () => {
     };
 
     const label = buildProgressLabel(extraction, { chapterIndex: 0, charOffset: 0 }, [0], 10);
-    const screen = formatCamouflageScreen('buildLog', ['content'], label);
+    const screen = formatResolvedCamouflageScreen(
+      resolveBuiltinTemplate('buildLog'),
+      ['content'],
+      label
+    );
 
     assert.strictEqual(screen.includes('\x1b[2J'), true); // clearScreen prefix remains intentional
     assert.strictEqual(screen.slice(4).includes('\x1b[2J'), false);

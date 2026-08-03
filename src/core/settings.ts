@@ -4,10 +4,22 @@ import { AppName, LineWidth } from './config';
 
 export const BOOK_LIST_GROUP_BY_OPTIONS = ['none', 'category', 'directory'] as const;
 export const READING_DISPLAY_TARGET_OPTIONS = ['statusBar', 'terminalCamouflage', 'both'] as const;
-export const TERMINAL_CAMOUFLAGE_STYLE_OPTIONS = ['buildLog', 'claudeCli', 'serverLog', 'vite', 'docker'] as const;
+export const BUILTIN_TERMINAL_CAMOUFLAGE_STYLE_OPTIONS = [
+  'buildLog',
+  'claudeCli',
+  'serverLog',
+  'vite',
+  'docker'
+] as const;
+export const TERMINAL_CAMOUFLAGE_STYLE_OPTIONS = [
+  ...BUILTIN_TERMINAL_CAMOUFLAGE_STYLE_OPTIONS,
+  'custom'
+] as const;
 
 export type BookListGroupBy = (typeof BOOK_LIST_GROUP_BY_OPTIONS)[number];
 export type ReadingDisplayTarget = (typeof READING_DISPLAY_TARGET_OPTIONS)[number];
+export type BuiltinTerminalCamouflageStyle =
+  (typeof BUILTIN_TERMINAL_CAMOUFLAGE_STYLE_OPTIONS)[number];
 export type TerminalCamouflageStyle = (typeof TERMINAL_CAMOUFLAGE_STYLE_OPTIONS)[number];
 
 export type ReadOnBushSettings = {
@@ -20,6 +32,7 @@ export type ReadOnBushSettings = {
   terminalCamouflageLineWidth: number;
   terminalCamouflageLineCount: number;
   terminalCamouflageStyle: TerminalCamouflageStyle;
+  terminalCamouflageCustomTemplate: unknown;
   bookListGroupBy: BookListGroupBy;
 };
 
@@ -33,6 +46,7 @@ export const defaultSettings: ReadOnBushSettings = {
   terminalCamouflageLineWidth: 0,
   terminalCamouflageLineCount: 3,
   terminalCamouflageStyle: 'claudeCli',
+  terminalCamouflageCustomTemplate: null,
   bookListGroupBy: 'none'
 };
 
@@ -120,6 +134,22 @@ export function getTerminalCamouflageStyle(): TerminalCamouflageStyle {
   return normalizeTerminalCamouflageStyle(getConfigurationValue('terminalCamouflageStyle'));
 }
 
+export function getTerminalCamouflageCustomTemplate(): unknown {
+  return getConfigurationValue('terminalCamouflageCustomTemplate');
+}
+
+export type TerminalCamouflageTemplateSettings = {
+  style: TerminalCamouflageStyle;
+  customTemplate: unknown;
+};
+
+export function getTerminalCamouflageTemplateSettings(): TerminalCamouflageTemplateSettings {
+  return {
+    style: getTerminalCamouflageStyle(),
+    customTemplate: getTerminalCamouflageCustomTemplate()
+  };
+}
+
 export function shouldShowStatusBarReading(): boolean {
   const displayTarget = getDisplayTarget();
   return displayTarget === 'statusBar' || displayTarget === 'both';
@@ -145,6 +175,7 @@ export function getSettings(): ReadOnBushSettings {
     terminalCamouflageLineWidth: getTerminalCamouflageLineWidth(),
     terminalCamouflageLineCount: getTerminalCamouflageLineCount(),
     terminalCamouflageStyle: getTerminalCamouflageStyle(),
+    terminalCamouflageCustomTemplate: getTerminalCamouflageCustomTemplate(),
     bookListGroupBy: getBookListGroupBy()
   };
 }

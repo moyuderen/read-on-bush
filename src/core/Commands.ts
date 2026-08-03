@@ -17,6 +17,7 @@ export enum Commands {
   Stop = 'readOnBush.stop',
   OpenTerminalCamouflage = 'readOnBush.openTerminalCamouflage',
   ToggleTerminalCamouflage = 'readOnBush.toggleTerminalCamouflage',
+  OpenCustomTemplateEditor = 'readOnBush.openCustomTemplateEditor',
 
   EpubNext = 'readOnBush.epub.next',
   EpubPrev = 'readOnBush.epub.prev',

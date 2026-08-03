@@ -1,13 +1,13 @@
 # Read On Bush
 
-Read On Bush 是一个适合在 VS Code 中低调阅读 txt / epub / pdf 小说的扩展。你可以把阅读内容展示在状态栏，也可以打开“终端伪装”窗口，把正文混入构建日志、Claude Code CLI 或服务日志风格的输出中；同时内置书架管理、目录批量导入、分类/目录分组、进度跳转、EPUB 章节阅读、PDF 分页阅读（含图片预览）和快捷键阅读模式，导入 mobi/azw3 时还会引导你转为 epub。
+Read On Bush 是一个适合在 VS Code 中低调阅读 txt / epub / pdf 小说的扩展。你可以把阅读内容展示在状态栏，也可以打开“终端伪装”窗口，把正文混入构建日志、Claude Code CLI、服务日志或**自定义 JSON 模板**风格的输出中；同时内置书架管理、目录批量导入、分类/目录分组、进度跳转、EPUB 章节阅读、PDF 分页阅读（含图片预览）和快捷键阅读模式，导入 mobi/azw3 时还会引导你转为 epub。
 
 > 当前支持 `.txt`、`.epub` 与 `.pdf` 文件。
 
 ## 功能亮点
 
 - **状态栏阅读**：在 VS Code 状态栏显示当前阅读片段，支持上一行、下一行、跳转和进度展示。
-- **终端伪装阅读**：在终端样式的 Webview 中阅读，可选择构建日志、Claude Code CLI、后端服务日志等伪装风格。
+- **终端伪装阅读**：在终端样式的 Webview 中阅读，可选择构建日志、Claude Code CLI、后端服务日志、Vite、Docker Compose 等伪装风格，或用自定义 JSON 模板打造专属日志长相。
 - **多显示位置**：阅读内容可仅显示在状态栏、仅显示在终端伪装窗口，或两处同时显示。
 - **书架管理**：支持导入单本 txt、按目录批量导入、刷新书架、删除、重命名、设置/清除分类。
 - **书架整理**：支持排序，并可按无分组、分类、文件目录三种方式展示书架。
@@ -71,13 +71,40 @@ Read On Bush 是一个适合在 VS Code 中低调阅读 txt / epub / pdf 小说�
 
 执行命令 **Read On Bush: 打开终端伪装** 可以打开终端伪装窗口；执行 **Read On Bush: 切换终端伪装** 可以切换显示状态。
 
-终端伪装支持三种输出风格：
+终端伪装支持六种输出风格：
 
 - **buildLog**：构建 / Watch 日志样式
 - **claudeCli**：Claude Code CLI 风格
 - **serverLog**：后端服务日志样式
 - **vite**：Vite 开发服务器样式
 - **docker**：Docker Compose 日志样式
+- **custom**：使用自定义 JSON 模板
+
+执行命令 **Read On Bush: 配置自定义终端模板** 可以打开可视化编辑器。页面提供默认示例、实时终端预览（带 Header / 正文 / Trailing / Done 区段标注）、模板 JSON 和完整 `settings.json` 配置；点击“保存并启用”会写入配置并自动切换到 `custom`。将 `terminalCamouflageStyle` 切换为 `custom` 时也会自动打开该编辑器。自定义模板支持静态头尾日志、正文前缀、安全颜色和完成行中的 `{{progress}}` 占位符，不支持脚本、原始 ANSI 或 Claude CLI 式动态底栏。
+
+示例模板：
+
+```json
+{
+  "version": 1,
+  "terminalName": "dev server",
+  "contentPrefix": "INFO  ",
+  "header": [
+    { "text": "npm run dev", "style": "blue" },
+    "",
+    { "text": "INFO  Server listening on http://localhost:3000", "style": "green" }
+  ],
+  "trailing": [
+    "",
+    { "text": "INFO  Background worker heartbeat ok", "style": "green" }
+  ],
+  "done": { "text": "INFO  request completed{{progress}}", "style": "green" },
+  "debugContent": [
+    { "text": "INFO  GET /api/workspaces 200 14ms", "style": "green" },
+    { "text": "WARN  slow query detected duration=42ms", "style": "yellow" }
+  ]
+}
+```
 
 可以通过配置调整终端伪装中的正文行数和每行宽度；宽度设置为 `0` 时，会根据终端窗口宽度自动计算。
 
@@ -159,6 +186,7 @@ Read On Bush 原生支持 `.txt`、`.epub` 与 `.pdf`。导入 `mobi` / `azw3` �
 | `readOnBush.switchCodingMode` | 禁用阅读快捷键 |
 | `readOnBush.openTerminalCamouflage` | 打开终端伪装 |
 | `readOnBush.toggleTerminalCamouflage` | 切换终端伪装 |
+| `readOnBush.openCustomTemplateEditor` | 配置自定义终端模板（可视化编辑器） |
 | `readOnBush.import` | 导入单本书籍 |
 | `readOnBush.importDirectory` | 按目录导入书籍 |
 | `readOnBush.refreshBookList` | 刷新书架 |
@@ -190,7 +218,8 @@ Read On Bush 原生支持 `.txt`、`.epub` 与 `.pdf`。导入 `mobi` / `azw3` �
 | `readOnBush.displayTarget` | `statusBar` | 阅读内容显示位置：状态栏、终端伪装或两者同时显示 |
 | `readOnBush.terminalCamouflageLineWidth` | `0` | 终端伪装中每行正文最大宽度，`0` 表示自动计算 |
 | `readOnBush.terminalCamouflageLineCount` | `3` | 终端伪装中展示的正文行数 |
-| `readOnBush.terminalCamouflageStyle` | `claudeCli` | 终端伪装输出样式：`buildLog`、`claudeCli`、`serverLog`、`vite`、`docker` |
+| `readOnBush.terminalCamouflageStyle` | `claudeCli` | 终端伪装输出样式：`buildLog`、`claudeCli`、`serverLog`、`vite`、`docker`、`custom` |
+| `readOnBush.terminalCamouflageCustomTemplate` | `null` | `custom` 样式使用的单个 JSON 模板，建议通过“配置自定义终端模板”命令生成 |
 | `readOnBush.bookListGroupBy` | `none` | 书架分组方式：`none`、`category`、`directory` |
 
 ## 5. 阅读模式说明
