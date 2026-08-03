@@ -1,15 +1,15 @@
 import { commands, EventEmitter, window } from 'vscode';
 import type { ExtensionContext, Pseudoterminal, Terminal, TerminalDimensions } from 'vscode';
-import type { TerminalCamouflageStyle } from '../settings';
+import type { ResolvedTerminalTemplate } from './camouflageTemplates';
 import { CamouflageConcealController } from './camouflageConcealController';
 import { handleCamouflageInput } from './camouflageInput';
 import {
-  computeEffectiveLineWidth,
-  formatCamouflageScreen,
-  formatDebugCamouflageScreen,
-  formatTerminalIdleScreen,
-  getTerminalName,
-  updateTerminalStyle
+  computeResolvedEffectiveLineWidth,
+  formatResolvedCamouflageScreen,
+  formatResolvedDebugCamouflageScreen,
+  formatResolvedTerminalIdleScreen,
+  resolveBuiltinTemplate,
+  updateTerminalTemplate
 } from './camouflageRender';
 
 /**
@@ -46,7 +46,7 @@ export class PaginatedTerminalDisplay implements Pseudoterminal {
   private terminal?: Terminal;
   private dimensions?: TerminalDimensions;
   private book?: PaginatedBook;
-  private style: TerminalCamouflageStyle = 'buildLog';
+  private template: ResolvedTerminalTemplate = resolveBuiltinTemplate('buildLog');
   private lineWidth = 0;
   private lineCount = 3;
   private pendingOutput?: string;
@@ -67,19 +67,23 @@ export class PaginatedTerminalDisplay implements Pseudoterminal {
 
   bind(
     book: PaginatedBook,
-    style: TerminalCamouflageStyle,
+    template: ResolvedTerminalTemplate,
     lineWidth: number,
     lineCount: number
   ): void {
     this.book = book;
-    this.updateStyle(style);
+    this.updateTemplate(template);
     this.lineWidth = lineWidth;
     this.lineCount = lineCount;
     this.concealController.reset();
   }
 
-  updateSettings(style: TerminalCamouflageStyle, lineWidth: number, lineCount: number): void {
-    this.updateStyle(style);
+  updateSettings(
+    template: ResolvedTerminalTemplate,
+    lineWidth: number,
+    lineCount: number
+  ): void {
+    this.updateTemplate(template);
     this.lineWidth = lineWidth;
     this.lineCount = lineCount;
   }
@@ -87,11 +91,15 @@ export class PaginatedTerminalDisplay implements Pseudoterminal {
   unbind(): void {
     this.book = undefined;
     this.concealController.reset();
-    this.write(formatTerminalIdleScreen(this.style));
+    this.write(formatResolvedTerminalIdleScreen(this.template));
   }
 
   getEffectiveLineWidth(): number {
-    return computeEffectiveLineWidth(this.lineWidth, this.dimensions?.columns, this.style);
+    return computeResolvedEffectiveLineWidth(
+      this.lineWidth,
+      this.dimensions?.columns,
+      this.template
+    );
   }
 
   getLineCount(): number {
@@ -104,7 +112,7 @@ export class PaginatedTerminalDisplay implements Pseudoterminal {
 
   open(): void {
     this.opened = true;
-    this.writeEmitter.fire(this.pendingOutput || formatTerminalIdleScreen(this.style));
+    this.writeEmitter.fire(this.pendingOutput || formatResolvedTerminalIdleScreen(this.template));
     this.pendingOutput = undefined;
   }
 
@@ -141,8 +149,8 @@ export class PaginatedTerminalDisplay implements Pseudoterminal {
 
     if (contentMode === 'debugTemplate') {
       this.write(
-        formatDebugCamouflageScreen(
-          this.style,
+        formatResolvedDebugCamouflageScreen(
+          this.template,
           effectiveWidth,
           this.lineCount,
           this.dimensions?.columns
@@ -155,7 +163,12 @@ export class PaginatedTerminalDisplay implements Pseudoterminal {
     const progressLabel =
       screen.images.length > 0 ? `${screen.progressLabel} · [图 i]` : screen.progressLabel;
     this.write(
-      formatCamouflageScreen(this.style, screen.lines, progressLabel, this.dimensions?.columns)
+      formatResolvedCamouflageScreen(
+        this.template,
+        screen.lines,
+        progressLabel,
+        this.dimensions?.columns
+      )
     );
   }
 
@@ -164,7 +177,7 @@ export class PaginatedTerminalDisplay implements Pseudoterminal {
     if (this.book) {
       this.render();
     } else {
-      this.write(formatTerminalIdleScreen(this.style));
+      this.write(formatResolvedTerminalIdleScreen(this.template));
     }
   }
 
@@ -195,10 +208,10 @@ export class PaginatedTerminalDisplay implements Pseudoterminal {
     }
   }
 
-  private updateStyle(style: TerminalCamouflageStyle): void {
-    this.style = updateTerminalStyle(
-      this.style,
-      style,
+  private updateTemplate(template: ResolvedTerminalTemplate): void {
+    this.template = updateTerminalTemplate(
+      this.template,
+      template,
       this.terminal ? (title) => this.write(title) : undefined
     );
   }
@@ -212,8 +225,8 @@ export class PaginatedTerminalDisplay implements Pseudoterminal {
 
     if (this.concealController.mode === 'debugTemplate') {
       this.write(
-        formatDebugCamouflageScreen(
-          this.style,
+        formatResolvedDebugCamouflageScreen(
+          this.template,
           this.getEffectiveLineWidth(),
           this.lineCount,
           this.dimensions?.columns
@@ -222,7 +235,7 @@ export class PaginatedTerminalDisplay implements Pseudoterminal {
       return;
     }
 
-    this.write(formatTerminalIdleScreen(this.style));
+    this.write(formatResolvedTerminalIdleScreen(this.template));
   }
 
   private ensureTerminal(): void {
@@ -230,7 +243,10 @@ export class PaginatedTerminalDisplay implements Pseudoterminal {
       this.terminal.show(true);
       return;
     }
-    this.terminal = window.createTerminal({ name: getTerminalName(this.style), pty: this });
+    this.terminal = window.createTerminal({
+      name: this.template.template.terminalName,
+      pty: this
+    });
     this.context.subscriptions.push(this.terminal);
     this.terminal.show(true);
   }

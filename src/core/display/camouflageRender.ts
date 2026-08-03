@@ -1,7 +1,8 @@
-import type { TerminalCamouflageStyle } from '../settings';
+import type { BuiltinTerminalCamouflageStyle } from '../settings';
 import { createBuiltinTemplates } from './camouflageTemplates';
 import { KEYS_HINT } from './camouflageTemplates/keys';
-import type { TerminalTemplate } from './camouflageTemplates';
+import { SAFE_SGR_CODE_ALTERNATION } from './camouflageTemplates';
+import type { ResolvedTerminalTemplate, TerminalTemplate } from './camouflageTemplates';
 export { KEYS_HINT } from './camouflageTemplates/keys';
 
 // 共享的纯视觉原语：日志模板、折行、宽度计算、拼屏。
@@ -14,38 +15,43 @@ export const fallbackContentWidth = 80;
 
 export type TerminalCamouflageContentMode = 'real' | 'debugTemplate';
 
-const builtinTemplates: Record<TerminalCamouflageStyle, TerminalTemplate> = createBuiltinTemplates({
+const builtinTemplates: Record<BuiltinTerminalCamouflageStyle, TerminalTemplate> = createBuiltinTemplates({
   fallbackContentWidth,
   getTextWidth,
   fitLineToWidth,
   joinLeftAndRight
 });
 
-export function getTemplate(style: TerminalCamouflageStyle): TerminalTemplate {
+export function getBuiltinTemplate(style: BuiltinTerminalCamouflageStyle): TerminalTemplate {
   return builtinTemplates[style];
 }
 
-export function getTerminalName(style: TerminalCamouflageStyle): string {
-  return getTemplate(style).terminalName;
+export function resolveBuiltinTemplate(
+  style: BuiltinTerminalCamouflageStyle
+): ResolvedTerminalTemplate {
+  return {
+    key: `builtin:${style}`,
+    requestedStyle: style,
+    template: getBuiltinTemplate(style)
+  };
 }
 
-export function formatTerminalTitle(style: TerminalCamouflageStyle): string {
-  return `\x1b]0;${getTerminalName(style)}\x07`;
+export function formatResolvedTerminalTitle(resolved: ResolvedTerminalTemplate): string {
+  return `\x1b]0;${resolved.template.terminalName}\x07`;
 }
 
-export function updateTerminalStyle(
-  currentStyle: TerminalCamouflageStyle,
-  nextStyle: TerminalCamouflageStyle,
+export function updateTerminalTemplate(
+  currentTemplate: ResolvedTerminalTemplate,
+  nextTemplate: ResolvedTerminalTemplate,
   writeTitle?: (title: string) => void
-): TerminalCamouflageStyle {
-  if (currentStyle !== nextStyle) {
-    writeTitle?.(formatTerminalTitle(nextStyle));
+): ResolvedTerminalTemplate {
+  if (currentTemplate.template.terminalName !== nextTemplate.template.terminalName) {
+    writeTitle?.(formatResolvedTerminalTitle(nextTemplate));
   }
-
-  return nextStyle;
+  return nextTemplate;
 }
 
-const wrappedDebugLinesCache = new Map<string, string[]>();
+const wrappedDebugLinesCache = new WeakMap<TerminalTemplate, Map<number, string[]>>();
 
 export function sanitizeContent(content: string): string {
   return stripUnsafeTerminalControls(content)
@@ -120,40 +126,39 @@ function readAnsiSgrAt(content: string, index: number): string | undefined {
     return undefined;
   }
 
-  const match = /^\x1b\[(?:0|2|31|32|33|34|35|36)m/.exec(content.slice(index));
+  const match = SAFE_SGR_PREFIX_RE.exec(content.slice(index));
   return match?.[0];
 }
 
-export function getDebugContentLines(
-  style: TerminalCamouflageStyle,
+export function getResolvedDebugContentLines(
+  resolved: ResolvedTerminalTemplate,
   lineWidth: number,
   lineCount: number
 ): string[] {
   return ensureLineCount(
-    getWrappedDebugContentLines(style, lineWidth),
+    getWrappedDebugContentLines(resolved.template, lineWidth),
     Math.max(lineCount, 1)
   );
 }
 
-export function formatDebugCamouflageScreen(
-  style: TerminalCamouflageStyle,
+export function formatResolvedDebugCamouflageScreen(
+  resolved: ResolvedTerminalTemplate,
   lineWidth: number,
   lineCount: number,
   columns?: number
 ): string {
   return formatCamouflageScreenInternal(
-    style,
-    getDebugContentLines(style, lineWidth, lineCount),
+    resolved.template,
+    getResolvedDebugContentLines(resolved, lineWidth, lineCount),
     '',
     columns,
     sanitizeTrustedTemplateContent
   );
 }
 
-export function formatTerminalIdleScreen(style: TerminalCamouflageStyle = 'buildLog'): string {
-  const template = getTemplate(style);
+export function formatResolvedTerminalIdleScreen(resolved: ResolvedTerminalTemplate): string {
+  const { template } = resolved;
   const lines = [...template.header, ...template.trailing, template.done('')];
-
   return `${clearScreen}${lines.join('\r\n')}`;
 }
 
@@ -163,14 +168,14 @@ export function formatTerminalIdleScreen(style: TerminalCamouflageStyle = 'build
  * columns 透传给模板底部区块，用于需要自适应排版的模版。
  * 普通模版使用默认底部区块，特殊模版可以完全接管底部内容。
  */
-export function formatCamouflageScreen(
-  style: TerminalCamouflageStyle,
+export function formatResolvedCamouflageScreen(
+  resolved: ResolvedTerminalTemplate,
   contentLines: string[],
   progressLabel: string,
   columns?: number
 ): string {
   return formatCamouflageScreenInternal(
-    style,
+    resolved.template,
     contentLines,
     progressLabel,
     columns,
@@ -179,14 +184,13 @@ export function formatCamouflageScreen(
 }
 
 function formatCamouflageScreenInternal(
-  style: TerminalCamouflageStyle,
+  template: TerminalTemplate,
   contentLines: string[],
   progressLabel: string,
   columns: number | undefined,
   sanitizeLine: (content: string) => string
 ): string {
-  const template = getTemplate(style);
-  const indent = ' '.repeat(template.contentPrefix.length);
+  const indent = ' '.repeat(getTextWidth(template.contentPrefix));
   const progress = stripUnsafeTerminalControls(progressLabel);
   const bottomLines = template.bottom?.(progress, columns) ?? [
     template.done(progress, columns),
@@ -210,14 +214,14 @@ function formatCamouflageScreenInternal(
  * 有效正文宽度：综合配置值、终端列数与当前样式前缀宽度。
  * 前缀宽度直接取自模版，不再另存一份。
  */
-export function computeEffectiveLineWidth(
+export function computeResolvedEffectiveLineWidth(
   lineWidth: number,
   columns: number | undefined,
-  style: TerminalCamouflageStyle
+  resolved: ResolvedTerminalTemplate
 ): number {
-  const prefixLength = getTemplate(style).contentPrefix.length;
+  const prefixWidth = getTextWidth(resolved.template.contentPrefix);
   const terminalContentWidth = columns
-    ? columns - prefixLength - 2
+    ? columns - prefixWidth - 2
     : fallbackContentWidth;
   const maxContentWidth = Math.max(minContentWidth, terminalContentWidth);
 
@@ -263,17 +267,20 @@ function fitLineToWidth(content: string, width: number): string {
   return result;
 }
 
-function getWrappedDebugContentLines(style: TerminalCamouflageStyle, lineWidth: number): string[] {
+function getWrappedDebugContentLines(template: TerminalTemplate, lineWidth: number): string[] {
   const width = Math.max(lineWidth, minContentWidth);
-  const cacheKey = `${style}:${width}`;
-  const cachedLines = wrappedDebugLinesCache.get(cacheKey);
-
+  let widthCache = wrappedDebugLinesCache.get(template);
+  if (!widthCache) {
+    widthCache = new Map<number, string[]>();
+    wrappedDebugLinesCache.set(template, widthCache);
+  }
+  const cachedLines = widthCache.get(width);
   if (cachedLines) {
     return cachedLines;
   }
 
-  const lines = getTemplate(style).debugContent.flatMap((line) => splitTrustedTemplateContent(line, width));
-  wrappedDebugLinesCache.set(cacheKey, lines);
+  const lines = template.debugContent.flatMap((line) => splitTrustedTemplateContent(line, width));
+  widthCache.set(width, lines);
   return lines;
 }
 
@@ -292,7 +299,11 @@ function ensureLineCount(lines: string[], lineCount: number): string[] {
 
 const OSC_SEQUENCE_RE = /\x1b\][^\x07]*(?:\x07|\x1b\\)/g;
 const ALL_CSI_SEQUENCE_RE = /\x1b\[[0-?]*[ -/]*[@-~]/g;
-const UNSAFE_TEMPLATE_CSI_SEQUENCE_RE = /\x1b\[(?!(?:0|2|31|32|33|34|35|36)m)[0-?]*[ -/]*[@-~]/g;
+const SAFE_SGR_PREFIX_RE = new RegExp(`^\\x1b\\[(?:${SAFE_SGR_CODE_ALTERNATION})m`);
+const UNSAFE_TEMPLATE_CSI_SEQUENCE_RE = new RegExp(
+  `\\x1b\\[(?!(?:${SAFE_SGR_CODE_ALTERNATION})m)[0-?]*[ -/]*[@-~]`,
+  'g'
+);
 const CONTROL_CHARS_RE = /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]/g;
 const TRUSTED_TEMPLATE_CONTROL_CHARS_RE = /[\x00-\x08\x0b\x0c\x0e-\x1a\x1c-\x1f\x7f-\x9f]/g;
 
@@ -303,7 +314,7 @@ function stripTerminalControls(content: string, csiPattern: RegExp, controlPatte
     .replace(controlPattern, '');
 }
 
-function sanitizeTrustedTemplateContent(content: string): string {
+export function sanitizeTrustedTemplateContent(content: string): string {
   return stripTerminalControls(content, UNSAFE_TEMPLATE_CSI_SEQUENCE_RE, TRUSTED_TEMPLATE_CONTROL_CHARS_RE);
 }
 

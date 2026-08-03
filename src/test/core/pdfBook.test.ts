@@ -1,6 +1,9 @@
 import * as assert from 'assert';
 import { PdfBook } from '../../core/PdfBook';
-import { formatCamouflageScreen } from '../../core/display/camouflageRender';
+import {
+  formatResolvedCamouflageScreen,
+  resolveBuiltinTemplate
+} from '../../core/display/camouflageRender';
 import type { BookData, PdfProgress } from '../../domain/books';
 import type { ReadBook } from '../../core/ReadBook';
 import type { PdfExtraction } from '../../core/parsers/PdfExtractor';
@@ -66,7 +69,11 @@ suite('PdfBook paginated reading', () => {
     };
     const pdfBook = new PdfBook(createBook(), app, dirty);
     const screen = pdfBook.getScreen(4, 2);
-    const rendered = formatCamouflageScreen('buildLog', screen.lines, screen.progressLabel);
+    const rendered = formatResolvedCamouflageScreen(
+      resolveBuiltinTemplate('buildLog'),
+      screen.lines,
+      screen.progressLabel
+    );
     assert.strictEqual(rendered.slice(4).includes('\x1b[2J'), false);
   });
 

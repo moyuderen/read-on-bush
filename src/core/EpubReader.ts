@@ -19,7 +19,7 @@ import { ImagePreviewPanel } from './display/imagePanel';
 import {
   getTerminalCamouflageLineCount,
   getTerminalCamouflageLineWidth,
-  getTerminalCamouflageStyle
+  getTerminalCamouflageTemplateSettings
 } from './settings';
 
 /**
@@ -67,7 +67,7 @@ export class EpubReader {
       this.epubBook = new EpubBook(syncedBook, this.app, extraction);
       this.terminal.bind(
         this.epubBook,
-        getTerminalCamouflageStyle(),
+        this.app.templateService.resolve(getTerminalCamouflageTemplateSettings()),
         getTerminalCamouflageLineWidth(),
         getTerminalCamouflageLineCount()
       );
@@ -202,7 +202,7 @@ export class EpubReader {
       return;
     }
     this.terminal.updateSettings(
-      getTerminalCamouflageStyle(),
+      this.app.templateService.resolve(getTerminalCamouflageTemplateSettings()),
       getTerminalCamouflageLineWidth(),
       getTerminalCamouflageLineCount()
     );

@@ -6,6 +6,25 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-08-03
+
+### Added
+
+- 终端伪装新增 `custom` 样式：支持通过单个 JSON 对象自定义普通日志模板（终端名称、正文前缀、header/trailing/debugContent、完成行），并提供安全颜色枚举与 `{{progress}}` 进度占位符。
+- 新增可视化模板编辑器：执行 **Read On Bush: 配置自定义终端模板** 打开 Webview，提供默认示例、表单编辑、实时终端预览（标注各配置区段）、只读模板 JSON 与 `settings.json` 配置，支持保存启用、复制 JSON 与恢复示例；将 `terminalCamouflageStyle` 切换为 `custom` 时会自动打开该编辑器。
+- 自定义模板同时作用于 TXT / EPUB / PDF 三种格式的伪装终端。
+
+### Changed
+
+- 渲染层统一改为基于「已解析模板」工作，支持宽字符（中文）正文前缀，自定义模板更新后正确刷新终端标题与调试占位缓存。
+- 终端伪装的安全 SGR 调色板收敛为单一事实源（`STYLE_SGR_ENTRIES`），编译、预览解析与清洗规则统一派生。
+- 扩展改为启动后激活（`onStartupFinished`），确保切换到 `custom` 时能可靠打开模板编辑器。
+
+### Fixed
+
+- 修复自定义模板完成行在进度文案含 `$&` / `$'` / `` $` `` 时被当作 `$`-替换模式，导致 `{{progress}}` 字面量泄漏并破坏输出的问题。
+- 修复有工作区配置覆盖时「保存并启用」写入用户配置被静默遮蔽、保存不生效的问题（改为写入当前生效作用域）。
+
 ## [2.3.1] - 2026-07-31
 
 ### Changed

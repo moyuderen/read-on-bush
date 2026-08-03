@@ -17,7 +17,7 @@ import { ImagePreviewPanel } from './display/imagePanel';
 import {
   getTerminalCamouflageLineCount,
   getTerminalCamouflageLineWidth,
-  getTerminalCamouflageStyle
+  getTerminalCamouflageTemplateSettings
 } from './settings';
 
 /**
@@ -68,7 +68,7 @@ export class PdfReader {
       this.pdfBook = new PdfBook(syncedBook, this.app, extraction);
       this.terminal.bind(
         this.pdfBook,
-        getTerminalCamouflageStyle(),
+        this.app.templateService.resolve(getTerminalCamouflageTemplateSettings()),
         getTerminalCamouflageLineWidth(),
         getTerminalCamouflageLineCount()
       );
@@ -209,7 +209,7 @@ export class PdfReader {
       return;
     }
     this.terminal.updateSettings(
-      getTerminalCamouflageStyle(),
+      this.app.templateService.resolve(getTerminalCamouflageTemplateSettings()),
       getTerminalCamouflageLineWidth(),
       getTerminalCamouflageLineCount()
     );

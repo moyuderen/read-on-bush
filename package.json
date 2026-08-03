@@ -2,7 +2,7 @@
   "name": "readOnBush",
   "displayName": "Read On Bush",
   "description": "在 VS Code 状态栏或终端伪装窗口低调阅读 txt / epub / pdf 小说，支持书架导入/目录批量导入、分类与目录分组、进度跳转、PDF 图片预览、快捷键模式切换和阅读体验配置；导入 mobi/azw3 时引导前往 CloudConvert 转 epub。",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "publisher": "moyuderen",
   "author": {
     "name": "moyuderen",
@@ -35,7 +35,7 @@
   "icon": "public/moyu.png",
   "activationEvents": [
     "onView:bookList",
-    "onCommand:readOnBush.openTerminalCamouflage"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -106,16 +106,208 @@
             "claudeCli",
             "serverLog",
             "vite",
-            "docker"
+            "docker",
+            "custom"
           ],
           "enumDescriptions": [
             "构建/Watch 日志样式",
             "Claude Code CLI 风格",
             "后端服务日志样式",
             "Vite 开发服务器样式",
-            "Docker Compose 日志样式"
+            "Docker Compose 日志样式",
+            "使用自定义 JSON 模板"
           ],
           "description": "终端伪装的输出样式"
+        },
+        "readOnBush.terminalCamouflageCustomTemplate": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "default": null,
+          "description": "自定义终端伪装模板，仅在 terminalCamouflageStyle 为 custom 时生效。建议使用“Read On Bush: 配置自定义终端模板”生成",
+          "required": [
+            "version",
+            "terminalName",
+            "contentPrefix",
+            "header",
+            "trailing",
+            "done",
+            "debugContent"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "version": {
+              "type": "number",
+              "enum": [
+                1
+              ],
+              "description": "模板格式版本"
+            },
+            "terminalName": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80,
+              "description": "终端标签名称"
+            },
+            "contentPrefix": {
+              "type": "string",
+              "maxLength": 100,
+              "description": "阅读正文首行前缀"
+            },
+            "header": {
+              "type": "array",
+              "maxItems": 100,
+              "description": "阅读正文前显示的日志行",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "text"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "text": {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      "style": {
+                        "type": "string",
+                        "enum": [
+                          "plain",
+                          "dim",
+                          "red",
+                          "green",
+                          "yellow",
+                          "blue",
+                          "magenta",
+                          "cyan"
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "trailing": {
+              "type": "array",
+              "maxItems": 100,
+              "description": "阅读正文后显示的日志行",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "text"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "text": {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      "style": {
+                        "type": "string",
+                        "enum": [
+                          "plain",
+                          "dim",
+                          "red",
+                          "green",
+                          "yellow",
+                          "blue",
+                          "magenta",
+                          "cyan"
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "done": {
+              "description": "完成/进度行，text 中仅支持 {{progress}} 占位符",
+              "oneOf": [
+                {
+                  "type": "string",
+                  "maxLength": 1000
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "text"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "maxLength": 1000
+                    },
+                    "style": {
+                      "type": "string",
+                      "enum": [
+                        "plain",
+                        "dim",
+                        "red",
+                        "green",
+                        "yellow",
+                        "blue",
+                        "magenta",
+                        "cyan"
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            "debugContent": {
+              "type": "array",
+              "maxItems": 100,
+              "description": "快速隐藏或调试模式中显示的伪装正文",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "text"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "text": {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      "style": {
+                        "type": "string",
+                        "enum": [
+                          "plain",
+                          "dim",
+                          "red",
+                          "green",
+                          "yellow",
+                          "blue",
+                          "magenta",
+                          "cyan"
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
         },
         "readOnBush.bookListGroupBy": {
           "type": "string",
@@ -173,6 +365,11 @@
       {
         "command": "readOnBush.toggleTerminalCamouflage",
         "title": "切换终端伪装",
+        "category": "Read On Bush"
+      },
+      {
+        "command": "readOnBush.openCustomTemplateEditor",
+        "title": "配置自定义终端模板",
         "category": "Read On Bush"
       },
       {
