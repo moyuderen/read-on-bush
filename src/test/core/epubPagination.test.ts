@@ -31,4 +31,22 @@ suite('epubPagination terminal safety', () => {
     assert.strictEqual(screen.slice(4).includes('\x1b[2J'), false);
     assert.strictEqual(screen.includes('第 1 章 · 全书 0%'), true);
   });
+
+  test('progress labels can hide chapter titles while keeping the book percentage', () => {
+    const extraction: EpubExtraction = {
+      bookTitle: 'book',
+      chapters: [{ title: '第 1 章', text: 'content', images: [] }]
+    };
+
+    const label = buildProgressLabel(
+      extraction,
+      { chapterIndex: 0, charOffset: 0 },
+      [0],
+      10,
+      false
+    );
+
+    assert.strictEqual(label, '  全书 0%');
+    assert.strictEqual(label.includes('第 1 章'), false);
+  });
 });

@@ -151,18 +151,22 @@ export function buildProgressLabel(
   extraction: EpubExtraction,
   progress: EpubProgress,
   chapterStartOffsets: readonly number[],
-  totalChars: number
+  totalChars: number,
+  showChapterTitle = true
 ): string {
+  const read = (chapterStartOffsets[progress.chapterIndex] ?? 0) + progress.charOffset;
+  const percent = totalChars > 0 ? Math.round((read / totalChars) * 100) : 0;
+  const clamped = Math.min(Math.max(percent, 0), 100);
+  if (!showChapterTitle) {
+    return `  全书 ${clamped}%`;
+  }
+
   const { chapters } = extraction;
   const lastIndex = Math.max(chapters.length - 1, 0);
   const chapterIndex = Math.min(Math.max(progress.chapterIndex, 0), lastIndex);
   const chapter = chapters[chapterIndex];
   const title = chapter ? truncateChapterTitle(chapter.title) : '';
   const chapterPart = title || `第 ${chapterIndex + 1} 章`;
-  const read = (chapterStartOffsets[chapterIndex] ?? 0) + progress.charOffset;
-  const percent = totalChars > 0 ? Math.round((read / totalChars) * 100) : 0;
-  const clamped = Math.min(Math.max(percent, 0), 100);
-
   return `  ${chapterPart} · 全书 ${clamped}%`;
 }
 

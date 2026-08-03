@@ -28,6 +28,7 @@ export type ReadOnBushSettings = {
   autoRefreshBookList: boolean;
   statusBarPrefix: string;
   showProgress: boolean;
+  showChapterTitle: boolean;
   displayTarget: ReadingDisplayTarget;
   terminalCamouflageLineWidth: number;
   terminalCamouflageLineCount: number;
@@ -42,6 +43,7 @@ export const defaultSettings: ReadOnBushSettings = {
   autoRefreshBookList: false,
   statusBarPrefix: '',
   showProgress: true,
+  showChapterTitle: true,
   displayTarget: 'statusBar',
   terminalCamouflageLineWidth: 0,
   terminalCamouflageLineCount: 3,
@@ -108,6 +110,10 @@ export function getShowProgress(): boolean {
   return getConfigurationValue('showProgress');
 }
 
+export function getShowChapterTitle(): boolean {
+  return getConfigurationValue('showChapterTitle');
+}
+
 export function getDisplayTarget(): ReadingDisplayTarget {
   return normalizeDisplayTarget(getConfigurationValue('displayTarget'));
 }
@@ -171,6 +177,7 @@ export function getSettings(): ReadOnBushSettings {
     autoRefreshBookList: getAutoRefreshBookList(),
     statusBarPrefix: getStatusBarPrefix(),
     showProgress: getShowProgress(),
+    showChapterTitle: getShowChapterTitle(),
     displayTarget: getDisplayTarget(),
     terminalCamouflageLineWidth: getTerminalCamouflageLineWidth(),
     terminalCamouflageLineCount: getTerminalCamouflageLineCount(),

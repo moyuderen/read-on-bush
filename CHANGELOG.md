@@ -6,6 +6,16 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.4.1] - 2026-08-03
+
+### Added
+
+- 新增 `readOnBush.showChapterTitle` 配置，默认显示 EPUB / PDF 终端伪装中的章节或页面名称，也可仅保留全书阅读进度。
+
+### Changed
+
+- 将章节名称显示控制从分页内容中抽离，配置变更时实时刷新 EPUB / PDF 终端伪装。
+
 ## [2.4.0] - 2026-08-03
 
 ### Added

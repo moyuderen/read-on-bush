@@ -215,6 +215,7 @@ Read On Bush 原生支持 `.txt`、`.epub` 与 `.pdf`。导入 `mobi` / `azw3` �
 | `readOnBush.autoRefreshBookList` | `false` | 是否尝试自动刷新书架 |
 | `readOnBush.statusBarPrefix` | `""` | 状态栏内容前缀 |
 | `readOnBush.showProgress` | `true` | 是否显示阅读进度 |
+| `readOnBush.showChapterTitle` | `true` | 是否在终端伪装的阅读进度中显示章节名称 |
 | `readOnBush.displayTarget` | `statusBar` | 阅读内容显示位置：状态栏、终端伪装或两者同时显示 |
 | `readOnBush.terminalCamouflageLineWidth` | `0` | 终端伪装中每行正文最大宽度，`0` 表示自动计算 |
 | `readOnBush.terminalCamouflageLineCount` | `3` | 终端伪装中展示的正文行数 |
