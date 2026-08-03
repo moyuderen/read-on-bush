@@ -72,7 +72,7 @@ suite('PdfBook paginated reading', () => {
     const rendered = formatResolvedCamouflageScreen(
       resolveBuiltinTemplate('buildLog'),
       screen.lines,
-      screen.progressLabel
+      pdfBook.getProgressLabel()
     );
     assert.strictEqual(rendered.slice(4).includes('\x1b[2J'), false);
   });
@@ -133,7 +133,7 @@ suite('PdfBook paginated reading', () => {
     assert.strictEqual(pdfBook.next(4, 1), true);
     const emptyScreen = pdfBook.getScreen(4, 1);
     assert.deepStrictEqual(emptyScreen.lines, []);
-    assert.strictEqual(emptyScreen.progressLabel.includes('第 2 页'), true);
+    assert.strictEqual(pdfBook.getProgressLabel().includes('第 2 页'), true);
     assert.deepStrictEqual(
       emptyScreen.images.map((image) => image.pageIndex),
       [1]

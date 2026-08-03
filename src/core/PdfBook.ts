@@ -70,13 +70,14 @@ export class PdfBook {
     }
   }
 
-  /** 进度文案：页标题（第 N 页）+ 全书百分比，喂给共享的 formatCamouflageScreen。 */
-  getProgressLabel(): string {
+  /** 进度文案：页标题（可选）+ 全书百分比，喂给共享的 formatCamouflageScreen。 */
+  getProgressLabel(showChapterTitle = true): string {
     return buildProgressLabel(
       this.paginationExtraction,
       this.progress,
       this.chapterStartOffsets,
-      this.totalChars
+      this.totalChars,
+      showChapterTitle
     );
   }
 
@@ -84,13 +85,11 @@ export class PdfBook {
   getScreen(lineWidth: number, lineCount: number): {
     lines: string[];
     images: PdfImageInView[];
-    progressLabel: string;
   } {
     const { lines, endProgress } = this.screenFromCurrent(lineWidth, lineCount);
     return {
       lines,
-      images: this.collectPageImages(this.progress, endProgress),
-      progressLabel: this.getProgressLabel()
+      images: this.collectPageImages(this.progress, endProgress)
     };
   }
 

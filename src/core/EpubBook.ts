@@ -50,13 +50,14 @@ export class EpubBook {
     return this.progress;
   }
 
-  /** 进度文案：章号 + 章节标题 + 全书百分比，喂给共享的 formatCamouflageScreen。 */
-  getProgressLabel(): string {
+  /** 进度文案：章节标题（可选）+ 全书百分比，喂给共享的 formatCamouflageScreen。 */
+  getProgressLabel(showChapterTitle = true): string {
     return buildProgressLabel(
       this.extraction,
       this.progress,
       this.chapterStartOffsets,
-      this.totalChars
+      this.totalChars,
+      showChapterTitle
     );
   }
 
@@ -64,7 +65,6 @@ export class EpubBook {
   getScreen(lineWidth: number, lineCount: number): {
     lines: string[];
     images: EpubImage[];
-    progressLabel: string;
   } {
     const { lines, endProgress } = screenFrom(
       this.extraction,
@@ -75,8 +75,7 @@ export class EpubBook {
     );
     return {
       lines,
-      images: this.collectImagesInRange(this.progress, endProgress),
-      progressLabel: this.getProgressLabel()
+      images: this.collectImagesInRange(this.progress, endProgress)
     };
   }
 

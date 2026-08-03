@@ -22,12 +22,19 @@ import {
 export type PaginatedScreen = {
   lines: string[];
   images: readonly unknown[];
-  progressLabel: string;
 };
 
 export interface PaginatedBook {
   getScreen(lineWidth: number, lineCount: number): PaginatedScreen;
+  getProgressLabel(showChapterTitle?: boolean): string;
 }
+
+export type PaginatedTerminalDisplaySettings = {
+  template: ResolvedTerminalTemplate;
+  lineWidth: number;
+  lineCount: number;
+  showChapterTitle: boolean;
+};
 
 export type PaginatedCommandIds = {
   next: string;
@@ -49,6 +56,7 @@ export class PaginatedTerminalDisplay implements Pseudoterminal {
   private template: ResolvedTerminalTemplate = resolveBuiltinTemplate('buildLog');
   private lineWidth = 0;
   private lineCount = 3;
+  private showChapterTitle = true;
   private pendingOutput?: string;
   private opened = false;
   private readonly concealController: CamouflageConcealController;
@@ -65,27 +73,14 @@ export class PaginatedTerminalDisplay implements Pseudoterminal {
     });
   }
 
-  bind(
-    book: PaginatedBook,
-    template: ResolvedTerminalTemplate,
-    lineWidth: number,
-    lineCount: number
-  ): void {
+  bind(book: PaginatedBook, settings: PaginatedTerminalDisplaySettings): void {
     this.book = book;
-    this.updateTemplate(template);
-    this.lineWidth = lineWidth;
-    this.lineCount = lineCount;
+    this.applySettings(settings);
     this.concealController.reset();
   }
 
-  updateSettings(
-    template: ResolvedTerminalTemplate,
-    lineWidth: number,
-    lineCount: number
-  ): void {
-    this.updateTemplate(template);
-    this.lineWidth = lineWidth;
-    this.lineCount = lineCount;
+  updateSettings(settings: PaginatedTerminalDisplaySettings): void {
+    this.applySettings(settings);
   }
 
   unbind(): void {
@@ -160,13 +155,14 @@ export class PaginatedTerminalDisplay implements Pseudoterminal {
     }
 
     const screen = this.book.getScreen(effectiveWidth, this.lineCount);
-    const progressLabel =
-      screen.images.length > 0 ? `${screen.progressLabel} · [图 i]` : screen.progressLabel;
+    const progressLabel = this.book.getProgressLabel(this.showChapterTitle);
+    const visibleProgressLabel =
+      screen.images.length > 0 ? `${progressLabel} · [图 i]` : progressLabel;
     this.write(
       formatResolvedCamouflageScreen(
         this.template,
         screen.lines,
-        progressLabel,
+        visibleProgressLabel,
         this.dimensions?.columns
       )
     );
@@ -206,6 +202,13 @@ export class PaginatedTerminalDisplay implements Pseudoterminal {
     if (this.isRealContentMode()) {
       commands.executeCommand(command);
     }
+  }
+
+  private applySettings(settings: PaginatedTerminalDisplaySettings): void {
+    this.updateTemplate(settings.template);
+    this.lineWidth = settings.lineWidth;
+    this.lineCount = settings.lineCount;
+    this.showChapterTitle = settings.showChapterTitle;
   }
 
   private updateTemplate(template: ResolvedTerminalTemplate): void {

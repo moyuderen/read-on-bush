@@ -25,6 +25,12 @@ const displayRefreshSettingKeys: ReadOnBushSettingKey[] = [
   'terminalCamouflageLineCount',
   'terminalCamouflageStyle'
 ];
+const readingSessionRefreshSettingKeys: ReadOnBushSettingKey[] = [
+  'showChapterTitle',
+  'terminalCamouflageLineWidth',
+  'terminalCamouflageLineCount',
+  'terminalCamouflageStyle'
+];
 
 function setupConfigurationChangeHandlers(context: ExtensionContext) {
   context.subscriptions.push(
@@ -38,9 +44,14 @@ function setupConfigurationChangeHandlers(context: ExtensionContext) {
         event,
         'terminalCamouflageCustomTemplate'
       );
+      const customTemplateActive =
+        customTemplateChanged && getTerminalCamouflageStyle() === 'custom';
       const displayRefreshSettingChanged =
         displayRefreshSettingKeys.some((key) => affectsSetting(event, key)) ||
-        (customTemplateChanged && getTerminalCamouflageStyle() === 'custom');
+        customTemplateActive;
+      const readingSessionRefreshSettingChanged =
+        readingSessionRefreshSettingKeys.some((key) => affectsSetting(event, key)) ||
+        customTemplateActive;
       const lineWidthChanged = affectsSetting(event, 'lineWidth');
       const bookListGroupByChanged = affectsSetting(event, 'bookListGroupBy');
 
@@ -50,6 +61,9 @@ function setupConfigurationChangeHandlers(context: ExtensionContext) {
 
       if (displayRefreshSettingChanged) {
         app.displayManager.refresh(app.readingBook && app.readingBook.getDisplayState());
+      }
+
+      if (readingSessionRefreshSettingChanged) {
         app.readingSession.refreshSettings();
       }
 

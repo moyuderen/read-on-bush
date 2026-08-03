@@ -14,9 +14,13 @@ import {
   type EpubImage
 } from './parsers/EpubExtractor';
 import { EpubCache } from './storage/EpubCache';
-import { PaginatedTerminalDisplay } from './display/paginatedTerminalDisplay';
+import {
+  PaginatedTerminalDisplay,
+  type PaginatedTerminalDisplaySettings
+} from './display/paginatedTerminalDisplay';
 import { ImagePreviewPanel } from './display/imagePanel';
 import {
+  getShowChapterTitle,
   getTerminalCamouflageLineCount,
   getTerminalCamouflageLineWidth,
   getTerminalCamouflageTemplateSettings
@@ -65,12 +69,7 @@ export class EpubReader {
       const extraction = await this.loadExtraction(book);
       const syncedBook = this.app.bookList.syncEpubChapters(book.id, extraction) ?? book;
       this.epubBook = new EpubBook(syncedBook, this.app, extraction);
-      this.terminal.bind(
-        this.epubBook,
-        this.app.templateService.resolve(getTerminalCamouflageTemplateSettings()),
-        getTerminalCamouflageLineWidth(),
-        getTerminalCamouflageLineCount()
-      );
+      this.terminal.bind(this.epubBook, this.getTerminalSettings());
       this.terminal.reveal();
       message(`Switch to 《${book.name}》 !`);
     } catch (error) {
@@ -201,12 +200,17 @@ export class EpubReader {
     if (!this.epubBook) {
       return;
     }
-    this.terminal.updateSettings(
-      this.app.templateService.resolve(getTerminalCamouflageTemplateSettings()),
-      getTerminalCamouflageLineWidth(),
-      getTerminalCamouflageLineCount()
-    );
+    this.terminal.updateSettings(this.getTerminalSettings());
     this.terminal.render();
+  }
+
+  private getTerminalSettings(): PaginatedTerminalDisplaySettings {
+    return {
+      template: this.app.templateService.resolve(getTerminalCamouflageTemplateSettings()),
+      lineWidth: getTerminalCamouflageLineWidth(),
+      lineCount: getTerminalCamouflageLineCount(),
+      showChapterTitle: getShowChapterTitle()
+    };
   }
 
   private async loadExtraction(book: BookData): Promise<EpubExtraction> {
