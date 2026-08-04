@@ -2,11 +2,8 @@ import { window, commands, StatusBarAlignment } from 'vscode';
 import type { StatusBarItem, ExtensionContext } from 'vscode';
 import { StatusBarPriority } from '../config';
 import { Commands } from '../Commands';
-import { startBarItem } from './start';
+import { applyReadingControlVisibility } from './index';
 import { contentBarItem } from './content';
-import { prevLineBarItem } from './prevLine';
-import { nextLineBarItem } from './nextLine';
-import { jumpLineBarItem } from './jumpLine';
 import { readingModeBarItem, codingModeBarItem } from './mode';
 import { progressBarItem } from './progress';
 import { app } from '../index';
@@ -24,12 +21,8 @@ export function setupStopBarItem(context: ExtensionContext) {
   stopBarItem.show();
 
   commands.registerCommand(Commands.Stop, () => {
-    startBarItem.show();
-    stopBarItem.hide();
+    applyReadingControlVisibility(false);
     contentBarItem.hide();
-    prevLineBarItem.hide();
-    nextLineBarItem.hide();
-    jumpLineBarItem.hide();
     progressBarItem.hide();
     codingModeBarItem.show();
     readingModeBarItem.hide();

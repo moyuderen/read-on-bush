@@ -2,7 +2,7 @@ import message from '../utils/message';
 import { ReadBook } from './ReadBook';
 import type { ReadingDisplayState } from './display';
 import { createBookParser } from './parsers';
-import { getLineWidth } from './settings';
+import { getLineWidth, getTxtEncoding } from './settings';
 import type { BookData } from '../domain/books';
 
 export type { BookData, BookFormat, ChapterRef, EpubProgress, PdfProgress } from '../domain/books';
@@ -25,7 +25,10 @@ export class Book {
 
   async init() {
     try {
-      const parser = createBookParser(this.book.url, { lineWidth: getLineWidth() });
+      const parser = createBookParser(this.book.url, {
+        lineWidth: getLineWidth(),
+        encoding: getTxtEncoding()
+      });
       const contents: string[] = await parser.readContent();
       this.contents = contents;
       // 兼容 分段算法导致的文件最大值改变

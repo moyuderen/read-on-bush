@@ -35,6 +35,7 @@ export class EpubReader {
   private epubBook?: EpubBook;
   private readonly terminal: PaginatedTerminalDisplay;
   private readonly imagePreview = new ImagePreviewPanel();
+  private readonly pendingExtractions = new Map<string, Promise<EpubExtraction>>();
 
   constructor(private readonly app: ReadBook) {
     this.terminal = new PaginatedTerminalDisplay(app.context, {
@@ -216,13 +217,32 @@ export class EpubReader {
   private async loadExtraction(book: BookData): Promise<EpubExtraction> {
     const stat = await fs.promises.stat(book.url);
     const cache = EpubCache.create(this.app.context.globalStorageUri);
-    const cached = await cache.get(book.id, stat.mtimeMs);
-    if (cached) {
-      return cached;
+    const key = `${book.id}:${stat.mtimeMs}`;
+    const pending = this.pendingExtractions.get(key);
+    if (pending) {
+      return pending;
     }
-    const extraction = await extractEpub(book.url);
-    await cache.set(book.id, stat.mtimeMs, extraction);
-    return extraction;
+
+    const extractionPromise = (async () => {
+      const cached = await cache.get(book.id, stat.mtimeMs);
+      if (cached) {
+        return cached;
+      }
+      const extraction = await extractEpub(book.url);
+      // 缓存写入只服务于下次打开，不应阻塞本次阅读；失败静默（不影响阅读）。
+      void cache.set(book.id, stat.mtimeMs, extraction).catch(() => undefined);
+      return extraction;
+    })();
+
+    this.pendingExtractions.set(key, extractionPromise);
+    extractionPromise.finally(() => this.clearPendingExtraction(key, extractionPromise));
+    return extractionPromise;
+  }
+
+  private clearPendingExtraction(key: string, extraction: Promise<EpubExtraction>): void {
+    if (this.pendingExtractions.get(key) === extraction) {
+      this.pendingExtractions.delete(key);
+    }
   }
 }
 

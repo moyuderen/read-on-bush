@@ -8,13 +8,13 @@ Read On Bush 是一个适合在 VS Code 中低调阅读 txt / epub / pdf 小说�
 
 - **状态栏阅读**：在 VS Code 状态栏显示当前阅读片段，支持上一行、下一行、跳转和进度展示。
 - **终端伪装阅读**：在终端样式的 Webview 中阅读，可选择构建日志、Claude Code CLI、后端服务日志、Vite、Docker Compose 等伪装风格，或用自定义 JSON 模板打造专属日志长相。
-- **多显示位置**：阅读内容可仅显示在状态栏、仅显示在终端伪装窗口，或两处同时显示。
+- **多显示位置**：阅读内容可显示在状态栏或终端伪装窗口，通过状态栏终端图标一键切换。
 - **书架管理**：支持导入单本 txt、按目录批量导入、刷新书架、删除、重命名、设置/清除分类。
 - **书架整理**：支持排序，并可按无分组、分类、文件目录三种方式展示书架。
 - **EPUB 阅读**：导入 `.epub` 后在专属伪装终端按章节阅读，支持章节目录、跳章、跨章自动流入、阅读进度（章 + 全书百分比）与按需查看图片。
 - **PDF 阅读**：导入 `.pdf` 后在专属伪装终端按页阅读，支持页面目录、跳页、跨页自动流入、阅读进度（第 N 页 + 全书百分比）与按需查看页面内插图。
 - **格式转换引导**：导入 `mobi` / `azw3` 时自动提示并引导前往 [CloudConvert](https://cloudconvert.com) 转为 epub。
-- **阅读体验配置**：可配置状态栏片段长度、终端正文宽度/行数、状态栏前缀、是否显示进度、默认是否启用阅读快捷键等。
+- **阅读体验配置**：可配置状态栏片段长度、TXT 文件编码、终端正文宽度/行数、状态栏前缀、是否显示进度、默认是否启用阅读快捷键等。
 - **快捷键模式切换**：通过 Reading / Coding 模式切换阅读快捷键，避免编码时和常用快捷键冲突。
 
 ## 1. 使用指南
@@ -163,7 +163,7 @@ Read On Bush 原生支持 `.txt`、`.epub` 与 `.pdf`。导入 `mobi` / `azw3` �
 
 ## 2. 快捷键
 
-快捷键只会在 `readOnBush.isReadingMode == true` 时生效。你可以通过状态栏的 Reading / Coding 模式按钮随时启用或禁用阅读快捷键。
+快捷键只会在 **阅读模式开启且正在阅读 TXT 书籍** 时生效。你可以通过状态栏的 Reading / Coding 模式按钮随时启用或禁用阅读快捷键；打开 TXT 书籍后快捷键自动激活，关闭或切换到 EPUB/PDF 后自动释放，不会影响编辑器的原生行首/行尾导航。
 
 ### macOS
 
@@ -211,12 +211,13 @@ Read On Bush 原生支持 `.txt`、`.epub` 与 `.pdf`。导入 `mobi` / `azw3` �
 | 配置项 | 默认值 | 说明 |
 | --- | --- | --- |
 | `readOnBush.lineWidth` | `45` | 状态栏每个阅读片段的最大字符数 |
+| `readOnBush.txtEncoding` | `auto` | TXT 文件编码：`auto`（自动检测）、`utf-8`、`utf-16le`、`utf-16be`、`gb18030`；自动检测无法正确识别时可手动指定 |
 | `readOnBush.defaultReadingMode` | `true` | 是否默认启用阅读快捷键 |
 | `readOnBush.autoRefreshBookList` | `false` | 是否尝试自动刷新书架 |
 | `readOnBush.statusBarPrefix` | `""` | 状态栏内容前缀 |
 | `readOnBush.showProgress` | `true` | 是否显示阅读进度 |
 | `readOnBush.showChapterTitle` | `true` | 是否在终端伪装的阅读进度中显示章节名称 |
-| `readOnBush.displayTarget` | `statusBar` | 阅读内容显示位置：状态栏、终端伪装或两者同时显示 |
+| `readOnBush.displayTarget` | `statusBar` | 阅读内容显示位置：`statusBar`（状态栏）或 `terminalCamouflage`（终端伪装） |
 | `readOnBush.terminalCamouflageLineWidth` | `0` | 终端伪装中每行正文最大宽度，`0` 表示自动计算 |
 | `readOnBush.terminalCamouflageLineCount` | `3` | 终端伪装中展示的正文行数 |
 | `readOnBush.terminalCamouflageStyle` | `claudeCli` | 终端伪装输出样式：`buildLog`、`claudeCli`、`serverLog`、`vite`、`docker`、`custom` |

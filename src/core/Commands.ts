@@ -38,5 +38,6 @@ export enum Commands {
 }
 
 export enum CustomWhenClauseContext {
-  IsReadingMode = 'readOnBush.isReadingMode'
+  IsReadingMode = 'readOnBush.isReadingMode',
+  IsTxtReading = 'readOnBush.isTxtReading'
 }

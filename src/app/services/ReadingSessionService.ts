@@ -1,5 +1,8 @@
+import { commands } from 'vscode';
+import { CustomWhenClauseContext } from '../../core/Commands';
+import { updateTxtStatusBarVisibility } from '../../core/barItems';
 import message from '../../utils/message';
-import type { BookData, BookNavigationTarget } from '../../domain/books';
+import type { BookData, BookFormat, BookNavigationTarget } from '../../domain/books';
 import type { ReadBook } from '../../core/ReadBook';
 import type { BookReaderController } from '../../formats';
 
@@ -24,6 +27,7 @@ export class ReadingSessionService {
     const reader = await provider.createReader({ book, app: this.app });
     this.currentReader = reader;
     await reader.open();
+    await this.updateFormatContext(reader.format);
   }
 
   async next(): Promise<void> {
@@ -51,9 +55,22 @@ export class ReadingSessionService {
     const reader = this.currentReader;
     this.currentReader = undefined;
     await reader.close();
+    await this.updateFormatContext(undefined);
   }
 
   refreshSettings(): void {
     this.currentReader?.refreshSettings?.();
+  }
+
+  /**
+   * 同步当前阅读格式到 VS Code 上下文和状态栏可见性。
+   */
+  private async updateFormatContext(format: BookFormat | undefined): Promise<void> {
+    await commands.executeCommand(
+      'setContext',
+      CustomWhenClauseContext.IsTxtReading,
+      format === 'txt'
+    );
+    updateTxtStatusBarVisibility(format);
   }
 }

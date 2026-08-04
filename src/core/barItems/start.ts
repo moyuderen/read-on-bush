@@ -2,10 +2,7 @@ import { window, commands, StatusBarAlignment } from 'vscode';
 import type { StatusBarItem, ExtensionContext } from 'vscode';
 import { StatusBarPriority } from '../config';
 import { Commands } from '../Commands';
-import { stopBarItem } from './stop';
-import { prevLineBarItem } from './prevLine';
-import { nextLineBarItem } from './nextLine';
-import { jumpLineBarItem } from './jumpLine';
+import { applyReadingControlVisibility } from './index';
 import { app } from '../index';
 
 export let startBarItem: StatusBarItem;
@@ -21,12 +18,7 @@ export function setupStartBarItem(context: ExtensionContext) {
   startBarItem.tooltip = 'Start';
 
   commands.registerCommand(Commands.Start, () => {
-    startBarItem.hide();
-    stopBarItem.show();
-    prevLineBarItem.show();
-    nextLineBarItem.show();
-    jumpLineBarItem.show();
-
+    applyReadingControlVisibility(true);
     app.readingBook && app.readingBook.start();
   });
 }
