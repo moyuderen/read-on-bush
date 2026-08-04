@@ -3,7 +3,8 @@ import type { ConfigurationChangeEvent } from 'vscode';
 import { AppName, LineWidth } from './config';
 
 export const BOOK_LIST_GROUP_BY_OPTIONS = ['none', 'category', 'directory'] as const;
-export const READING_DISPLAY_TARGET_OPTIONS = ['statusBar', 'terminalCamouflage', 'both'] as const;
+export const READING_DISPLAY_TARGET_OPTIONS = ['statusBar', 'terminalCamouflage'] as const;
+export const TXT_ENCODING_OPTIONS = ['auto', 'utf-8', 'utf-16le', 'utf-16be', 'gb18030'] as const;
 export const BUILTIN_TERMINAL_CAMOUFLAGE_STYLE_OPTIONS = [
   'buildLog',
   'claudeCli',
@@ -18,12 +19,14 @@ export const TERMINAL_CAMOUFLAGE_STYLE_OPTIONS = [
 
 export type BookListGroupBy = (typeof BOOK_LIST_GROUP_BY_OPTIONS)[number];
 export type ReadingDisplayTarget = (typeof READING_DISPLAY_TARGET_OPTIONS)[number];
+export type TxtEncodingSetting = (typeof TXT_ENCODING_OPTIONS)[number];
 export type BuiltinTerminalCamouflageStyle =
   (typeof BUILTIN_TERMINAL_CAMOUFLAGE_STYLE_OPTIONS)[number];
 export type TerminalCamouflageStyle = (typeof TERMINAL_CAMOUFLAGE_STYLE_OPTIONS)[number];
 
 export type ReadOnBushSettings = {
   lineWidth: number;
+  txtEncoding: TxtEncodingSetting;
   defaultReadingMode: boolean;
   autoRefreshBookList: boolean;
   statusBarPrefix: string;
@@ -39,6 +42,7 @@ export type ReadOnBushSettings = {
 
 export const defaultSettings: ReadOnBushSettings = {
   lineWidth: LineWidth.Default,
+  txtEncoding: 'auto',
   defaultReadingMode: true,
   autoRefreshBookList: false,
   statusBarPrefix: '',
@@ -64,6 +68,10 @@ function normalizeNumber(value: number, fallback: number, min: number, max: numb
 
 function normalizeLineWidth(lineWidth: number): number {
   return normalizeNumber(lineWidth, defaultSettings.lineWidth, LineWidth.Min, LineWidth.Max);
+}
+
+function normalizeTxtEncoding(encoding: string): TxtEncodingSetting {
+  return normalizeEnum(encoding, TXT_ENCODING_OPTIONS, defaultSettings.txtEncoding);
 }
 
 function normalizeEnum<T extends readonly string[]>(value: string, options: T, fallback: T[number]): T[number] {
@@ -92,6 +100,10 @@ function getConfigurationValue<T extends ReadOnBushSettingKey>(key: T): ReadOnBu
 
 export function getLineWidth(): number {
   return normalizeLineWidth(getConfigurationValue('lineWidth'));
+}
+
+export function getTxtEncoding(): TxtEncodingSetting {
+  return normalizeTxtEncoding(getConfigurationValue('txtEncoding'));
 }
 
 export function getDefaultReadingMode(): boolean {
@@ -157,13 +169,11 @@ export function getTerminalCamouflageTemplateSettings(): TerminalCamouflageTempl
 }
 
 export function shouldShowStatusBarReading(): boolean {
-  const displayTarget = getDisplayTarget();
-  return displayTarget === 'statusBar' || displayTarget === 'both';
+  return getDisplayTarget() === 'statusBar';
 }
 
 export function shouldShowTerminalCamouflage(): boolean {
-  const displayTarget = getDisplayTarget();
-  return displayTarget === 'terminalCamouflage' || displayTarget === 'both';
+  return getDisplayTarget() === 'terminalCamouflage';
 }
 
 export function getBookListGroupBy(): BookListGroupBy {
@@ -173,6 +183,7 @@ export function getBookListGroupBy(): BookListGroupBy {
 export function getSettings(): ReadOnBushSettings {
   return {
     lineWidth: getLineWidth(),
+    txtEncoding: getTxtEncoding(),
     defaultReadingMode: getDefaultReadingMode(),
     autoRefreshBookList: getAutoRefreshBookList(),
     statusBarPrefix: getStatusBarPrefix(),

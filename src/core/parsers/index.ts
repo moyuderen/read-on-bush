@@ -5,8 +5,11 @@ export interface BookParser {
   readContent(): Promise<string[]>;
 }
 
+export type TxtEncoding = 'auto' | 'utf-8' | 'utf-16le' | 'utf-16be' | 'gb18030';
+
 export type BookParserOptions = {
   lineWidth?: number;
+  encoding?: TxtEncoding;
 };
 
 // txt 走 BookParser 工厂；epub/pdf/mobi/azw3 等结构化格式由各自的

@@ -3,8 +3,6 @@ import message from './utils/message';
 import { setup } from './core/index';
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Congratulations, your extension "readOnBush" is now active!');
-
   // demo
   let disposable = vscode.commands.registerCommand('readOnBush.helloWorld', () => {
     message();

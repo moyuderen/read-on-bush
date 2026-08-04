@@ -128,9 +128,7 @@ export class ReadingDisplayManager {
   private async toggleTerminalCamouflage() {
     const currentTarget = getDisplayTarget();
     const nextTarget =
-      currentTarget === 'terminalCamouflage' || currentTarget === 'both'
-        ? 'statusBar'
-        : 'terminalCamouflage';
+      currentTarget === 'terminalCamouflage' ? 'statusBar' : 'terminalCamouflage';
     const configuration = workspace.getConfiguration(AppName);
     const inspected = configuration.inspect('displayTarget');
     const updateGlobal = inspected?.workspaceValue === undefined;

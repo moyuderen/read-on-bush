@@ -2,7 +2,7 @@ import { workspace } from 'vscode';
 import { type ExtensionContext } from 'vscode';
 import { ReadBook } from './ReadBook';
 import { setupStorage } from '../utils/storage';
-import { setupBars } from './barItems';
+import { setupBars, updateTxtStatusBarVisibility } from './barItems';
 import { applyReadingMode } from './barItems/mode';
 import { setupAutoRefreshBookList, setupViewTitleImport } from './views';
 import {
@@ -61,6 +61,7 @@ function setupConfigurationChangeHandlers(context: ExtensionContext) {
 
       if (displayRefreshSettingChanged) {
         app.displayManager.refresh(app.readingBook && app.readingBook.getDisplayState());
+        updateTxtStatusBarVisibility(app.readingSession.current?.format);
       }
 
       if (readingSessionRefreshSettingChanged) {
