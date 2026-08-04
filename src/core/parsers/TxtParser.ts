@@ -16,7 +16,7 @@ const BOM_TABLE: ReadonlyArray<{ encoding: DecoderEncoding; bytes: number[] }> =
   { encoding: 'utf-16be', bytes: [0xfe, 0xff] }
 ];
 
-function matchBom(bytes: Buffer): { encoding: DecoderEncoding; bomLength: number } | undefined {
+function matchBom(bytes: Uint8Array): { encoding: DecoderEncoding; bomLength: number } | undefined {
   for (const { encoding, bytes: bom } of BOM_TABLE) {
     if (bom.every((byte, index) => bytes[index] === byte)) {
       return { encoding, bomLength: bom.length };
@@ -60,7 +60,7 @@ function countCjkAndTotal(text: string): { cjk: number; total: number } {
   return { cjk, total };
 }
 
-function detectUtf16WithoutBom(bytes: Buffer): DecoderEncoding | undefined {
+function detectUtf16WithoutBom(bytes: Uint8Array): DecoderEncoding | undefined {
   if (bytes.length < 4 || bytes.length % 2 !== 0) {
     return undefined;
   }
@@ -98,7 +98,7 @@ function detectUtf16WithoutBom(bytes: Buffer): DecoderEncoding | undefined {
   return undefined;
 }
 
-function isLikelyAmbiguousUtf16(bytes: Buffer): boolean {
+function isLikelyAmbiguousUtf16(bytes: Uint8Array): boolean {
   if (bytes.length < 2 || bytes.length % 2 !== 0) {
     return false;
   }
@@ -143,7 +143,7 @@ function isLikelyAmbiguousUtf16(bytes: Buffer): boolean {
   );
 }
 
-function detectEncoding(bytes: Buffer, requested: TxtEncoding): DetectionResult {
+function detectEncoding(bytes: Uint8Array, requested: TxtEncoding): DetectionResult {
   if (requested !== 'auto') {
     const bom = matchBom(bytes);
     const bomLength = bom?.encoding === requested ? bom.bomLength : 0;
@@ -189,7 +189,7 @@ export class TxtParser implements BookParser {
   }
 
   async readContent(): Promise<string[]> {
-    const bytes = await fs.promises.readFile(this.url);
+    const bytes = new Uint8Array(await fs.promises.readFile(this.url));
     const { text } = detectEncoding(bytes, this.encoding);
     const results: string[] = [];
 
