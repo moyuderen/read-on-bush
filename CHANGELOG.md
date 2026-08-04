@@ -6,6 +6,26 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-08-04
+
+### Added
+
+- 新增 `readOnBush.txtEncoding` 配置项，支持自动检测或手动指定 TXT 文件编码（`auto`/`utf-8`/`utf-16le`/`utf-16be`/`gb18030`），解决 Windows 中文 TXT 乱码问题。
+
+### Changed
+
+- 移除 `readOnBush.displayTarget` 的 `both` 选项，简化为 `statusBar` 和 `terminalCamouflage` 二选一，通过状态栏终端图标一键切换。
+- TXT 阅读快捷键改为按书籍格式自动激活/释放：打开 TXT 书籍后快捷键自动生效，关闭或切换到 EPUB/PDF 后自动释放，不影响编辑器原生行首/行尾导航。
+- EPUB 提取缓存支持并发去重与写入序列化，避免同一文件在短时间内被重复提取。
+- 重写 TxtParser：移除 `linebyline` 依赖，内置 BOM 检测、UTF-16 无 BOM 端序检测与编码启发式。
+- 提取 `applyReadingControlVisibility` 共享阅读控件可见性逻辑，消除 start/stop/状态栏刷新三处重复代码。
+- 简化 EpubCache，移除冗余的 generation token 系统（写入序列化 + mtime 校验已足够）。
+
+### Fixed
+
+- 修复偶数长度纯 ASCII/UTF-8 文件被误判为 UTF-16 歧义编码导致无法阅读的问题。
+- 修复 `Buffer` 传入 `TextDecoder` 在 TypeScript 5.7+ 的类型不兼容问题。
+
 ## [2.4.1] - 2026-08-03
 
 ### Added
