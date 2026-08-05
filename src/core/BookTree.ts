@@ -1,5 +1,11 @@
 import * as vscode from 'vscode';
-import { type BookData, type ChapterRef, type EpubProgress, type PdfProgress } from './Book';
+import {
+  type BookData,
+  type BookFormat,
+  type ChapterRef,
+  type EpubProgress,
+  type PdfProgress
+} from './Book';
 import type { BookNavigationTarget } from '../domain/books';
 import { getBookGroupName, uncategorizedBookGroupName } from './bookGroups';
 import { Commands } from './Commands';
@@ -18,7 +24,8 @@ export class BookTreeBookItem extends vscode.TreeItem {
     public category?: string,
     public chapters?: ChapterRef[],
     public currentChapterIndex?: number,
-    hasOutline = false
+    hasOutline = false,
+    format: BookFormat = bookData.format ?? 'txt'
   ) {
     super(
       name,
@@ -27,7 +34,7 @@ export class BookTreeBookItem extends vscode.TreeItem {
 
     this.label = `《${this.name}》`;
     this.tooltip = `${this.url}`;
-    this.iconPath = new vscode.ThemeIcon('book');
+    this.iconPath = new vscode.ThemeIcon(getBookIcon(format));
     this.contextValue = this.type;
     this.command = {
       title: this.name,
@@ -104,8 +111,22 @@ function createBookTreeItem(book: BookData, registry: BookFormatRegistry): BookT
     book.category,
     book.chapters,
     book.pdfProgress?.pageIndex ?? book.epubProgress?.chapterIndex,
-    !!provider?.getOutline
+    !!provider?.getOutline,
+    provider?.format ?? book.format
   );
+}
+
+function getBookIcon(format: BookFormat): string {
+  switch (format) {
+    case 'txt':
+      return 'file-text';
+    case 'epub':
+      return 'book';
+    case 'pdf':
+      return 'file-pdf';
+    default:
+      return 'book';
+  }
 }
 
 export class BookTreeProvider
