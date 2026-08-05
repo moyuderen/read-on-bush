@@ -2,7 +2,7 @@
   "name": "readOnBush",
   "displayName": "Read On Bush",
   "description": "在 VS Code 中低调摸鱼看小说——状态栏或终端伪装窗口阅读 TXT / EPUB / PDF，内置书架管理、章节目录、进度跳转与快捷键模式。",
-  "version": "2.5.2",
+  "version": "2.6.0",
   "publisher": "moyuderen",
   "author": {
     "name": "moyuderen",
@@ -439,6 +439,16 @@
         "icon": "$(clear-all)"
       },
       {
+        "command": "readOnBush.createCategory",
+        "title": "New Category",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "readOnBush.renameCategory",
+        "title": "Rename Category",
+        "icon": "$(edit)"
+      },
+      {
         "command": "readOnBush.import",
         "title": "Import",
         "icon": "$(add)"
@@ -577,6 +587,11 @@
           "command": "readOnBush.clearBookCategory",
           "group": "book@2",
           "when": "view == bookList && viewItem == book"
+        },
+        {
+          "command": "readOnBush.renameCategory",
+          "group": "inline",
+          "when": "view == bookList && viewItem == categoryGroup"
         }
       ],
       "view/title": [
@@ -602,6 +617,11 @@
         },
         {
           "command": "readOnBush.switchBookListGroupBy",
+          "group": "navigation",
+          "when": "view == bookList"
+        },
+        {
+          "command": "readOnBush.createCategory",
           "group": "navigation",
           "when": "view == bookList"
         }

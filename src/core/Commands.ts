@@ -4,6 +4,8 @@ export enum Commands {
   RenameBook = 'readOnBush.renameBook',
   SetBookCategory = 'readOnBush.setBookCategory',
   ClearBookCategory = 'readOnBush.clearBookCategory',
+  CreateCategory = 'readOnBush.createCategory',
+  RenameCategory = 'readOnBush.renameCategory',
 
   ImportBook = 'readOnBush.import',
   ImportBookDirectory = 'readOnBush.importDirectory',
