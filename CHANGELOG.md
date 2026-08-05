@@ -6,6 +6,20 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-08-05
+
+### Added
+
+- 新增隐私界面模式：一键隐藏书架、Tooltip、通知和阅读标题中的真实书名、路径、章节或页码等信息；支持隐私别名及 `readOnBush.privacyDisplayOnStart` 启动配置。
+- 新增 EPUB/PDF 图片预览缩略图模式，点击图片后查看大图，切换到隐蔽内容模式时自动关闭图片预览。
+- 新增 TXT / EPUB / PDF 书架格式图标，便于快速识别文件格式。
+
+### Changed
+
+- 新增 `readOnBush.imagePreviewMode` 配置，支持 `thumbnail` 和 `large` 两种图片预览初始模式。
+- 优化 VSIX 打包范围，仅保留运行时依赖及 PDF.js 必需文件，排除开发依赖和未使用资源。
+- 扩展市场分类调整为 `Other`。
+
 ## [2.6.0] - 2026-08-05
 
 ### Added
