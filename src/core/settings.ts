@@ -16,6 +16,7 @@ export const TERMINAL_CAMOUFLAGE_STYLE_OPTIONS = [
   ...BUILTIN_TERMINAL_CAMOUFLAGE_STYLE_OPTIONS,
   'custom'
 ] as const;
+export const IMAGE_PREVIEW_MODE_OPTIONS = ['thumbnail', 'large'] as const;
 
 export type BookListGroupBy = (typeof BOOK_LIST_GROUP_BY_OPTIONS)[number];
 export type ReadingDisplayTarget = (typeof READING_DISPLAY_TARGET_OPTIONS)[number];
@@ -23,6 +24,7 @@ export type TxtEncodingSetting = (typeof TXT_ENCODING_OPTIONS)[number];
 export type BuiltinTerminalCamouflageStyle =
   (typeof BUILTIN_TERMINAL_CAMOUFLAGE_STYLE_OPTIONS)[number];
 export type TerminalCamouflageStyle = (typeof TERMINAL_CAMOUFLAGE_STYLE_OPTIONS)[number];
+export type ImagePreviewMode = (typeof IMAGE_PREVIEW_MODE_OPTIONS)[number];
 
 export type ReadOnBushSettings = {
   lineWidth: number;
@@ -33,6 +35,7 @@ export type ReadOnBushSettings = {
   statusBarPrefix: string;
   showProgress: boolean;
   showChapterTitle: boolean;
+  imagePreviewMode: ImagePreviewMode;
   displayTarget: ReadingDisplayTarget;
   terminalCamouflageLineWidth: number;
   terminalCamouflageLineCount: number;
@@ -50,6 +53,7 @@ export const defaultSettings: ReadOnBushSettings = {
   statusBarPrefix: '',
   showProgress: true,
   showChapterTitle: true,
+  imagePreviewMode: 'thumbnail',
   displayTarget: 'statusBar',
   terminalCamouflageLineWidth: 0,
   terminalCamouflageLineCount: 3,
@@ -86,6 +90,10 @@ function normalizeBookListGroupBy(groupBy: string): BookListGroupBy {
 
 function normalizeDisplayTarget(displayTarget: string): ReadingDisplayTarget {
   return normalizeEnum(displayTarget, READING_DISPLAY_TARGET_OPTIONS, defaultSettings.displayTarget);
+}
+
+function normalizeImagePreviewMode(mode: string): ImagePreviewMode {
+  return normalizeEnum(mode, IMAGE_PREVIEW_MODE_OPTIONS, defaultSettings.imagePreviewMode);
 }
 
 function normalizeTerminalCamouflageStyle(style: string): TerminalCamouflageStyle {
@@ -130,6 +138,10 @@ export function getShowProgress(): boolean {
 
 export function getShowChapterTitle(): boolean {
   return getConfigurationValue('showChapterTitle');
+}
+
+export function getImagePreviewMode(): ImagePreviewMode {
+  return normalizeImagePreviewMode(getConfigurationValue('imagePreviewMode'));
 }
 
 export function getDisplayTarget(): ReadingDisplayTarget {
@@ -196,6 +208,7 @@ export function getSettings(): ReadOnBushSettings {
     statusBarPrefix: getStatusBarPrefix(),
     showProgress: getShowProgress(),
     showChapterTitle: getShowChapterTitle(),
+    imagePreviewMode: getImagePreviewMode(),
     displayTarget: getDisplayTarget(),
     terminalCamouflageLineWidth: getTerminalCamouflageLineWidth(),
     terminalCamouflageLineCount: getTerminalCamouflageLineCount(),
