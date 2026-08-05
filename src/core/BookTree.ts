@@ -11,6 +11,12 @@ import { getBookGroupName, uncategorizedBookGroupName } from './bookGroups';
 import { Commands } from './Commands';
 import type { BookListGroupBy } from './settings';
 import type { BookFormatRegistry } from '../formats';
+import {
+  getBookDisplayName,
+  getBookTooltip,
+  PrivacyDisplayService,
+  type PrivacyDisplayMode
+} from './privacy/PrivacyDisplayService';
 
 export class BookTreeBookItem extends vscode.TreeItem {
   public readonly type = 'book';
@@ -25,7 +31,8 @@ export class BookTreeBookItem extends vscode.TreeItem {
     public chapters?: ChapterRef[],
     public currentChapterIndex?: number,
     hasOutline = false,
-    format: BookFormat = bookData.format ?? 'txt'
+    format: BookFormat = bookData.format ?? 'txt',
+    private readonly privacyDisplayMode: PrivacyDisplayMode = 'normal'
   ) {
     super(
       name,
@@ -33,7 +40,7 @@ export class BookTreeBookItem extends vscode.TreeItem {
     );
 
     this.label = `《${this.name}》`;
-    this.tooltip = `${this.url}`;
+    this.tooltip = getBookTooltip(bookData, privacyDisplayMode);
     this.iconPath = new vscode.ThemeIcon(getBookIcon(format));
     this.contextValue = this.type;
     this.command = {
@@ -55,6 +62,11 @@ export class BookTreeBookItem extends vscode.TreeItem {
       this.description = undefined;
       return;
     }
+    if (this.privacyDisplayMode === 'private') {
+      this.description = `读至：第${this.currentChapterIndex + 1}节`;
+      return;
+    }
+
     const title = this.chapters[this.currentChapterIndex]?.title?.trim();
     // 直接用 TOC 标题，与终端进度文案一致（不自行合成章号，避免与书本身编号错位）
     this.description = title
@@ -71,14 +83,25 @@ export class BookTreeOutlineItem extends vscode.TreeItem {
     public bookId: string,
     public target: BookNavigationTarget,
     title: string,
-    isCurrent: boolean
+    isCurrent: boolean,
+    privacyDisplayMode: PrivacyDisplayMode = 'normal'
   ) {
-    super(title, vscode.TreeItemCollapsibleState.None);
-    this.label = isCurrent ? `▸ ${title}` : title;
-    this.tooltip = isCurrent ? `${title}（当前位置）` : title;
+    const targetIndex =
+      target.kind === 'section'
+        ? target.sectionIndex
+        : target.kind === 'page'
+          ? target.pageIndex
+          : undefined;
+    const displayTitle =
+      privacyDisplayMode === 'private' && targetIndex !== undefined
+        ? `第${targetIndex + 1}节`
+        : title;
+    super(displayTitle, vscode.TreeItemCollapsibleState.None);
+    this.label = isCurrent ? `▸ ${displayTitle}` : displayTitle;
+    this.tooltip = isCurrent ? `${displayTitle}（当前位置）` : displayTitle;
     this.iconPath = new vscode.ThemeIcon(isCurrent ? 'circle-filled' : 'circle-outline');
     this.command = {
-      title,
+      title: displayTitle,
       command: Commands.OpenBookOutline,
       arguments: [{ bookId, target }]
     };
@@ -100,11 +123,16 @@ export class BookTreeGroupItem extends vscode.TreeItem {
 
 export type BookTreeItem = BookTreeBookItem | BookTreeGroupItem | BookTreeOutlineItem;
 
-function createBookTreeItem(book: BookData, registry: BookFormatRegistry): BookTreeBookItem {
+function createBookTreeItem(
+  book: BookData,
+  registry: BookFormatRegistry,
+  privacyDisplay: PrivacyDisplayService
+): BookTreeBookItem {
   const provider = registry.getProviderForBook(book);
+  const privacyDisplayMode = privacyDisplay.currentMode;
   return new BookTreeBookItem(
     book,
-    book.name,
+    getBookDisplayName(book, privacyDisplayMode),
     book.id,
     book.url,
     book.process,
@@ -112,7 +140,8 @@ function createBookTreeItem(book: BookData, registry: BookFormatRegistry): BookT
     book.chapters,
     book.pdfProgress?.pageIndex ?? book.epubProgress?.chapterIndex,
     !!provider?.getOutline,
-    provider?.format ?? book.format
+    provider?.format ?? book.format,
+    privacyDisplayMode
   );
 }
 
@@ -150,6 +179,7 @@ export class BookTreeProvider
 
   constructor(
     private readonly registry: BookFormatRegistry,
+    private readonly privacyDisplay: PrivacyDisplayService,
     books: BookData[] = [],
     groupBy: BookListGroupBy = 'none'
   ) {
@@ -281,7 +311,8 @@ export class BookTreeProvider
             element.id,
             item.target,
             item.title,
-            isCurrentOutlineTarget(item.target, element.currentChapterIndex)
+            isCurrentOutlineTarget(item.target, element.currentChapterIndex),
+            this.privacyDisplay.currentMode
           )
       );
     }
@@ -309,24 +340,29 @@ export class BookTreeProvider
 
   private buildTreeItems(books: BookData[], groupBy: BookListGroupBy): BookTreeItem[] {
     if (groupBy === 'none') {
-      return books.map((book) => createBookTreeItem(book, this.registry));
+      return books.map((book) => createBookTreeItem(book, this.registry, this.privacyDisplay));
     }
 
-    const groups = new Map<string, BookTreeBookItem[]>();
+    const groups = new Map<
+      string,
+      { name: string; rawName: string; children: BookTreeBookItem[] }
+    >();
 
     for (const book of books) {
-      const groupName = getBookGroupName(book, groupBy);
-      const groupBooks = groups.get(groupName) ?? [];
-      groupBooks.push(createBookTreeItem(book, this.registry));
-      groups.set(groupName, groupBooks);
+      const rawName = getBookGroupName(book, groupBy);
+      const name = this.privacyDisplay.getGroupDisplayName(rawName, groupBy);
+      const key = this.privacyDisplay.isPrivate && groupBy === 'directory' ? name : rawName;
+      const group = groups.get(key) ?? { name, rawName, children: [] };
+      group.children.push(createBookTreeItem(book, this.registry, this.privacyDisplay));
+      groups.set(key, group);
     }
 
-    return [...groups.entries()]
-      .sort(([left], [right]) => left.localeCompare(right, 'zh-CN'))
-      .map(([name, children]) => {
+    return [...groups.values()]
+      .sort((left, right) => left.name.localeCompare(right.name, 'zh-CN'))
+      .map(({ name, rawName, children }) => {
         const item = new BookTreeGroupItem(name, children);
         // 按分类分组时，非「未分类」的分组允许重命名；拖拽改分类也仅在此模式生效。
-        if (groupBy === 'category' && name !== uncategorizedBookGroupName) {
+        if (groupBy === 'category' && rawName !== uncategorizedBookGroupName) {
           item.contextValue = 'categoryGroup';
         }
         return item;

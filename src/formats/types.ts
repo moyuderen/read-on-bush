@@ -7,6 +7,7 @@ export type ImportBookInput = {
   name: string;
   filePath: string;
   context: ExtensionContext;
+  displayName?: string;
 };
 
 export type CreateReaderInput = {
@@ -24,6 +25,7 @@ export interface BookReaderController {
   previous(): Promise<void>;
   jumpTo?(target: BookNavigationTarget): Promise<void>;
   refreshSettings?(): void;
+  refreshPrivacyDisplay?(): void;
 }
 
 export interface BookFormatProvider {

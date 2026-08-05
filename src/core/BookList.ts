@@ -10,7 +10,7 @@ import message from '../utils/message';
 import { generateId } from '../utils/generateId';
 import { getBookGroupName } from './bookGroups';
 import { AppName } from './config';
-import { Commands } from './Commands';
+import { Commands, CustomWhenClauseContext } from './Commands';
 import { CLOUDCONVERT_URL, summarizeConvertible } from './convertGuide';
 import { toChapterRefs, type EpubExtraction } from './parsers/EpubExtractor';
 import { toPageRefs, type PdfExtraction } from './parsers/PdfExtractor';
@@ -19,6 +19,7 @@ import {
   BookStorage,
   GlobalStateBookStorage
 } from './storage/BookStorage';
+import { PrivacyDisplayService } from './privacy/PrivacyDisplayService';
 
 type SortType =
   | 'nameAsc'
@@ -59,14 +60,17 @@ export class BookList {
   public books: BookData[];
   private readonly bookTreeProvider: BookTreeProvider;
   private readonly bookStorage: BookStorage;
+  private readonly privacyDisplay: PrivacyDisplayService;
 
   constructor(app: ReadBook, bookStorage: BookStorage = new GlobalStateBookStorage()) {
     this.app = app;
     this.context = app.context;
     this.bookStorage = bookStorage;
+    this.privacyDisplay = app.privacyDisplay;
     this.books = this.bookStorage.getBooks();
     this.bookTreeProvider = new BookTreeProvider(
       this.app.formatRegistry,
+      this.privacyDisplay,
       this.books,
       getBookListGroupBy()
     );
@@ -80,6 +84,7 @@ export class BookList {
       })
     );
     this.initCommands();
+    this.updatePrivacyDisplayContext();
   }
 
   getBooks(): BookData[] {
@@ -111,6 +116,18 @@ export class BookList {
       }),
       commands.registerCommand(Commands.ClearBookCategory, (event) => {
         this.clearBookCategory(event);
+      }),
+      commands.registerCommand(Commands.SetPrivacyAlias, (event) => {
+        void this.setPrivacyAlias(event);
+      }),
+      commands.registerCommand(Commands.TogglePrivacyDisplay, () => {
+        this.togglePrivacyDisplay();
+      }),
+      commands.registerCommand(Commands.EnablePrivacyDisplay, () => {
+        this.setPrivacyDisplayMode(true);
+      }),
+      commands.registerCommand(Commands.DisablePrivacyDisplay, () => {
+        this.setPrivacyDisplayMode(false);
       }),
       commands.registerCommand(Commands.CreateCategory, () => {
         this.createCategory();
@@ -173,7 +190,7 @@ export class BookList {
     }
 
     const action = await window.showWarningMessage(
-      `文件不存在，是否从书架移除《${bookData.name}》？`,
+      `文件不存在，是否从书架移除${this.privacyDisplay.getBookMessageName(bookData)}？`,
       '移除',
       '保留'
     );
@@ -187,6 +204,33 @@ export class BookList {
 
   updateBookTreeProvider() {
     this.bookTreeProvider.updateBooks(this.books, getBookListGroupBy());
+  }
+
+  togglePrivacyDisplay() {
+    this.setPrivacyDisplayMode(!this.privacyDisplay.isPrivate);
+  }
+
+  private setPrivacyDisplayMode(isPrivate: boolean): void {
+    if (this.privacyDisplay.isPrivate === isPrivate) {
+      return;
+    }
+
+    const mode = this.privacyDisplay.setMode(isPrivate ? 'private' : 'normal');
+    this.updatePrivacyDisplayContext();
+    this.updateBookTreeProvider();
+    if (this.app.readingBook) {
+      this.app.displayManager.refresh(this.app.readingBook.getDisplayState());
+    }
+    this.app.readingSession.refreshPrivacyDisplay();
+    message(mode === 'private' ? '隐私界面模式已开启' : '隐私界面模式已关闭');
+  }
+
+  private updatePrivacyDisplayContext(): void {
+    void commands.executeCommand(
+      'setContext',
+      CustomWhenClauseContext.IsPrivacyDisplay,
+      this.privacyDisplay.isPrivate
+    );
   }
 
   deleteBook(id: string, successMessage = 'Delete successful !') {
@@ -302,7 +346,7 @@ export class BookList {
     }
 
     const name = await window.showInputBox({
-      value: book.name,
+      value: book.bookData.name,
       prompt: '请输入新的书名',
       validateInput: (value) => (value.trim() ? undefined : '书名不能为空')
     });
@@ -321,6 +365,28 @@ export class BookList {
     }
 
     message('重命名成功');
+  }
+
+  async setPrivacyAlias(book: BookTreeItem) {
+    if (!this.isBookItem(book)) {
+      return;
+    }
+
+    const alias = await window.showInputBox({
+      value: book.bookData.privacyAlias ?? '',
+      prompt: '请输入隐私模式下显示的名称，留空将清除别名',
+      placeHolder: '例如：Project Notes'
+    });
+
+    if (alias === undefined) {
+      return;
+    }
+
+    this.books = this.bookStorage.updateBookPrivacyAlias(book.id, alias);
+    if (this.privacyDisplay.isPrivate) {
+      this.updateBookTreeProvider();
+    }
+    message(alias.trim() ? '隐私别名已设置' : '隐私别名已清除');
   }
 
   async sortBookList() {
@@ -445,7 +511,7 @@ export class BookList {
 
     const picks = await window.showQuickPick(
       this.books.map((book) => ({
-        label: book.name,
+        label: this.privacyDisplay.getBookDisplayName(book),
         description: book.category ? `当前：${book.category}` : '未分类',
         picked: false,
         bookId: book.id
@@ -628,11 +694,13 @@ export class BookList {
 
   private async importBookPath(filePath: string): Promise<BookData> {
     const provider = this.app.formatRegistry.getProviderByPath(filePath);
+    const name = path.parse(filePath).base;
     return provider.importBook({
-      name: path.parse(filePath).base,
+      name,
       id: generateId(),
       filePath,
-      context: this.context
+      context: this.context,
+      displayName: this.privacyDisplay.isPrivate ? '文档' : `《${name}》`
     });
   }
 

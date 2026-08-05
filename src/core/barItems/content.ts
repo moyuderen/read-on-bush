@@ -29,7 +29,9 @@ export function updateContent(content: string) {
   tooltip.isTrusted = true;
 
   if (app && app.readingBook) {
-    tooltip.appendMarkdown(`\n\n---\n\n《${app.readingBook.book.name}》`);
+    tooltip.appendMarkdown(
+      `\n\n---\n\n${app.privacyDisplay.getBookMessageName(app.readingBook.book)}`
+    );
   }
 
   contentBarItem.tooltip = tooltip;

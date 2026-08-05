@@ -17,12 +17,7 @@ import {
   type PaginatedTerminalDisplaySettings
 } from './display/paginatedTerminalDisplay';
 import { ImagePreviewPanel } from './display/imagePanel';
-import {
-  getShowChapterTitle,
-  getTerminalCamouflageLineCount,
-  getTerminalCamouflageLineWidth,
-  getTerminalCamouflageTemplateSettings
-} from './settings';
+import { getPaginatedTerminalDisplaySettings } from './display/paginatedTerminalSettings';
 
 /**
  * pdf 阅读控制器：串联 PdfBook（阅读模型）+ PaginatedTerminalDisplay（epub/pdf 共用的伪装终端）+
@@ -72,7 +67,7 @@ export class PdfReader {
       this.pdfBook = new PdfBook(syncedBook, this.app, extraction);
       this.terminal.bind(this.pdfBook, this.getTerminalSettings());
       this.terminal.reveal();
-      message(`Switch to 《${book.name}》 !`);
+      message(`Switch to ${this.app.privacyDisplay.getBookMessageName(book)} !`);
     } catch (error) {
       const text = error instanceof Error ? error.message : 'Open pdf failed';
       message.error(text);
@@ -104,7 +99,7 @@ export class PdfReader {
     }
     const total = this.pdfBook.extraction.pages.length;
     const items = this.pdfBook.extraction.pages.map((page, index) => ({
-      label: page.title,
+      label: this.app.privacyDisplay.isPrivate ? `第 ${index + 1} 页` : page.title,
       description: `${index + 1} / ${total}`,
       index
     }));
@@ -189,7 +184,7 @@ export class PdfReader {
     }
     const base64 = Buffer.from(decoded.bytes).toString('base64');
     this.imagePreview.show({
-      title: `《${book.name}》图片`,
+      title: this.app.privacyDisplay.getImageTitle(book),
       mediaType: decoded.mediaType,
       base64,
       onToggleDebug: () => this.terminal.toggleDebugContent(),
@@ -202,6 +197,11 @@ export class PdfReader {
     setTimeout(() => this.terminal.focus(), 50);
   }
 
+  refreshPrivacyDisplay(): void {
+    this.imagePreview.close();
+    this.refreshSettings();
+  }
+
   /** 终端伪装样式 / 宽度 / 行数配置变更时刷新。 */
   refreshSettings(): void {
     if (!this.pdfBook) {
@@ -212,12 +212,10 @@ export class PdfReader {
   }
 
   private getTerminalSettings(): PaginatedTerminalDisplaySettings {
-    return {
-      template: this.app.templateService.resolve(getTerminalCamouflageTemplateSettings()),
-      lineWidth: getTerminalCamouflageLineWidth(),
-      lineCount: getTerminalCamouflageLineCount(),
-      showChapterTitle: getShowChapterTitle()
-    };
+    return getPaginatedTerminalDisplaySettings(
+      this.app.templateService,
+      this.app.privacyDisplay
+    );
   }
 
   private async loadExtraction(book: BookData): Promise<PdfExtraction> {
