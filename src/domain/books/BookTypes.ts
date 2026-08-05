@@ -29,6 +29,7 @@ export type BookData = {
   createdAt?: number;
   order?: number;
   format?: BookFormat;
+  privacyAlias?: string;
   epubProgress?: EpubProgress;
   pdfProgress?: PdfProgress;
   chapters?: ChapterRef[];

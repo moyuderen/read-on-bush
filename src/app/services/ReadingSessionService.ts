@@ -62,6 +62,10 @@ export class ReadingSessionService {
     this.currentReader?.refreshSettings?.();
   }
 
+  refreshPrivacyDisplay(): void {
+    this.currentReader?.refreshPrivacyDisplay?.();
+  }
+
   /**
    * 同步当前阅读格式到 VS Code 上下文和状态栏可见性。
    */

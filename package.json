@@ -97,6 +97,11 @@
           "default": true,
           "description": "是否默认启用阅读快捷键"
         },
+        "readOnBush.privacyDisplayOnStart": {
+          "type": "boolean",
+          "default": false,
+          "description": "激活扩展时是否默认开启隐私界面模式"
+        },
         "readOnBush.autoRefreshBookList": {
           "type": "boolean",
           "default": false,
@@ -439,6 +444,26 @@
         "icon": "$(clear-all)"
       },
       {
+        "command": "readOnBush.setPrivacyAlias",
+        "title": "Set Privacy Alias",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "readOnBush.togglePrivacyDisplay",
+        "title": "Toggle Privacy Display",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "readOnBush.enablePrivacyDisplay",
+        "title": "Enable Privacy Display",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "readOnBush.disablePrivacyDisplay",
+        "title": "Disable Privacy Display",
+        "icon": "$(eye-closed)"
+      },
+      {
         "command": "readOnBush.createCategory",
         "title": "New Category",
         "icon": "$(new-folder)"
@@ -590,6 +615,11 @@
           "when": "view == bookList && viewItem == book"
         },
         {
+          "command": "readOnBush.setPrivacyAlias",
+          "group": "book@3",
+          "when": "view == bookList && viewItem == book"
+        },
+        {
           "command": "readOnBush.renameCategory",
           "group": "inline",
           "when": "view == bookList && viewItem == categoryGroup"
@@ -610,6 +640,16 @@
           "command": "readOnBush.refreshBookList",
           "group": "navigation",
           "when": "view == bookList"
+        },
+        {
+          "command": "readOnBush.enablePrivacyDisplay",
+          "group": "navigation@3",
+          "when": "view == bookList && readOnBush.isPrivacyDisplay != true"
+        },
+        {
+          "command": "readOnBush.disablePrivacyDisplay",
+          "group": "navigation@3",
+          "when": "view == bookList && readOnBush.isPrivacyDisplay == true"
         },
         {
           "command": "readOnBush.sortBookList",

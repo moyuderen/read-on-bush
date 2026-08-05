@@ -19,12 +19,7 @@ import {
   type PaginatedTerminalDisplaySettings
 } from './display/paginatedTerminalDisplay';
 import { ImagePreviewPanel } from './display/imagePanel';
-import {
-  getShowChapterTitle,
-  getTerminalCamouflageLineCount,
-  getTerminalCamouflageLineWidth,
-  getTerminalCamouflageTemplateSettings
-} from './settings';
+import { getPaginatedTerminalDisplaySettings } from './display/paginatedTerminalSettings';
 
 /**
  * epub 阅读控制器：串联 EpubBook（阅读模型）+ PaginatedTerminalDisplay（epub/pdf 共用的伪装终端）+
@@ -72,7 +67,7 @@ export class EpubReader {
       this.epubBook = new EpubBook(syncedBook, this.app, extraction);
       this.terminal.bind(this.epubBook, this.getTerminalSettings());
       this.terminal.reveal();
-      message(`Switch to 《${book.name}》 !`);
+      message(`Switch to ${this.app.privacyDisplay.getBookMessageName(book)} !`);
     } catch (error) {
       const text = error instanceof Error ? error.message : 'Open epub failed';
       message.error(text);
@@ -103,7 +98,9 @@ export class EpubReader {
       return;
     }
     const items = this.epubBook.extraction.chapters.map((chapter, index) => ({
-      label: chapter.title || `第 ${index + 1} 章`,
+      label: this.app.privacyDisplay.isPrivate
+        ? `第 ${index + 1} 章`
+        : chapter.title || `第 ${index + 1} 章`,
       description: `第 ${index + 1} 章`,
       index
     }));
@@ -183,7 +180,7 @@ export class EpubReader {
     const base64 = Buffer.from(bytes).toString('base64');
     const mediaType = getSafeImageMediaType(image.mediaType, image.zipPath);
     this.imagePreview.show({
-      title: `《${book.name}》图片`,
+      title: this.app.privacyDisplay.getImageTitle(book),
       mediaType,
       base64,
       onToggleDebug: () => this.terminal.toggleDebugContent(),
@@ -196,6 +193,11 @@ export class EpubReader {
     setTimeout(() => this.terminal.focus(), 50);
   }
 
+  refreshPrivacyDisplay(): void {
+    this.imagePreview.close();
+    this.refreshSettings();
+  }
+
   /** 终端伪装样式 / 宽度 / 行数配置变更时刷新。 */
   refreshSettings(): void {
     if (!this.epubBook) {
@@ -206,12 +208,10 @@ export class EpubReader {
   }
 
   private getTerminalSettings(): PaginatedTerminalDisplaySettings {
-    return {
-      template: this.app.templateService.resolve(getTerminalCamouflageTemplateSettings()),
-      lineWidth: getTerminalCamouflageLineWidth(),
-      lineCount: getTerminalCamouflageLineCount(),
-      showChapterTitle: getShowChapterTitle()
-    };
+    return getPaginatedTerminalDisplaySettings(
+      this.app.templateService,
+      this.app.privacyDisplay
+    );
   }
 
   private async loadExtraction(book: BookData): Promise<EpubExtraction> {

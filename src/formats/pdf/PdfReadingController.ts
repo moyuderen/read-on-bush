@@ -36,4 +36,8 @@ export class PdfReadingController implements BookReaderController {
   refreshSettings(): void {
     this.reader.refreshSettings();
   }
+
+  refreshPrivacyDisplay(): void {
+    this.reader.refreshPrivacyDisplay();
+  }
 }

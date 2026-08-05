@@ -14,6 +14,7 @@ import {
 import { StatusBarDisplay } from './statusBarDisplay';
 import type { ResolvedTerminalTemplate } from './camouflageTemplates';
 import type { CamouflageTemplateService } from './camouflageTemplateService';
+import type { PrivacyDisplayService } from '../privacy/PrivacyDisplayService';
 import { TerminalCamouflageDisplay } from './terminalCamouflageDisplay';
 import type { ReadingDisplayState } from './types';
 
@@ -24,7 +25,8 @@ export class ReadingDisplayManager {
 
   constructor(
     context: ExtensionContext,
-    private readonly templateService: CamouflageTemplateService
+    private readonly templateService: CamouflageTemplateService,
+    private readonly privacyDisplay: PrivacyDisplayService
   ) {
     this.terminalCamouflageDisplay = new TerminalCamouflageDisplay(context);
 
@@ -122,7 +124,8 @@ export class ReadingDisplayManager {
   }
 
   private getResolvedTemplate(): ResolvedTerminalTemplate {
-    return this.templateService.resolve(getTerminalCamouflageTemplateSettings());
+    const template = this.templateService.resolve(getTerminalCamouflageTemplateSettings());
+    return this.privacyDisplay.applyTerminalPrivacy(template);
   }
 
   private async toggleTerminalCamouflage() {

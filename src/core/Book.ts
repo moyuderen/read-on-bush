@@ -33,7 +33,7 @@ export class Book {
       this.contents = contents;
       // 兼容 分段算法导致的文件最大值改变
       this.book.process = Math.min(this.book.process, Math.max(this.contents.length - 1, 0));
-      message(`Switch to 《${this.book.name}》 !`);
+      message(`Switch to ${this.app.privacyDisplay.getBookMessageName(this.book)} !`);
       this.inited = true;
       this.renderCurrentContent();
     } catch (e: any) {
@@ -48,7 +48,7 @@ export class Book {
     }
 
     if (!this.inited) {
-      message.warn(`《${this.book.name}》Initializing failed !`);
+      message.warn(`${this.app.privacyDisplay.getBookMessageName(this.book)}Initializing failed !`);
       return;
     }
 
@@ -66,7 +66,7 @@ export class Book {
     }
 
     if (!this.inited) {
-      message.warn(`《${this.book.name}》Initializing failed !`);
+      message.warn(`${this.app.privacyDisplay.getBookMessageName(this.book)}Initializing failed !`);
       return;
     }
 
@@ -84,7 +84,7 @@ export class Book {
     }
 
     if (!this.inited) {
-      message.warn(`《${this.book.name}》Initializing failed !`);
+      message.warn(`${this.app.privacyDisplay.getBookMessageName(this.book)}Initializing failed !`);
       return;
     }
 

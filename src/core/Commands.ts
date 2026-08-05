@@ -4,6 +4,10 @@ export enum Commands {
   RenameBook = 'readOnBush.renameBook',
   SetBookCategory = 'readOnBush.setBookCategory',
   ClearBookCategory = 'readOnBush.clearBookCategory',
+  SetPrivacyAlias = 'readOnBush.setPrivacyAlias',
+  TogglePrivacyDisplay = 'readOnBush.togglePrivacyDisplay',
+  EnablePrivacyDisplay = 'readOnBush.enablePrivacyDisplay',
+  DisablePrivacyDisplay = 'readOnBush.disablePrivacyDisplay',
   CreateCategory = 'readOnBush.createCategory',
   RenameCategory = 'readOnBush.renameCategory',
 
@@ -41,5 +45,6 @@ export enum Commands {
 
 export enum CustomWhenClauseContext {
   IsReadingMode = 'readOnBush.isReadingMode',
-  IsTxtReading = 'readOnBush.isTxtReading'
+  IsTxtReading = 'readOnBush.isTxtReading',
+  IsPrivacyDisplay = 'readOnBush.isPrivacyDisplay'
 }

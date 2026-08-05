@@ -14,6 +14,7 @@ export interface BookStorage {
   updateEpubChapters(id: string, chapters: ChapterRef[]): BookData[];
   renameBook(id: string, name: string): BookData[];
   updateBookCategory(id: string, category?: string): BookData[];
+  updateBookPrivacyAlias(id: string, privacyAlias?: string): BookData[];
   deleteBook(id: string): BookData[];
 }
 
@@ -25,9 +26,17 @@ function normalizeBook(book: BookData, index: number): BookData {
   };
 }
 
+function normalizeOptionalText(value?: string): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
 function normalizeCategory(category?: string): string | undefined {
-  const value = category?.trim();
-  return value ? value : undefined;
+  return normalizeOptionalText(category);
+}
+
+function normalizePrivacyAlias(privacyAlias?: string): string | undefined {
+  return normalizeOptionalText(privacyAlias);
 }
 
 function hasSameNormalization(left: BookData, right: BookData): boolean {
@@ -117,6 +126,14 @@ export class GlobalStateBookStorage implements BookStorage {
     return this.updateBook(id, (book) => ({
       ...book,
       category: nextCategory
+    }));
+  }
+
+  updateBookPrivacyAlias(id: string, privacyAlias?: string): BookData[] {
+    const nextPrivacyAlias = normalizePrivacyAlias(privacyAlias);
+    return this.updateBook(id, (book) => ({
+      ...book,
+      privacyAlias: nextPrivacyAlias
     }));
   }
 

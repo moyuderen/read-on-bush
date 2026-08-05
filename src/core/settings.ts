@@ -28,6 +28,7 @@ export type ReadOnBushSettings = {
   lineWidth: number;
   txtEncoding: TxtEncodingSetting;
   defaultReadingMode: boolean;
+  privacyDisplayOnStart: boolean;
   autoRefreshBookList: boolean;
   statusBarPrefix: string;
   showProgress: boolean;
@@ -44,6 +45,7 @@ export const defaultSettings: ReadOnBushSettings = {
   lineWidth: LineWidth.Default,
   txtEncoding: 'auto',
   defaultReadingMode: true,
+  privacyDisplayOnStart: false,
   autoRefreshBookList: false,
   statusBarPrefix: '',
   showProgress: true,
@@ -108,6 +110,10 @@ export function getTxtEncoding(): TxtEncodingSetting {
 
 export function getDefaultReadingMode(): boolean {
   return getConfigurationValue('defaultReadingMode');
+}
+
+export function getPrivacyDisplayOnStart(): boolean {
+  return getConfigurationValue('privacyDisplayOnStart');
 }
 
 export function getAutoRefreshBookList(): boolean {
@@ -185,6 +191,7 @@ export function getSettings(): ReadOnBushSettings {
     lineWidth: getLineWidth(),
     txtEncoding: getTxtEncoding(),
     defaultReadingMode: getDefaultReadingMode(),
+    privacyDisplayOnStart: getPrivacyDisplayOnStart(),
     autoRefreshBookList: getAutoRefreshBookList(),
     statusBarPrefix: getStatusBarPrefix(),
     showProgress: getShowProgress(),

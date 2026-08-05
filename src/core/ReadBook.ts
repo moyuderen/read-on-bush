@@ -7,6 +7,7 @@ import { EpubReader } from './EpubReader';
 import { PdfReader } from './PdfReader';
 import { createDefaultBookFormatRegistry, type BookFormatRegistry } from '../formats';
 import { ReadingSessionService } from '../app/services';
+import { PrivacyDisplayService } from './privacy/PrivacyDisplayService';
 
 export class ReadBook {
   public context: ExtensionContext;
@@ -18,12 +19,18 @@ export class ReadBook {
   public pdfReader: PdfReader;
   public formatRegistry: BookFormatRegistry;
   public readingSession: ReadingSessionService;
+  public privacyDisplay: PrivacyDisplayService;
 
   constructor(context: ExtensionContext) {
     this.context = context;
+    this.privacyDisplay = new PrivacyDisplayService();
     this.formatRegistry = createDefaultBookFormatRegistry();
     this.templateService = new CamouflageTemplateService();
-    this.displayManager = new ReadingDisplayManager(context, this.templateService);
+    this.displayManager = new ReadingDisplayManager(
+      context,
+      this.templateService,
+      this.privacyDisplay
+    );
     this.epubReader = new EpubReader(this);
     this.pdfReader = new PdfReader(this);
     this.readingSession = new ReadingSessionService(this);

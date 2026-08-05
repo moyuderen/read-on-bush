@@ -34,7 +34,7 @@ export class PdfProvider implements BookFormatProvider {
       await cache.set(bookData.id, stat.mtimeMs, extraction);
     } catch (error) {
       const text = error instanceof Error ? error.message : '解析 pdf 失败';
-      message.warn(`《${bookData.name}》${text}，仍已加入书架`);
+      message.warn(`${input.displayName ?? `《${bookData.name}》`}${text}，仍已加入书架`);
     }
 
     return bookData;
