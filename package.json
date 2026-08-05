@@ -556,7 +556,8 @@
       "readOnBush": [
         {
           "id": "bookList",
-          "name": "书架"
+          "name": "书架",
+          "icon": "public/logo.svg"
         }
       ]
     },
@@ -631,6 +632,7 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
+    "package": "vsce package",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
@@ -644,6 +646,7 @@
     "@typescript-eslint/parser": "^6.15.0",
     "@vscode/test-cli": "^0.0.4",
     "@vscode/test-electron": "^2.3.8",
+    "@vscode/vsce": "^3.9.2",
     "eslint": "^8.56.0",
     "typescript": "^5.3.3"
   },
