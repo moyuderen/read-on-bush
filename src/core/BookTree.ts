@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { type BookData, type ChapterRef, type EpubProgress, type PdfProgress } from './Book';
 import type { BookNavigationTarget } from '../domain/books';
-import { getBookGroupName } from './bookGroups';
+import { getBookGroupName, uncategorizedBookGroupName } from './bookGroups';
 import { Commands } from './Commands';
 import type { BookListGroupBy } from './settings';
 import type { BookFormatRegistry } from '../formats';
@@ -80,7 +80,6 @@ export class BookTreeOutlineItem extends vscode.TreeItem {
 
 export class BookTreeGroupItem extends vscode.TreeItem {
   public readonly type = 'group';
-  public readonly contextValue = 'group';
 
   constructor(public name: string, public children: BookTreeBookItem[]) {
     super(name, vscode.TreeItemCollapsibleState.Expanded);
@@ -88,6 +87,7 @@ export class BookTreeGroupItem extends vscode.TreeItem {
     this.label = name;
     this.tooltip = name;
     this.iconPath = new vscode.ThemeIcon('folder');
+    this.contextValue = this.type;
   }
 }
 
@@ -108,8 +108,19 @@ function createBookTreeItem(book: BookData, registry: BookFormatRegistry): BookT
   );
 }
 
-export class BookTreeProvider implements vscode.TreeDataProvider<BookTreeItem> {
+export class BookTreeProvider
+  implements vscode.TreeDataProvider<BookTreeItem>, vscode.TreeDragAndDropController<BookTreeItem>
+{
+  private static readonly dndMimeType = 'application/vnd.code.tree.bookList';
+
+  readonly dragMimeTypes = [BookTreeProvider.dndMimeType];
+  readonly dropMimeTypes = [BookTreeProvider.dndMimeType];
+
   public books: BookTreeItem[];
+  private groupBy: BookListGroupBy;
+
+  /** 拖拽改分类回调，由 BookList 注入（避免 Provider 直接依赖 storage）。 */
+  onReassignCategory?: (bookIds: string[], category: string | undefined) => void;
 
   private readonly _onDidChangeTreeData = new vscode.EventEmitter<
     void | BookTreeItem | BookTreeItem[] | null | undefined
@@ -121,10 +132,12 @@ export class BookTreeProvider implements vscode.TreeDataProvider<BookTreeItem> {
     books: BookData[] = [],
     groupBy: BookListGroupBy = 'none'
   ) {
+    this.groupBy = groupBy;
     this.books = this.buildTreeItems(books, groupBy);
   }
 
   updateBooks(books: BookData[], groupBy: BookListGroupBy = 'none'): void {
+    this.groupBy = groupBy;
     this.books = this.buildTreeItems(books, groupBy);
     this.refresh();
   }
@@ -167,6 +180,57 @@ export class BookTreeProvider implements vscode.TreeDataProvider<BookTreeItem> {
 
   refresh(): void {
     this._onDidChangeTreeData.fire();
+  }
+
+  handleDrag(source: readonly BookTreeItem[], dataTransfer: vscode.DataTransfer): void {
+    // 仅在按分类分组时启用拖拽改分类，其它分组方式拖拽无意义。
+    if (this.groupBy !== 'category') {
+      return;
+    }
+    const bookIds = source
+      .filter((item): item is BookTreeBookItem => item.type === 'book')
+      .map((book) => book.id);
+    if (bookIds.length === 0) {
+      return;
+    }
+    dataTransfer.set(BookTreeProvider.dndMimeType, new vscode.DataTransferItem(bookIds));
+  }
+
+  handleDrop(target: BookTreeItem | undefined, dataTransfer: vscode.DataTransfer): void {
+    if (this.groupBy !== 'category' || !this.onReassignCategory) {
+      return;
+    }
+    const item = dataTransfer.get(BookTreeProvider.dndMimeType);
+    const bookIds = item?.value;
+    if (!Array.isArray(bookIds) || bookIds.length === 0) {
+      return;
+    }
+    const category = this.resolveDropCategory(target);
+    if (category === null) {
+      return;
+    }
+    this.onReassignCategory(bookIds, category);
+  }
+
+  /**
+   * 解析拖拽落点对应的目标分类。
+   * @returns string 设为该分类 / undefined 清除分类 / null 无效落点（不操作）
+   */
+  private resolveDropCategory(target: BookTreeItem | undefined): string | undefined | null {
+    if (!target) {
+      // 拖到空白处 = 清除分类。
+      return undefined;
+    }
+    if (target.type === 'group') {
+      // 「未分类」分组即清除分类，其它分组名为分类名。
+      return target.name === uncategorizedBookGroupName ? undefined : target.name;
+    }
+    if (target.type === 'book') {
+      // 拖到某本书上 = 归入该书所在分类。
+      return target.category ?? undefined;
+    }
+    // 拖到章节大纲项上 = 无效。
+    return null;
   }
 
   getTreeItem(element: BookTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
@@ -238,7 +302,14 @@ export class BookTreeProvider implements vscode.TreeDataProvider<BookTreeItem> {
 
     return [...groups.entries()]
       .sort(([left], [right]) => left.localeCompare(right, 'zh-CN'))
-      .map(([name, children]) => new BookTreeGroupItem(name, children));
+      .map(([name, children]) => {
+        const item = new BookTreeGroupItem(name, children);
+        // 按分类分组时，非「未分类」的分组允许重命名；拖拽改分类也仅在此模式生效。
+        if (groupBy === 'category' && name !== uncategorizedBookGroupName) {
+          item.contextValue = 'categoryGroup';
+        }
+        return item;
+      });
   }
 }
 

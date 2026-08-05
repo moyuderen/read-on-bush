@@ -34,7 +34,7 @@
 |------|------|
 | 多格式 | TXT / EPUB / PDF 统一书架管理，导入时自动提取目录 |
 | 双模式 | 状态栏阅读 + 终端伪装，通过状态栏图标一键切换 |
-| 书架整理 | 分类、排序、按分类或目录分组 |
+| 书架整理 | 分类、排序、按分类或目录分组，支持拖拽改分类 |
 | 编码检测 | TXT 自动检测 BOM / UTF-16 端序 / GB18030，也支持手动指定 |
 
 ![Read On Bush 功能展示](https://cdn.jsdelivr.net/gh/moyuderen/read-on-bush@main/readme/example.png)
@@ -213,7 +213,14 @@
 
 书籍右键菜单：**Rename**（重命名）、**Set Category** / **Clear Category**（分类）、**Delete**（删除）。
 
-书架标题栏：**Sort**（排序）、**Group By**（分组方式：不分组 / 按分类 / 按文件目录）、**Refresh**（刷新）。
+书架标题栏：**Sort**（排序）、**Group By**（分组方式：不分组 / 按分类 / 按文件目录）、**New Category**（新建分类）、**Refresh**（刷新）。
+
+**分类管理：**
+
+- **设置分类**：右键书籍 → **Set Category**，弹出已有分类列表可直接选择（带数量标注、当前分类高亮），也可底部「创建新分类…」输入新名称或「清除分类」
+- **拖拽改分类**：切换到「按分类分组」后，直接把书籍拖到目标分类文件夹或另一本书上即可改分类；拖到「未分类」或空白处则清除分类，支持多选拖拽
+- **新建分类**：点击标题栏 **New Category**，输入名称后多选要加入的书籍
+- **重命名分类**：右键分类文件夹 → 点击编辑图标重命名，自动更新该分类下所有书籍；若新名与已有分类重名则自动合并
 
 ### 状态栏阅读
 
@@ -330,6 +337,10 @@ EPUB 和 PDF 都支持跨章 / 跨页自动流入——当一页内容不够填�
 | `readOnBush.refreshBookList` | 刷新书架 |
 | `readOnBush.sortBookList` | 排序书架 |
 | `readOnBush.switchBookListGroupBy` | 切换书架分组方式 |
+| `readOnBush.setBookCategory` | 设置书籍分类 |
+| `readOnBush.clearBookCategory` | 清除书籍分类 |
+| `readOnBush.createCategory` | 新建分类 |
+| `readOnBush.renameCategory` | 重命名分类 |
 | `readOnBush.openBookOutline` | 打开书籍章节目录 |
 | `readOnBush.epub.next` | EPUB 读书：下一页 |
 | `readOnBush.epub.prev` | EPUB 读书：上一页 |

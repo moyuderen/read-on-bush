@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { window, commands, workspace, env, Uri } from 'vscode';
+import { window, commands, workspace, env, Uri, QuickPickItemKind } from 'vscode';
 import { type ExtensionContext } from 'vscode';
 import { BookTreeProvider, BookTreeItem, BookTreeBookItem } from './BookTree';
 import { ReadBook } from './ReadBook';
@@ -44,6 +44,15 @@ type SortableBook = {
   process: number;
 };
 
+type CategoryPickItem = {
+  label: string;
+  description?: string;
+  detail?: string;
+  picked?: boolean;
+  kind?: QuickPickItemKind;
+  action?: 'create' | 'clear';
+};
+
 export class BookList {
   public app: ReadBook;
   public context: ExtensionContext;
@@ -61,8 +70,14 @@ export class BookList {
       this.books,
       getBookListGroupBy()
     );
+    this.bookTreeProvider.onReassignCategory = (bookIds, category) => {
+      this.reassignCategory(bookIds, category);
+    };
     this.context.subscriptions.push(
-      window.registerTreeDataProvider('bookList', this.bookTreeProvider)
+      window.createTreeView('bookList', {
+        treeDataProvider: this.bookTreeProvider,
+        dragAndDropController: this.bookTreeProvider
+      })
     );
     this.initCommands();
   }
@@ -96,6 +111,12 @@ export class BookList {
       }),
       commands.registerCommand(Commands.ClearBookCategory, (event) => {
         this.clearBookCategory(event);
+      }),
+      commands.registerCommand(Commands.CreateCategory, () => {
+        this.createCategory();
+      }),
+      commands.registerCommand(Commands.RenameCategory, (event) => {
+        this.renameCategory(event);
       }),
       commands.registerCommand(Commands.SwitchBookListGroupBy, () => {
         this.switchBookListGroupBy();
@@ -350,18 +371,160 @@ export class BookList {
       return;
     }
 
-    const category = await window.showInputBox({
-      value: book.category ?? '',
-      prompt: '请输入分类名称，留空将清除分类'
+    const currentCategory = book.category ?? '';
+    const pick = await window.showQuickPick(this.buildCategoryPickItems(currentCategory), {
+      placeHolder: currentCategory
+        ? `当前分类：${currentCategory}，选择已有分类或创建新分类`
+        : '选择已有分类或创建新分类'
     });
 
-    if (category === undefined) {
+    if (!pick) {
       return;
     }
 
-    this.books = this.bookStorage.updateBookCategory(book.id, category);
+    if (pick.action === 'create') {
+      const input = await window.showInputBox({
+        value: currentCategory,
+        prompt: '请输入分类名称，留空将清除分类'
+      });
+      if (input === undefined) {
+        return;
+      }
+      this.applyBookCategory(book.id, input);
+      return;
+    }
+
+    // 选择「清除分类」或已有分类时直接写入。
+    this.applyBookCategory(book.id, pick.action === 'clear' ? '' : pick.label);
+  }
+
+  private applyBookCategory(bookId: string, category: string) {
+    this.books = this.bookStorage.updateBookCategory(bookId, category);
     this.updateBookTreeProvider();
     message(category.trim() ? '分类已更新' : '分类已清除');
+  }
+
+  /** 拖拽落点批量改分类：单次读写 storage，避免逐条调用造成的多次持久化。 */
+  reassignCategory(bookIds: string[], category: string | undefined) {
+    const idSet = new Set(bookIds);
+    const nextCategory = category?.trim() || undefined;
+    let changed = false;
+
+    this.books = this.books.map((book) => {
+      if (idSet.has(book.id) && (book.category ?? '') !== (nextCategory ?? '')) {
+        changed = true;
+        return { ...book, category: nextCategory };
+      }
+      return book;
+    });
+
+    if (!changed) {
+      return;
+    }
+
+    this.bookStorage.saveBooks(this.books);
+    this.updateBookTreeProvider();
+    message(nextCategory ? `已移动到「${nextCategory}」` : '已移出分类');
+  }
+
+  /** 新建分类：输入名称后多选书籍加入（空分类不会在树中显示，故创建时一并选书）。 */
+  async createCategory() {
+    if (this.books.length === 0) {
+      message.warn('书架为空，请先导入书籍');
+      return;
+    }
+
+    const input = await window.showInputBox({
+      prompt: '请输入新分类名称',
+      validateInput: (value) => (value.trim() ? undefined : '分类名称不能为空')
+    });
+    if (input === undefined) {
+      return;
+    }
+    const categoryName = input.trim();
+
+    const picks = await window.showQuickPick(
+      this.books.map((book) => ({
+        label: book.name,
+        description: book.category ? `当前：${book.category}` : '未分类',
+        picked: false,
+        bookId: book.id
+      })),
+      {
+        canPickMany: true,
+        placeHolder: `选择要加入「${categoryName}」的书籍`
+      }
+    );
+
+    if (!picks || picks.length === 0) {
+      return;
+    }
+
+    const idSet = new Set(picks.map((pick) => pick.bookId));
+    this.books = this.books.map((book) =>
+      idSet.has(book.id) ? { ...book, category: categoryName } : book
+    );
+    this.bookStorage.saveBooks(this.books);
+    this.updateBookTreeProvider();
+    message(`已创建分类「${categoryName}」，添加 ${picks.length} 本书`);
+  }
+
+  /** 重命名分类：批量更新该分类下所有书籍；若新名与已有分类重名则自动合并。 */
+  async renameCategory(item: BookTreeItem) {
+    if (item?.type !== 'group' || item.contextValue !== 'categoryGroup') {
+      return;
+    }
+    const oldName = item.name;
+
+    const input = await window.showInputBox({
+      value: oldName,
+      prompt: '请输入新的分类名称',
+      validateInput: (value) => (value.trim() ? undefined : '分类名称不能为空')
+    });
+    if (input === undefined) {
+      return;
+    }
+    const newName = input.trim();
+    if (newName === oldName) {
+      return;
+    }
+
+    const hasExisting = this.books.some((book) => book.category === newName);
+    this.books = this.books.map((book) =>
+      book.category === oldName ? { ...book, category: newName } : book
+    );
+    this.bookStorage.saveBooks(this.books);
+    this.updateBookTreeProvider();
+    message(hasExisting ? `已合并到「${newName}」` : `已重命名为「${newName}」`);
+  }
+
+  /** 构建分类选择列表：已有分类（按书名排序，标注当前分类与数量）+ 创建/清除入口。 */
+  private buildCategoryPickItems(currentCategory: string): CategoryPickItem[] {
+    const counts = new Map<string, number>();
+    for (const item of this.books) {
+      const category = item.category?.trim();
+      if (category) {
+        counts.set(category, (counts.get(category) ?? 0) + 1);
+      }
+    }
+
+    const items: CategoryPickItem[] = Array.from(counts.keys())
+      .sort((left, right) => left.localeCompare(right, 'zh-CN'))
+      .map((category) => ({
+        label: category,
+        description: `${counts.get(category) ?? 0} 本`,
+        detail: category === currentCategory ? '当前分类' : undefined,
+        picked: category === currentCategory
+      }));
+
+    items.push({ label: '', kind: QuickPickItemKind.Separator });
+    items.push({ label: '$(add) 创建新分类…', action: 'create' });
+
+    if (currentCategory) {
+      items.push({ label: '$(clear-all) 清除分类', action: 'clear' });
+    }
+
+    return items;
   }
 
   clearBookCategory(book: BookTreeItem) {
