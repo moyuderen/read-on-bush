@@ -1,8 +1,10 @@
+import { randomBytes } from 'crypto';
 import { ViewColumn, window, type WebviewPanel } from 'vscode';
+import { getImagePreviewMode, type ImagePreviewMode } from '../settings';
 
 /**
  * 图片预览面板（epub / pdf 共用）。从 EpubReader 抽出，避免 epub/pdf 各自重复 webview
- * 生命周期与按键处理。行为：任意键 / 点击关闭；按 d 切换伪装调试文案；关闭后回调收回焦点。
+ * 生命周期与按键处理。缩略图模式下点击图片切换大小，点击空白或按键关闭。
  */
 
 export type ImagePreviewOptions = {
@@ -15,42 +17,117 @@ export type ImagePreviewOptions = {
   onRefocus?: () => void;
 };
 
-export function buildImageHtml(mediaType: string, base64: string): string {
+export function buildImageHtml(
+  mediaType: string,
+  base64: string,
+  imagePreviewMode: ImagePreviewMode
+): string {
+  const nonce = randomBytes(16).toString('hex');
+  const thumbnailMode = imagePreviewMode === 'thumbnail';
+
   return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';">
+<style nonce="${nonce}">
+  body {
+    margin: 0;
+    background: var(--vscode-panel-background, var(--vscode-editor-background));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .image {
+    display: block;
+  }
+
+  .image.thumbnail {
+    max-width: min(18vw, 180px);
+    max-height: min(20vh, 160px);
+    cursor: zoom-in;
+  }
+
+  .image.expanded {
+    max-width: 100%;
+    max-height: 100vh;
+    cursor: pointer;
+  }
+
+  .hint {
+    position: fixed;
+    bottom: 8px;
+    right: 12px;
+    color: var(--vscode-descriptionForeground);
+    font-size: 12px;
+    pointer-events: none;
+  }
+</style>
 </head>
-<body tabindex="0" style="margin:0;background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;cursor:pointer;outline:none">
-<img src="data:${mediaType};base64,${base64}" style="max-width:100%;max-height:100vh;object-fit:contain" />
-<div style="position:fixed;bottom:8px;right:12px;color:#999;font-size:12px;pointer-events:none">按任意键 / 点击关闭</div>
-<script>
+<body tabindex="0">
+<img class="image" src="data:${mediaType};base64,${base64}" alt="图片预览" />
+<div class="hint"></div>
+<script nonce="${nonce}">
   const vscode = acquireVsCodeApi();
+  const body = document.body;
+  const image = document.querySelector('.image');
+  const hint = document.querySelector('.hint');
+  const canToggleImage = ${thumbnailMode};
+  let isThumbnail = canToggleImage;
   let closed = false;
-  const postOnce = (message) => {
+
+  const postCloseOnce = () => {
     if (closed) {
       return;
     }
     closed = true;
-    vscode.postMessage(message);
+    vscode.postMessage('close');
   };
-  const close = () => postOnce('close');
+
+  const updateView = () => {
+    image.classList.toggle('thumbnail', isThumbnail);
+    image.classList.toggle('expanded', !isThumbnail);
+    image.setAttribute('aria-label', isThumbnail ? '点击查看大图' : '点击缩小图片');
+    hint.textContent = canToggleImage
+      ? isThumbnail
+        ? '点击图片查看大图 · 点击空白处或按任意键关闭'
+        : '点击图片缩小 · 点击空白处或按任意键关闭'
+      : '按任意键 / 点击关闭';
+  };
+
+  const handleImageClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!canToggleImage) {
+      postCloseOnce();
+      return;
+    }
+    isThumbnail = !isThumbnail;
+    updateView();
+  };
+
   const handleKeydown = (event) => {
     if (event.key.toLowerCase() === 'd') {
       event.preventDefault();
       event.stopPropagation();
-      postOnce('toggleDebugContent');
+      vscode.postMessage('toggleDebugContent');
       return;
     }
 
-    close();
+    postCloseOnce();
   };
-  const focusBody = () => document.body.focus({ preventScroll: true });
+
+  const focusBody = () => body.focus({ preventScroll: true });
+  image.addEventListener('click', handleImageClick);
+  body.addEventListener('click', postCloseOnce);
   window.addEventListener('keydown', handleKeydown, true);
-  document.addEventListener('keydown', handleKeydown, true);
-  document.body.addEventListener('click', close);
   window.addEventListener('load', focusBody);
+  updateView();
   setTimeout(focusBody, 0);
 </script>
 </body>
@@ -73,7 +150,11 @@ export class ImagePreviewPanel {
       ViewColumn.Active,
       { enableScripts: true }
     );
-    panel.webview.html = buildImageHtml(options.mediaType, options.base64);
+    panel.webview.html = buildImageHtml(
+      options.mediaType,
+      options.base64,
+      getImagePreviewMode()
+    );
     panel.webview.onDidReceiveMessage((msg) => {
       if (msg === 'toggleDebugContent') {
         options.onToggleDebug?.();

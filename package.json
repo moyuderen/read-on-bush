@@ -22,7 +22,6 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Education",
     "Other"
   ],
   "keywords": [
@@ -121,6 +120,19 @@
           "type": "boolean",
           "default": true,
           "description": "是否在终端伪装的阅读进度中显示章节名称"
+        },
+        "readOnBush.imagePreviewMode": {
+          "type": "string",
+          "default": "thumbnail",
+          "enum": [
+            "thumbnail",
+            "large"
+          ],
+          "enumDescriptions": [
+            "先显示缩略图，点击图片后放大",
+            "打开时直接显示大图"
+          ],
+          "description": "EPUB/PDF 图片预览的初始显示模式"
         },
         "readOnBush.displayTarget": {
           "type": "string",
