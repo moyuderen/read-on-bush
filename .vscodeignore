@@ -11,12 +11,30 @@ vsc-extension-quickstart.md
 **/*.ts
 **/.vscode-test.*
 
-# --- 打包体积优化：排除未使用的依赖文件 ---
+# --- 打包体积优化：只保留运行时依赖 ---
 
-# linebyline：extraneous 残留，代码完全未引用
-node_modules/linebyline/**
+# 旧的 bundle 输出不再使用，避免本地残留 dist/ 被打入 VSIX。
+dist/**
 
-# pdfjs-dist：仅使用 legacy/build/pdf.js + legacy/build/pdf.worker.js
+# VSCE 会根据 npm list 收集 node_modules。若本地曾安装过 VSCE 或测试工具，
+# extraneous 依赖也可能被收进扩展包，因此先整体排除，再显式放行运行时依赖。
+node_modules/**
+!node_modules/fast-xml-parser/**
+!node_modules/fflate/**
+!node_modules/pngjs/**
+!node_modules/@nodable/entities/**
+!node_modules/anynum/**
+!node_modules/fast-xml-builder/**
+!node_modules/is-unsafe/**
+!node_modules/path-expression-matcher/**
+!node_modules/strnum/**
+!node_modules/xml-naming/**
+!node_modules/path2d-polyfill/**
+!node_modules/pdfjs-dist/package.json
+!node_modules/pdfjs-dist/legacy/build/pdf.js
+!node_modules/pdfjs-dist/legacy/build/pdf.worker.js
+
+# pdfjs-dist 只使用 legacy/build 下的核心与 worker。
 node_modules/pdfjs-dist/build/**
 node_modules/pdfjs-dist/cmaps/**
 node_modules/pdfjs-dist/standard_fonts/**
@@ -26,13 +44,13 @@ node_modules/pdfjs-dist/legacy/web/**
 node_modules/pdfjs-dist/legacy/image_decoders/**
 node_modules/pdfjs-dist/**/*.min.js
 
-# pngjs：Node 环境不需要 browser build
+# pngjs：Node 环境不需要 browser build。
 node_modules/pngjs/browser.js
 
-# readme 截图仅在 GitHub 展示，不需要进扩展包
+# readme 截图仅在 GitHub 展示，不需要进扩展包。
 readme/**
 
-# 依赖包内测试文件 / 文档
+# 依赖包内测试文件 / 文档。
 **/test/**
 **/tests/**
 **/docs/**
