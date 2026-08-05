@@ -6,6 +6,14 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.5.1] - 2026-08-05
+
+### Changed
+
+- 大幅缩减安装包体积（8.5 MB → 1.5 MB，-82%）：排除 pdfjs-dist 中未使用的 cmaps / standard_fonts / web viewer / image_decoders / min 重复构建等附属文件。
+- 清理残留的 `linebyline` 依赖（代码已不引用），排除 `pngjs` 浏览器构建和 README 截图等无关文件。
+- 压缩扩展图标 `moyu.png`（1254×1254 → 256×256，1.5 MB → 108 KB），不影响显示效果。
+
 ## [2.5.0] - 2026-08-04
 
 ### Added
