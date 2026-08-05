@@ -1,86 +1,181 @@
 # Read On Bush
 
-Read On Bush 是一个适合在 VS Code 中低调阅读 txt / epub / pdf 小说的扩展。你可以把阅读内容展示在状态栏，也可以打开“终端伪装”窗口，把正文混入构建日志、Claude Code CLI、服务日志或**自定义 JSON 模板**风格的输出中；同时内置书架管理、目录批量导入、分类/目录分组、进度跳转、EPUB 章节阅读、PDF 分页阅读（含图片预览）和快捷键阅读模式，导入 mobi/azw3 时还会引导你转为 epub。
+> 在 VS Code 中低调摸鱼看小说——把正文伪装成 Claude CLI、构建日志、服务日志等开发输出，旁人路过只会以为你在认真工作。
 
-> 当前支持 `.txt`、`.epub` 与 `.pdf` 文件。
+支持 **TXT / EPUB / PDF** 三种格式，内置书架管理、章节目录、进度跳转和快捷键翻页。
 
-## 功能亮点
+---
 
-- **状态栏阅读**：在 VS Code 状态栏显示当前阅读片段，支持上一行、下一行、跳转和进度展示。
-- **终端伪装阅读**：在终端样式的 Webview 中阅读，可选择构建日志、Claude Code CLI、后端服务日志、Vite、Docker Compose 等伪装风格，或用自定义 JSON 模板打造专属日志长相。
-- **多显示位置**：阅读内容可显示在状态栏或终端伪装窗口，通过状态栏终端图标一键切换。
-- **书架管理**：支持导入单本 txt、按目录批量导入、刷新书架、删除、重命名、设置/清除分类。
-- **书架整理**：支持排序，并可按无分组、分类、文件目录三种方式展示书架。
-- **EPUB 阅读**：导入 `.epub` 后在专属伪装终端按章节阅读，支持章节目录、跳章、跨章自动流入、阅读进度（章 + 全书百分比）与按需查看图片。
-- **PDF 阅读**：导入 `.pdf` 后在专属伪装终端按页阅读，支持页面目录、跳页、跨页自动流入、阅读进度（第 N 页 + 全书百分比）与按需查看页面内插图。
-- **格式转换引导**：导入 `mobi` / `azw3` 时自动提示并引导前往 [CloudConvert](https://cloudconvert.com) 转为 epub。
-- **阅读体验配置**：可配置状态栏片段长度、TXT 文件编码、终端正文宽度/行数、状态栏前缀、是否显示进度、默认是否启用阅读快捷键等。
-- **快捷键模式切换**：通过 Reading / Coding 模式切换阅读快捷键，避免编码时和常用快捷键冲突。
+## 📋 目录
 
-## 1. 使用指南
+- [功能概览](#功能概览)
+- [✨ 特色功能](#-特色功能)
+  - [终端伪装：把小说藏进开发日志](#终端伪装把小说藏进开发日志)
+  - [一键隐蔽：0.1 秒消除证据](#一键隐蔽01-秒消除证据)
+  - [图片预览：插图随看随关](#图片预览插图随看随关)
+  - [自定义伪装模板：打造专属风格](#自定义伪装模板打造专属风格)
+- [📖 使用指南](#-使用指南)
+- [快捷键](#快捷键)
+- [配置项](#配置项)
+- [命令列表](#命令列表)
 
-### 1.1 安装 Read On Bush
+---
 
-安装成功后，活动栏会显示 Read On Bush 图标；进入书架视图后，可以从标题栏按钮导入书籍或刷新书架。
+## 功能概览
 
-![Install](https://cdn.jsdelivr.net/gh/moyuderen/CDN@main/moyuderen/read-on-bush/install.png)
+```
+导入书籍 --> 书架管理 --> 选择书籍 --> 开始阅读
+                                |
+                                +-- 状态栏模式：正文显示在底部状态栏
+                                +-- 终端伪装模式：正文混入伪装终端（推荐）
+```
 
-### 1.2 导入书籍
+| 能力 | 说明 |
+|------|------|
+| 多格式 | TXT / EPUB / PDF 统一书架管理，导入时自动提取目录 |
+| 双模式 | 状态栏阅读 + 终端伪装，通过状态栏图标一键切换 |
+| 书架整理 | 分类、排序、按分类或目录分组 |
+| 编码检测 | TXT 自动检测 BOM / UTF-16 端序 / GB18030，也支持手动指定 |
 
-#### 导入 txt 文件
+![Read On Bush 功能展示](https://cdn.jsdelivr.net/gh/moyuderen/read-on-bush@main/readme/example.png)
 
-在书架视图点击 **Import**，选择一个或多个本地 `.txt` 文件后即可加入书架。
+---
 
-![Import book](https://cdn.jsdelivr.net/gh/moyuderen/CDN@main/moyuderen/read-on-bush/import-book.png)
+## ✨ 特色功能
 
-#### 按目录批量导入
+### 终端伪装：把小说藏进开发日志
 
-在书架视图点击 **Import Directory**，选择目录后会批量导入目录下的 txt 文件。导入后可以点击 **Refresh** 刷新书架。
+这是 Read On Bush 最核心的特色。小说正文被嵌入终端日志模板中，看起来就像你在正常开发：
 
-![Refresh Book list](https://cdn.jsdelivr.net/gh/moyuderen/CDN@main/moyuderen/read-on-bush/refresh-booklist.jpg)
+```
++-- terminal: Claude Code -----------------------------------+
+|                                                            |
+|  > Planning...                                             |
+|    Read src/features/orders/OrderList.tsx                  |
+|    Read src/api/orders.ts                                  |
+|                                                            |
+|    第三章 龙族崛起                                         |
+|    他缓缓睁开双眼，发现自己躺在一间陌生                    |
+|    的石室之中，空气中弥漫着古老的气息。                    |
+|                                                            |
+|  Updated src/api/orders.ts                                 |
+|     @@ -24,7 +24,12 @@                                     |
+|     +  const params = new URLSearchParams(...)             |
+|                                                            |
+|  npm test -- 18 passed (2.4s)                              |
+|  ------------------------------------                      |
+|  [opus-4.8] [========------] 43% | $16.17 | 305m           |
++------------------------------------------------------------+
+```
 
-### 1.3 管理书架
+内置 6 种伪装风格，通过配置项 `terminalCamouflageStyle` 切换：
 
-在书架中的书籍上右键，可以进行：
+| 风格 | 伪装效果 |
+|------|---------|
+| `claudeCli`（默认） | Claude Code 命令行交互界面 |
+| `buildLog` | Webpack / tsc 等构建工具的 Watch 输出 |
+| `serverLog` | 后端服务运行时日志 |
+| `vite` | Vite 开发服务器终端输出 |
+| `docker` | Docker Compose 容器日志 |
+| `custom` | 自定义 JSON 模板（见[自定义伪装模板](#自定义伪装模板打造专属风格)） |
 
-- **Rename**：重命名书籍显示名称
-- **Set Category**：设置分类
-- **Clear Category**：清除分类
-- **Delete**：从书架删除
+终端伪装窗口内的键盘操作（TXT / EPUB / PDF 通用）：
 
-书架标题栏还支持：
+| 按键 | 功能 |
+|------|------|
+| `→` 或 `n` | 下一行 / 下一页 |
+| `←` 或 `p` | 上一行 / 上一页 |
+| `j` | 跳转 |
+| `d` | 切换真实内容 ↔ 模板占位（[无痕切换](#一键隐蔽01-秒消除证据)，按一下隐藏，再按一下继续看） |
+| `q` | 快速切到模板占位（一键隐蔽） |
+| `q q` | 停止阅读 |
+| `i` | 查看 / 关闭当前页图片（仅 EPUB / PDF，见[图片预览](#图片预览插图随看随关)） |
 
-- **Sort**：排序书架
-- **Group By**：切换分组方式，可选不分组、按分类分组、按文件目录分组
-- **Refresh**：刷新书架
+### 一键隐蔽：0.1 秒消除证据
 
-### 1.4 开始阅读
+旁人靠近时，两个按键帮你瞬间隐蔽：
 
-选择书架中的书籍后，阅读内容会按照配置展示在状态栏、终端伪装窗口或两处同时展示。
+- **`q` — 一键隐蔽**：正文瞬间替换为伪装占位文案，看起来就像正常的 AI 编程输出
+- **`d` — 无痕切换**：在真实内容和占位文案之间来回切换，按一下隐藏，再按一下继续阅读
 
-![How to read](https://cdn.jsdelivr.net/gh/moyuderen/CDN@main/moyuderen/read-on-bush/read.png)
+以 Claude CLI 模式为例，按 `q` 的前后对比：
 
-常用操作：
+```
++-- 正常阅读 ------------------------------------------------+
+|                                                            |
+|  > Planning...                                             |
+|                                                            |
+|  第三章 龙族崛起                                           |
+|  他缓缓睁开双眼，发现自己躺在一间陌生的                    |
+|  石室之中，空气中弥漫着古老的气息。                        |
+|                                                            |
+|  Updated src/api/orders.ts                                 |
+|  [opus-4.8] [========------] 43% | $16.17 | 305m           |
++------------------------------------------------------------+
+         |
+         |  按 q 或 d (0.1 秒切换)
+         v
++-- 一键隐藏 ------------------------------------------------+
+|                                                            |
+|  > Planning...                                             |
+|                                                            |
+|  I'll keep the terminal rendering state local to           |
+|  the pseudoterminal and reuse the shared renderer.         |
+|     @@ -42,7 +42,11 @@ render(state)                       |
+|     +  this.panel.webview.html = renderScreen(...)         |
+|                                                            |
+|  Updated src/api/orders.ts                                 |
+|  [opus-4.8] [========------] 43% | $16.17 | 305m           |
++------------------------------------------------------------+
+```
 
-- 点击状态栏阅读片段或执行命令 **状态栏读书：下一行** 翻到下一行
-- 执行 **状态栏读书：上一行** 返回上一行
-- 执行 **状态栏读书：跳转** 跳转到指定位置
-- 使用 Reading / Coding 模式切换阅读快捷键是否生效
+上下两段的 Header（任务规划）、Trailing（代码 diff）、底部进度条完全一致——只有中间正文被替换。再按 `d` 即可切回真实内容继续阅读。
 
-### 1.5 终端伪装阅读
+### 图片预览：插图随看随关
 
-执行命令 **Read On Bush: 打开终端伪装** 可以打开终端伪装窗口；执行 **Read On Bush: 切换终端伪装** 可以切换显示状态。
+阅读 EPUB 或 PDF 时，如果当前页包含图片，进度处会显示 `[图 i]` 标记。按 `i` 即可在独立窗口中查看插图：
 
-终端伪装支持六种输出风格：
+```
++-- terminal: Claude Code -------------------+
+|                                            |
+|  第三章 龙族崛起 - 第 12 页 [图 i]         |
+|  他缓缓睁开双眼，发现自己躺在一间陌生      |
+|  的石室之中，石壁上刻满了古老的符文...     |
+|  ------------------------------ 43%        |
++--------------------------------------------+
+         |
+         |  按 i
+         v
++-- 图片预览窗口 ----------------------------+
+|                                            |
+|                                            |
+|       [ 石壁符文插图 ]                     |
+|                                            |
+|                                            |
+|    按任意键或点击即关闭                    |
+|                                            |
++--------------------------------------------+
+```
 
-- **buildLog**：构建 / Watch 日志样式
-- **claudeCli**：Claude Code CLI 风格
-- **serverLog**：后端服务日志样式
-- **vite**：Vite 开发服务器样式
-- **docker**：Docker Compose 日志样式
-- **custom**：使用自定义 JSON 模板
+隐蔽设计细节：
 
-执行命令 **Read On Bush: 配置自定义终端模板** 可以打开可视化编辑器。页面提供默认示例、实时终端预览（带 Header / 正文 / Trailing / Done 区段标注）、模板 JSON 和完整 `settings.json` 配置；点击“保存并启用”会写入配置并自动切换到 `custom`。将 `terminalCamouflageStyle` 切换为 `custom` 时也会自动打开该编辑器。自定义模板支持静态头尾日志、正文前缀、安全颜色和完成行中的 `{{progress}}` 占位符，不支持脚本、原始 ANSI 或 Claude CLI 式动态底栏。
+- 图片窗口内**按任意键或点击**立即关闭——旁人靠近时无需找按键，随手一按就行
+- 切换到模板占位模式（`q` 或 `d`）时，已打开的图片窗口会**自动关闭**
+- 占位模式下按 `i` **不会打开真实图片**，不会暴露你在看什么
+- PDF 图片为纯 JS 按需解码，无需额外原生依赖
+
+### 自定义伪装模板：打造专属风格
+
+如果 6 种内置风格都不够用，可以用可视化编辑器打造完全属于自己的伪装模板。
+
+执行 **Read On Bush: 配置自定义终端模板** 打开 Webview 编辑器：
+
+- **实时预览**：左侧编辑表单，右侧终端预览，带 Header / 正文 / Trailing / Done 区段标注
+- **所见即所得**：修改任意字段，预览立即更新
+- **一键启用**：点击「保存并启用」自动写入 `settings.json` 并切换到 `custom` 风格
+- **安全颜色**：支持 `plain` / `dim` / `red` / `green` / `yellow` / `blue` / `magenta` / `cyan`
+
+将 `terminalCamouflageStyle` 设为 `custom` 时也会自动打开编辑器。模板支持静态头尾日志、正文前缀、`{{progress}}` 进度占位符。不支持脚本、原始 ANSI 或动态底栏。
 
 示例模板：
 
@@ -106,76 +201,119 @@ Read On Bush 是一个适合在 VS Code 中低调阅读 txt / epub / pdf 小说�
 }
 ```
 
-可以通过配置调整终端伪装中的正文行数和每行宽度；宽度设置为 `0` 时，会根据终端窗口宽度自动计算。
+---
 
-终端伪装窗口内也支持键盘操作和一键切换占位模板：
+## 📖 使用指南
 
-- 下一行：`Right` 或 `n`
-- 上一行：`Left` 或 `p`
-- 跳转：`j`
-- 切换模板调试文案：`d`（真实内容 ↔ 当前模板调试内容）
-- 快速切到模板占位：`q`
-- 连续两次 `q q`：停止阅读
+### 安装与导入
 
-### 1.6 阅读 EPUB
+安装后点击活动栏的 Read On Bush 图标打开书架视图。点击 **Import** 选择单本文件，或点击 **Import Directory** 选择目录批量导入，导入后可点击 **Refresh** 刷新书架。
 
-除 txt 外，Read On Bush 也支持直接导入并阅读 `.epub`：
+### 书架管理
 
-- 在书架视图点 **Import** 选择 `.epub`（或 **Import Directory** 批量导入），导入时会提取章节目录。
-- 书架中的 epub 书可**展开**查看章节，点击章节即可跳转。
-- 打开 epub 后会在专属的终端伪装窗口（默认名 `Claude Code`）中阅读，**与 txt 的伪装终端相互独立**，且不受 `displayTarget` 配置影响。
-- 终端内按键：
-  - 下一页：`Right` 或 `n`（跨章自动流入）
-  - 上一页：`Left` 或 `p`
-  - 跳转章节：`j`
-  - 查看/关闭当前页图片：`i` 切换（仅当当前页含图片时，进度处会显示 `[图 i]` 标记）；图片窗口内**按任意键或点击**可一键关闭，便于旁有人时迅速隐蔽
-  - 切换模板调试文案：`d`（真实内容 ↔ 模板占位）
-  - 快速切到模板占位：`q`
-  - 连续两次 `q q`：停止阅读
-  - 模板占位下会自动关闭图片窗口，且 `i` 不会打开真实图片
-- 进度按「第 N 章 · 全书 X%」展示；首次打开会解析并缓存全书（按文件修改时间失效），之后秒开。
+书籍右键菜单：**Rename**（重命名）、**Set Category** / **Clear Category**（分类）、**Delete**（删除）。
 
-### 1.7 阅读 PDF
+书架标题栏：**Sort**（排序）、**Group By**（分组方式：不分组 / 按分类 / 按文件目录）、**Refresh**（刷新）。
 
-除 txt / epub 外，Read On Bush 也支持直接导入并阅读 `.pdf`：
+### 状态栏阅读
 
-- 在书架视图点 **Import** 选择 `.pdf`（或 **Import Directory** 批量导入），导入时会提取每页文本与页面图片元信息。
-- 书架中的 pdf 书可**展开**查看页面目录，点击某页即可跳转。
-- 打开 pdf 后会在专属的终端伪装窗口中阅读，**与 txt / epub 的伪装终端相互独立**，且不受 `displayTarget` 配置影响。
-- 终端内按键：
-  - 下一页：`Right` 或 `n`（跨页自动流入）
-  - 上一页：`Left` 或 `p`
-  - 跳转页面：`j`
-  - 查看/关闭当前页图片：`i` 切换（仅当当前页含图片时，进度处会显示 `[图 i]` 标记）；图片窗口内**按任意键或点击**可一键关闭，便于旁有人时迅速隐蔽
-  - 切换模板调试文案：`d`（真实内容 ↔ 模板占位）
-  - 快速切到模板占位：`q`
-  - 连续两次 `q q`：停止阅读
-  - 模板占位下会自动关闭图片窗口，且 `i` 不会打开真实图片
-- 进度按「第 N 页 · 全书 X%」展示；首次打开会解析并缓存全书（按文件修改时间失效），之后秒开。
-- 图片为按需解码（纯 JS，无需额外原生依赖）；个别含罕见编码或色彩空间的图片可能无法显示，但不影响阅读正文。
+选择 TXT 书籍后，正文片段显示在 VS Code 底部状态栏，点击翻页：
 
-### 1.8 转换其他格式（mobi / azw3）
+```
++-- VS Code 底部状态栏 --------------------------------------+
+|                                                            |
+|  第三章 龙族崛起 他缓缓睁开双眼... 43%  Reading  main*     |
+|                                                            |
++------------------------------------------------------------+
+```
 
-Read On Bush 原生支持 `.txt`、`.epub` 与 `.pdf`。导入 `mobi` / `azw3` 时（无论单本导入还是按目录批量导入），扩展不会静默丢弃这些文件，而是弹窗提示需要先转 epub，并提供 **前往 CloudConvert** 按钮一键打开 [cloudconvert.com](https://cloudconvert.com)：
+通过状态栏的 **Reading / Coding** 按钮切换快捷键是否生效——打开 TXT 书籍时自动激活，关闭或切换到 EPUB/PDF 后自动释放，不影响编辑器原生行首/行尾导航。
 
-- 这些格式属于 Amazon 专有二进制，扩展不自研解析，统一引导你转成 epub 后再导入阅读。
-- 转换完成后，把生成的 `.epub` 重新通过 **Import** 或 **Import Directory** 导入即可。
+### EPUB & PDF 阅读
 
-## 2. 快捷键
+EPUB 和 PDF 均通过专属终端伪装窗口阅读（与 TXT 伪装终端相互独立，不受 `displayTarget` 配置影响）。终端操作和图片预览复用上方[特色功能](#-特色功能)中的说明。
 
-快捷键只会在 **阅读模式开启且正在阅读 TXT 书籍** 时生效。你可以通过状态栏的 Reading / Coding 模式按钮随时启用或禁用阅读快捷键；打开 TXT 书籍后快捷键自动激活，关闭或切换到 EPUB/PDF 后自动释放，不会影响编辑器的原生行首/行尾导航。
+**通用流程：**
 
-### macOS
+1. **Import** 导入 `.epub` / `.pdf`（或 **Import Directory** 批量导入），自动提取目录
+2. 首次打开解析并缓存全书（按文件修改时间失效），之后秒开
 
-- 上一行：`Cmd+Left`
-- 下一行：`Cmd+Right`
+**目录树与跳转：**
 
-### Windows / Linux
+书架中的 EPUB / PDF 书籍可**展开**查看目录树，直接点击任意章节或页面跳转：
 
-- 上一行：`Ctrl+Left`
-- 下一行：`Ctrl+Right`
+- **EPUB**：展开后显示章节目录（如「第一章 初入江湖」「第二章 龙族崛起」…），点击章节名跳转到对应位置
+- **PDF**：展开后显示页面目录（如「第 1 页」「第 2 页」…），点击页码跳转到对应页面；也可以在终端中按 `j` 输入页码跳转
 
-## 3. 常用命令
+展开后的目录树支持滚动浏览，几百页的书也能快速定位到想看的位置。
+
+**翻页衔接：**
+
+EPUB 和 PDF 都支持跨章 / 跨页自动流入——当一页内容不够填满终端时，会自动从下一章 / 下一页继续拼接显示，翻页体验连贯。PDF 中的空白页和纯图片页会保留页码语义（不会被跳过），遇到时单独占一屏。
+
+**格式差异：**
+
+| | EPUB | PDF |
+|---|------|-----|
+| 目录单位 | 章节 | 页面 |
+| 进度显示 | 第 N 章 · 全书 X% | 第 N 页 · 全书 X% |
+| 图片 | 按章节内位置锚定 | 按页锚定，纯 JS 按需解码 |
+
+### 格式转换引导
+
+导入 `mobi` / `azw3` 时不会静默丢弃，而是弹窗提示并提供 **前往 CloudConvert** 按钮一键打开 [cloudconvert.com](https://cloudconvert.com)，转换完成后把生成的 `.epub` 重新导入即可。
+
+---
+
+## 快捷键
+
+以下快捷键仅在 **阅读模式开启且正在阅读 TXT 书籍** 时生效（不影响 EPUB / PDF 终端内的按键操作）：
+
+| 平台 | 上一行 | 下一行 |
+|------|--------|--------|
+| macOS | `Cmd+Left` | `Cmd+Right` |
+| Windows / Linux | `Ctrl+Left` | `Ctrl+Right` |
+
+终端伪装窗口内的完整键盘操作见[终端伪装](#终端伪装把小说藏进开发日志)章节。
+
+## 配置项
+
+在 VS Code 设置中搜索 `Read On Bush` 调整以下配置。
+
+### 显示与伪装
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `displayTarget` | `statusBar` | 阅读内容显示位置：`statusBar`（状态栏）或 `terminalCamouflage`（终端伪装）。**推荐改为 `terminalCamouflage` 体验伪装阅读**，通过状态栏终端图标也能随时切换 |
+| `terminalCamouflageStyle` | `claudeCli` | 伪装输出样式：`claudeCli` / `buildLog` / `serverLog` / `vite` / `docker` / `custom`。选择最适合你工作场景的风格 |
+| `terminalCamouflageLineCount` | `3` | 终端伪装中一次展示的正文行数。设大一点（如 5-8）可以一次多看几行，但也会占用更多终端空间 |
+| `terminalCamouflageLineWidth` | `0` | 终端伪装中每行正文的最大显示宽度。`0` 表示根据终端宽度自动计算，也可以手动指定固定值（如 `60`） |
+| `showProgress` | `true` | 是否在状态栏 / 终端伪装中显示阅读进度百分比 |
+| `showChapterTitle` | `true` | 是否在终端伪装的进度中显示当前章节名称（EPUB 显示章节名，PDF 显示页码） |
+
+### 状态栏阅读
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `lineWidth` | `45` | 状态栏每个阅读片段的最大字符数。值越大状态栏显示的正文越长，但也会挤占状态栏空间 |
+| `statusBarPrefix` | `""` | 状态栏内容前缀。可以设置一个不起眼的字符串（如 `| ` 或 `Ln `）让正文更隐蔽 |
+
+### TXT 编码
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `txtEncoding` | `auto` | TXT 文件编码。`auto` 自动检测 BOM / UTF-16 端序 / GB18030。如果 Windows 中文 TXT 出现乱码，手动指定为 `gb18030` 即可解决 |
+
+### 书架与快捷键
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `bookListGroupBy` | `none` | 书架分组方式：`none`（不分组）/ `category`（按分类）/ `directory`（按文件目录）。书多时按分类分组更整洁 |
+| `defaultReadingMode` | `true` | 是否默认启用阅读快捷键。如果不想让快捷键自动激活，设为 `false` 改为手动开关 |
+| `autoRefreshBookList` | `false` | 是否尝试自动刷新书架 |
+| `terminalCamouflageCustomTemplate` | `null` | `custom` 样式的 JSON 模板，建议通过可视化编辑器生成，不建议手写 |
+
+## 命令列表
 
 | 命令 | 说明 |
 | --- | --- |
@@ -192,7 +330,7 @@ Read On Bush 原生支持 `.txt`、`.epub` 与 `.pdf`。导入 `mobi` / `azw3` �
 | `readOnBush.refreshBookList` | 刷新书架 |
 | `readOnBush.sortBookList` | 排序书架 |
 | `readOnBush.switchBookListGroupBy` | 切换书架分组方式 |
-| `readOnBush.openBookOutline` | 打开书籍章节目录（epub） |
+| `readOnBush.openBookOutline` | 打开书籍章节目录 |
 | `readOnBush.epub.next` | EPUB 读书：下一页 |
 | `readOnBush.epub.prev` | EPUB 读书：上一页 |
 | `readOnBush.epub.jumpChapter` | EPUB 读书：跳转章节 |
@@ -203,32 +341,3 @@ Read On Bush 原生支持 `.txt`、`.epub` 与 `.pdf`。导入 `mobi` / `azw3` �
 | `readOnBush.pdf.jumpPage` | PDF 读书：跳转页面 |
 | `readOnBush.pdf.viewImage` | PDF 读书：查看图片 |
 | `readOnBush.pdf.stop` | PDF 读书：停止 |
-
-## 4. 配置项
-
-可以在 VS Code 设置中搜索 `Read On Bush` 调整以下配置。
-
-| 配置项 | 默认值 | 说明 |
-| --- | --- | --- |
-| `readOnBush.lineWidth` | `45` | 状态栏每个阅读片段的最大字符数 |
-| `readOnBush.txtEncoding` | `auto` | TXT 文件编码：`auto`（自动检测）、`utf-8`、`utf-16le`、`utf-16be`、`gb18030`；自动检测无法正确识别时可手动指定 |
-| `readOnBush.defaultReadingMode` | `true` | 是否默认启用阅读快捷键 |
-| `readOnBush.autoRefreshBookList` | `false` | 是否尝试自动刷新书架 |
-| `readOnBush.statusBarPrefix` | `""` | 状态栏内容前缀 |
-| `readOnBush.showProgress` | `true` | 是否显示阅读进度 |
-| `readOnBush.showChapterTitle` | `true` | 是否在终端伪装的阅读进度中显示章节名称 |
-| `readOnBush.displayTarget` | `statusBar` | 阅读内容显示位置：`statusBar`（状态栏）或 `terminalCamouflage`（终端伪装） |
-| `readOnBush.terminalCamouflageLineWidth` | `0` | 终端伪装中每行正文最大宽度，`0` 表示自动计算 |
-| `readOnBush.terminalCamouflageLineCount` | `3` | 终端伪装中展示的正文行数 |
-| `readOnBush.terminalCamouflageStyle` | `claudeCli` | 终端伪装输出样式：`buildLog`、`claudeCli`、`serverLog`、`vite`、`docker`、`custom` |
-| `readOnBush.terminalCamouflageCustomTemplate` | `null` | `custom` 样式使用的单个 JSON 模板，建议通过“配置自定义终端模板”命令生成 |
-| `readOnBush.bookListGroupBy` | `none` | 书架分组方式：`none`、`category`、`directory` |
-
-## 5. 阅读模式说明
-
-Read On Bush 使用 Reading / Coding 两种模式控制快捷键：
-
-- **Reading mode**：启用阅读快捷键，适合专注翻页阅读。
-- **Coding mode**：禁用阅读快捷键，避免和编码时的快捷键冲突。
-
-如果停止阅读，扩展会自动切换回 `Coding` 模式。
