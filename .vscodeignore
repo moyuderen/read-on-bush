@@ -10,3 +10,29 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
+
+# --- 打包体积优化：排除未使用的依赖文件 ---
+
+# linebyline：extraneous 残留，代码完全未引用
+node_modules/linebyline/**
+
+# pdfjs-dist：仅使用 legacy/build/pdf.js + legacy/build/pdf.worker.js
+node_modules/pdfjs-dist/build/**
+node_modules/pdfjs-dist/cmaps/**
+node_modules/pdfjs-dist/standard_fonts/**
+node_modules/pdfjs-dist/web/**
+node_modules/pdfjs-dist/image_decoders/**
+node_modules/pdfjs-dist/legacy/web/**
+node_modules/pdfjs-dist/legacy/image_decoders/**
+node_modules/pdfjs-dist/**/*.min.js
+
+# pngjs：Node 环境不需要 browser build
+node_modules/pngjs/browser.js
+
+# readme 截图仅在 GitHub 展示，不需要进扩展包
+readme/**
+
+# 依赖包内测试文件 / 文档
+**/test/**
+**/tests/**
+**/docs/**
