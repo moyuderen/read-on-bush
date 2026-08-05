@@ -1,13 +1,15 @@
 {
   "name": "readOnBush",
   "displayName": "Read On Bush",
-  "description": "在 VS Code 状态栏或终端伪装窗口低调阅读 txt / epub / pdf 小说，支持书架导入/目录批量导入、分类与目录分组、进度跳转、PDF 图片预览、快捷键模式切换和阅读体验配置；导入 mobi/azw3 时引导前往 CloudConvert 转 epub。",
-  "version": "2.5.1",
+  "description": "在 VS Code 中低调摸鱼看小说——状态栏或终端伪装窗口阅读 TXT / EPUB / PDF，内置书架管理、章节目录、进度跳转与快捷键模式。",
+  "version": "2.5.2",
   "publisher": "moyuderen",
   "author": {
     "name": "moyuderen",
     "email": "moyuderen.git@gmail.com"
   },
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/moyuderen/read-on-bush",
   "repository": {
     "type": "git",
     "url": "https://github.com/moyuderen/read-on-bush"
@@ -20,17 +22,39 @@
     "vscode": "^1.85.0"
   },
   "categories": [
+    "Education",
     "Other"
   ],
   "keywords": [
-    "read",
-    "阅读",
     "小说",
+    "小说阅读器",
+    "小说插件",
+    "摸鱼",
+    "摸鱼神器",
+    "上班摸鱼",
+    "偷看",
+    "电子书",
+    "电子书阅读器",
+    "看书",
+    "读书",
+    "阅读",
+    "伪装",
+    "txt",
     "epub",
     "pdf",
-    "摸鱼",
-    "vscode 状态栏",
-    "终端伪装"
+    "ebook",
+    "novel",
+    "fiction",
+    "txt reader",
+    "epub reader",
+    "pdf reader",
+    "ebook reader",
+    "novel reader",
+    "stealth reading",
+    "camouflage",
+    "bookshelf",
+    "终端伪装",
+    "状态栏"
   ],
   "icon": "public/moyu.png",
   "activationEvents": [

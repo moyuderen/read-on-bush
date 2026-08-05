@@ -6,6 +6,13 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.5.2] - 2026-08-05
+
+### Changed
+
+- 优化插件市场搜索发现性：精简 description，扩充 keywords（覆盖中英文高频搜索词），新增 Education 分类。
+- 补充 `license`（Apache-2.0）和 `homepage` 元数据字段。
+
 ## [2.5.1] - 2026-08-05
 
 ### Changed
