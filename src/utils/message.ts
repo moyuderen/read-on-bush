@@ -1,7 +1,7 @@
-import { window, commands } from 'vscode';
+import { window } from 'vscode';
 
-export default function message(message = 'Hello World !!!', time = 3000) {
-  window.showInformationMessage(message).then(() => {});
+export default function message(message = 'Hello World !!!') {
+  void window.showInformationMessage(message);
   // window.setStatusBarMessage('这条信息将在5秒后消失', 5000);
 }
 
