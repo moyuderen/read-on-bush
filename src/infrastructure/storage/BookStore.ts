@@ -14,6 +14,8 @@ export interface BookStore {
   updateEpubProgress(id: string, progress: EpubProgress): BookData[];
   updatePdfProgress(id: string, progress: PdfProgress): BookData[];
   updateBookChapters(id: string, chapters: ChapterRef[]): BookData[];
+  updateLastOpened(id: string): BookData[];
+  clearLastOpened(id: string): BookData[];
   renameBook(id: string, name: string): BookData[];
   updateBookCategory(id: string, category?: string): BookData[];
   updateBookPrivacyAlias(id: string, privacyAlias?: string): BookData[];
@@ -113,6 +115,18 @@ export class GlobalStateBookStore implements BookStore {
       ...book,
       pdfProgress: progress
     }));
+  }
+
+  updateLastOpened(id: string): BookData[] {
+    return this.updateBook(id, (book) => ({ ...book, lastOpenedAt: Date.now() }));
+  }
+
+  clearLastOpened(id: string): BookData[] {
+    return this.updateBook(id, (book) => {
+      const next = { ...book };
+      delete next.lastOpenedAt;
+      return next;
+    });
   }
 
   updateBookChapters(id: string, chapters: ChapterRef[]): BookData[] {

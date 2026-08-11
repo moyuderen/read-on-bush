@@ -79,7 +79,7 @@ export class ConfigurationCoordinator {
       message('Line width will apply the next time a book is opened');
     }
 
-    if (affectsSetting(event, 'bookListGroupBy')) {
+    if (affectsSetting(event, 'bookListGroupBy') || affectsSetting(event, 'recentBookCount')) {
       this.app.bookList.updateBookTreeProvider();
     }
   }

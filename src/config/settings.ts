@@ -45,6 +45,7 @@ export type ReadOnBushSettings = {
   terminalCamouflageStyle: TerminalCamouflageStyle;
   terminalCamouflageCustomTemplate: unknown;
   bookListGroupBy: BookListGroupBy;
+  recentBookCount: number;
   cacheLimitMB: number;
 };
 
@@ -65,6 +66,7 @@ export const defaultSettings: ReadOnBushSettings = {
   terminalCamouflageStyle: 'claudeCli',
   terminalCamouflageCustomTemplate: null,
   bookListGroupBy: 'none',
+  recentBookCount: 5,
   cacheLimitMB: 100
 };
 
@@ -212,6 +214,15 @@ export function getBookListGroupBy(): BookListGroupBy {
   return normalizeBookListGroupBy(getConfigurationValue('bookListGroupBy'));
 }
 
+export function getRecentBookCount(): number {
+  return normalizeNumber(
+    getConfigurationValue('recentBookCount'),
+    5,
+    0,
+    50
+  );
+}
+
 export function getCacheLimitMB(): number {
   return normalizeNumber(
     getConfigurationValue('cacheLimitMB'),
@@ -239,6 +250,7 @@ export function getSettings(): ReadOnBushSettings {
     terminalCamouflageStyle: getTerminalCamouflageStyle(),
     terminalCamouflageCustomTemplate: getTerminalCamouflageCustomTemplate(),
     bookListGroupBy: getBookListGroupBy(),
+    recentBookCount: getRecentBookCount(),
     cacheLimitMB: getCacheLimitMB()
   };
 }

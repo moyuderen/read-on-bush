@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import {
   type BookData,
+  getRecentBooks,
   type BookFormat,
   type ChapterRef,
   type EpubProgress,
@@ -10,7 +11,7 @@ import type { BookNavigationTarget } from '../../domain/books';
 import { uncategorizedBookGroupName } from '../../config/bookGroups';
 import { getBookGroupDescriptor } from './bookGrouping';
 import { Commands } from '../../config/commands';
-import type { BookListGroupBy } from '../../config/settings';
+import { getRecentBookCount, type BookListGroupBy } from '../../config/settings';
 import type { BookFormatRegistry } from '../../formats';
 import {
   getBookDisplayName,
@@ -195,9 +196,7 @@ export class BookTreeProvider
   }
 
   updateBookProcess(id: string, process: number): void {
-    const book = this.findBookItem(id, this.books);
-
-    if (book) {
+    for (const book of this.findAllBookItems(id, this.books)) {
       book.process = process;
       book.bookData.process = process;
       this._onDidChangeTreeData.fire(book);
@@ -206,28 +205,26 @@ export class BookTreeProvider
 
   /** epub 进度变化：只在跨章时刷新书籍行与目录高亮，章内翻页不重建整棵树。 */
   updateEpubProgress(id: string, progress: EpubProgress): void {
-    const book = this.findBookItem(id, this.books);
-
-    if (!book || book.currentChapterIndex === progress.chapterIndex) {
-      return;
+    for (const book of this.findAllBookItems(id, this.books)) {
+      if (book.currentChapterIndex === progress.chapterIndex) {
+        continue;
+      }
+      book.bookData.epubProgress = progress;
+      book.setCurrentChapter(progress.chapterIndex);
+      this._onDidChangeTreeData.fire(book);
     }
-
-    book.bookData.epubProgress = progress;
-    book.setCurrentChapter(progress.chapterIndex);
-    this._onDidChangeTreeData.fire(book);
   }
 
   /** pdf 进度变化：只在跨页时刷新书籍行与目录高亮，页内翻页不重建整棵树。 */
   updatePdfProgress(id: string, progress: PdfProgress): void {
-    const book = this.findBookItem(id, this.books);
-
-    if (!book || book.currentChapterIndex === progress.pageIndex) {
-      return;
+    for (const book of this.findAllBookItems(id, this.books)) {
+      if (book.currentChapterIndex === progress.pageIndex) {
+        continue;
+      }
+      book.bookData.pdfProgress = progress;
+      book.setCurrentChapter(progress.pageIndex);
+      this._onDidChangeTreeData.fire(book);
     }
-
-    book.bookData.pdfProgress = progress;
-    book.setCurrentChapter(progress.pageIndex);
-    this._onDidChangeTreeData.fire(book);
   }
 
   refresh(): void {
@@ -274,6 +271,10 @@ export class BookTreeProvider
       return undefined;
     }
     if (target.type === 'group') {
+      // 「最近阅读」分组不可作为拖拽落点。
+      if (target.contextValue === 'recentGroup') {
+        return null;
+      }
       // 「未分类」分组即清除分类，其它分组名为分类名。
       return target.name === uncategorizedBookGroupName ? undefined : target.name;
     }
@@ -321,29 +322,33 @@ export class BookTreeProvider
     return [];
   }
 
-  private findBookItem(id: string, items: BookTreeItem[]): BookTreeBookItem | undefined {
+  /** 查找指定 id 的所有书籍项（同一本书可能同时出现在最近阅读和正常分组中）。 */
+  private findAllBookItems(id: string, items: BookTreeItem[]): BookTreeBookItem[] {
+    const result: BookTreeBookItem[] = [];
     for (const item of items) {
       if (item.type === 'book' && item.id === id) {
-        return item;
+        result.push(item);
       }
 
       if (item.type === 'group') {
-        const book = this.findBookItem(id, item.children);
-
-        if (book) {
-          return book;
-        }
+        result.push(...this.findAllBookItems(id, item.children));
       }
     }
 
-    return undefined;
+    return result;
   }
 
   private buildTreeItems(books: BookData[], groupBy: BookListGroupBy): BookTreeItem[] {
-    if (groupBy === 'none') {
-      return books.map((book) => createBookTreeItem(book, this.registry, this.privacyDisplay));
-    }
+    const baseItems =
+      groupBy === 'none'
+        ? books.map((book) => createBookTreeItem(book, this.registry, this.privacyDisplay))
+        : this.buildGroupedItems(books, groupBy);
 
+    const recentGroup = this.buildRecentGroup(books);
+    return recentGroup ? [recentGroup, ...baseItems] : baseItems;
+  }
+
+  private buildGroupedItems(books: BookData[], groupBy: BookListGroupBy): BookTreeItem[] {
     const groups = new Map<
       string,
       { name: string; rawName: string; children: BookTreeBookItem[] }
@@ -370,6 +375,31 @@ export class BookTreeProvider
         }
         return item;
       });
+  }
+
+  /** 构建置顶的「最近阅读」分组；无记录或已禁用时返回 undefined。 */
+  private buildRecentGroup(books: BookData[]): BookTreeGroupItem | undefined {
+    const limit = getRecentBookCount();
+    if (limit <= 0) {
+      return undefined;
+    }
+
+    const recentBooks = getRecentBooks(books, limit);
+
+    if (recentBooks.length === 0) {
+      return undefined;
+    }
+
+    const children = recentBooks.map((book) => {
+      const item = createBookTreeItem(book, this.registry, this.privacyDisplay);
+      item.contextValue = 'recentBook';
+      return item;
+    });
+
+    const group = new BookTreeGroupItem('最近阅读', children);
+    group.iconPath = new vscode.ThemeIcon('history');
+    group.contextValue = 'recentGroup';
+    return group;
   }
 }
 

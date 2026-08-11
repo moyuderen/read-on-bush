@@ -1,5 +1,6 @@
 export type { BookNavigationTarget, BookOutlineItem } from './BookOutline';
 export type { BookData, BookFormat, ChapterRef, EpubProgress, PdfProgress } from './BookData';
+export { getRecentBooks } from './BookData';
 export type {
   EpubChapter,
   EpubExtraction,

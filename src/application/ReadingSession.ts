@@ -63,6 +63,7 @@ export class ReadingSession implements TxtReadingPort {
       return;
     }
 
+    this.app.bookList.markLastOpened(book.id);
     this.formatEmitter.fire(reader.format);
   }
 

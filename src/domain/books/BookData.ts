@@ -33,6 +33,15 @@ export type BookData = {
   epubProgress?: EpubProgress;
   pdfProgress?: PdfProgress;
   chapters?: ChapterRef[];
+  lastOpenedAt?: number;
 };
 
 export type { BookOutlineItem } from './BookOutline';
+
+/** 返回按最近打开时间降序排列的前 limit 本书（无 lastOpenedAt 的书不参与）。 */
+export function getRecentBooks(books: BookData[], limit: number): BookData[] {
+  return books
+    .filter((book) => book.lastOpenedAt !== undefined)
+    .sort((a, b) => (b.lastOpenedAt ?? 0) - (a.lastOpenedAt ?? 0))
+    .slice(0, limit);
+}

@@ -6,6 +6,7 @@ import { BookTreeProvider, BookTreeItem, BookTreeBookItem } from '../presentatio
 import { ApplicationContext } from './ApplicationContext';
 import {
   BookData,
+  getRecentBooks,
   type ChapterRef,
   type EpubProgress,
   type PdfProgress
@@ -17,7 +18,7 @@ import { getBookGroupName } from '../config/bookGroups';
 import { AppName } from '../config/constants';
 import { Commands, CustomWhenClauseContext } from '../config/commands';
 import { CLOUDCONVERT_URL, summarizeConvertible } from '../config/convertGuide';
-import { getBookListGroupBy, type BookListGroupBy } from '../config/settings';
+import { getBookListGroupBy, getRecentBookCount, type BookListGroupBy } from '../config/settings';
 import {
   BookStore,
   GlobalStateBookStore
@@ -157,6 +158,14 @@ export class BookCatalog implements Disposable {
       }),
       commands.registerCommand(Commands.ClearCache, () => {
         void this.clearCache();
+      }),
+      commands.registerCommand(Commands.ContinueReading, () => {
+        void this.continueReading();
+      }),
+      commands.registerCommand(Commands.RemoveFromRecent, (event) => {
+        if (this.isBookItem(event)) {
+          this.removeFromRecent(event.id);
+        }
       })
     );
   }
@@ -311,6 +320,39 @@ export class BookCatalog implements Disposable {
   async flushProgressWrite(): Promise<void> {
     this.progressDebounce.flush();
     await this.bookStorage.flush();
+  }
+
+  /** 记录书籍最近打开时间（不走防抖，打开是一次性事件，需立即写入）。 */
+  markLastOpened(id: string): void {
+    // 如果该书已是最近打开的，最近分组顺序不变，跳过重建避免折叠已展开的目录。
+    const wasMostRecent = getRecentBooks(this.books, 1)[0]?.id === id;
+    this.books = this.bookStorage.updateLastOpened(id);
+    if (!wasMostRecent) {
+      this.updateBookTreeProvider();
+    }
+  }
+
+  /** 从「最近阅读」中移除（清除 lastOpenedAt，不删除书籍本身）。 */
+  removeFromRecent(id: string): void {
+    this.books = this.bookStorage.clearLastOpened(id);
+    this.updateBookTreeProvider();
+  }
+
+  /** 继续阅读上次打开的书。 */
+  async continueReading(): Promise<void> {
+    const lastBook = getRecentBooks(this.books, 1)[0];
+
+    if (!lastBook) {
+      message('暂无阅读记录');
+      return;
+    }
+
+    const bookData = await this.getExistingBookForOpen(lastBook.id);
+    if (!bookData) {
+      return;
+    }
+
+    await this.app.readingSession.open(bookData);
   }
 
   dispose(): void {

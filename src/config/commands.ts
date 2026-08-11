@@ -40,6 +40,8 @@ export enum Commands {
   OpenBookOutline = 'readOnBush.openBookOutline',
 
   ClearCache = 'readOnBush.clearCache',
+  ContinueReading = 'readOnBush.continueReading',
+  RemoveFromRecent = 'readOnBush.removeFromRecent',
 
   SwitchReadingMode = 'readOnBush.switchReadingMode',
   SwitchCodingMode = 'readOnBush.switchCodingMode'

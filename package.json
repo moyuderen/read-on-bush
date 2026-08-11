@@ -401,6 +401,13 @@
           ],
           "description": "书架分组方式"
         },
+        "readOnBush.recentBookCount": {
+          "type": "number",
+          "default": 5,
+          "minimum": 0,
+          "maximum": 50,
+          "description": "书架顶部「最近阅读」分组显示的书籍数量；设置为 0 表示禁用"
+        },
         "readOnBush.cacheLimitMB": {
           "type": "number",
           "default": 100,
@@ -510,7 +517,7 @@
       {
         "command": "readOnBush.importDirectory",
         "title": "Import Directory",
-        "icon": "$(folder-opened)"
+        "icon": "$(folder)"
       },
       {
         "command": "readOnBush.refreshBookList",
@@ -525,7 +532,7 @@
       {
         "command": "readOnBush.switchBookListGroupBy",
         "title": "Group By",
-        "icon": "$(list-tree)"
+        "icon": "$(group-by-ref-type)"
       },
       {
         "command": "readOnBush.epub.next",
@@ -587,6 +594,17 @@
         "title": "清除全部缓存",
         "category": "Read On Bush",
         "icon": "$(trash)"
+      },
+      {
+        "command": "readOnBush.continueReading",
+        "title": "继续阅读",
+        "category": "Read On Bush"
+      },
+      {
+        "command": "readOnBush.removeFromRecent",
+        "title": "从最近阅读中移除",
+        "category": "Read On Bush",
+        "icon": "$(close)"
       }
     ],
     "keybindings": [
@@ -641,32 +659,37 @@
         {
           "command": "readOnBush.deleteEntry",
           "group": "inline",
-          "when": "view == readOnBush-bookList && viewItem == book"
+          "when": "view == readOnBush-bookList && viewItem =~ /^(book|recentBook)$/"
         },
         {
           "command": "readOnBush.renameBook",
           "group": "inline",
-          "when": "view == readOnBush-bookList && viewItem == book"
+          "when": "view == readOnBush-bookList && viewItem =~ /^(book|recentBook)$/"
         },
         {
           "command": "readOnBush.setBookCategory",
           "group": "book@1",
-          "when": "view == readOnBush-bookList && viewItem == book"
+          "when": "view == readOnBush-bookList && viewItem =~ /^(book|recentBook)$/"
         },
         {
           "command": "readOnBush.clearBookCategory",
           "group": "book@2",
-          "when": "view == readOnBush-bookList && viewItem == book"
+          "when": "view == readOnBush-bookList && viewItem =~ /^(book|recentBook)$/"
         },
         {
           "command": "readOnBush.setPrivacyAlias",
           "group": "book@3",
-          "when": "view == readOnBush-bookList && viewItem == book"
+          "when": "view == readOnBush-bookList && viewItem =~ /^(book|recentBook)$/"
         },
         {
           "command": "readOnBush.renameCategory",
           "group": "inline",
           "when": "view == readOnBush-bookList && viewItem == categoryGroup"
+        },
+        {
+          "command": "readOnBush.removeFromRecent",
+          "group": "inline",
+          "when": "view == readOnBush-bookList && viewItem == recentBook"
         }
       ],
       "view/title": [
@@ -707,11 +730,6 @@
         },
         {
           "command": "readOnBush.createCategory",
-          "group": "navigation",
-          "when": "view == readOnBush-bookList"
-        },
-        {
-          "command": "readOnBush.clearCache",
           "group": "navigation",
           "when": "view == readOnBush-bookList"
         }
