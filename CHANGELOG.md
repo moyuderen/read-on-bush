@@ -6,6 +6,24 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-08-11
+
+### Added
+
+- 新增阅读面板模式（`camouflageSurface: readerPanel`）：伪装阅读内容可显示在侧边栏 Webview 面板中，不占用集成终端，支持全部键盘操作和伪装模板。
+- 新增架构设计文档 `docs/architecture.md`，描述分层架构、模块职责和扩展方式。
+
+### Changed
+
+- **架构重构为 DDD 分层结构**：从扁平的 `src/core/*` 迁移到 `domain / application / infrastructure / presentation / formats / config` 六层架构，依赖方向严格自外向内。
+- **领域模型解耦**：`TxtBook`、`EpubBook`、`PdfBook` 不再依赖 `ApplicationContext`，改为通过窄端口接口（`BookProgressPort`、`ReadingNotifier`、`TxtDisplayPort`、`ReadingPrivacyPort`）注入依赖。
+- **缓存引擎通用化**：新增格式无关的 `ExtractionCache<T>` 和 `CachedExtractionLoader<T>`，统一 mtime 失效、JSON envelope、写入序列化和 in-flight 去重；缓存文件名改为 `encodeURIComponent` 防碰撞，记录增加 `bookId` 校验。
+- **阅读器生命周期管理**：`ReadingSession` 成为当前 Reader 的唯一所有者，每次打开创建独立 Reader 实例并完整 dispose；新增 `openGeneration` 防止过期异步打开覆盖新书。
+- **状态栏解耦**：状态栏控件改为依赖 `TxtReadingPort` 窄接口，不再直接访问 `ApplicationContext`；格式上下文和可见性由 bootstrap 事件驱动。
+- **书架分组逻辑独立**：隐私分组规则从 `PrivacyService` 移至 bookshelf 专用模块，隐私模式下同时隐藏目录名和自定义分类名。
+- **构建脚本优化**：`compile` 不再每次 clean，新增 `rebuild`（clean + compile）和 `typecheck`（tsc --noEmit）脚本。
+- 扩展名解析提升为共享工具 `utils/fileExtension.ts`，消除 parser 和 format registry 的重复实现。
+
 ## [2.7.0] - 2026-08-05
 
 ### Added

@@ -1,7 +1,7 @@
 import * as assert from 'assert';
-import { BookFormatRegistry } from '../../formats/registry';
+import { BookFormatRegistry } from '../../formats/BookFormatRegistry';
 import { createDefaultBookFormatRegistry } from '../../formats';
-import type { BookFormatProvider } from '../../formats/types';
+import type { BookFormatProvider } from '../../formats/BookFormat';
 
 function createProvider(
   format: string,
@@ -22,7 +22,7 @@ function createProvider(
         format
       };
     },
-    async createReader() {
+    createReader() {
       throw new Error('not implemented');
     }
   };

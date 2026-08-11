@@ -1,58 +1,59 @@
-import fs from 'fs';
-import message from '../../utils/message';
+import { Uri } from 'vscode';
 import type { BookData, BookFormat, BookOutlineItem } from '../../domain/books';
-import { extractPdf, toPageRefs } from '../../core/parsers/PdfExtractor';
-import { PdfCache } from '../../core/storage/PdfCache';
-import type { BookFormatProvider, CreateReaderInput, ImportBookInput } from '../types';
-import { PdfReadingController } from './PdfReadingController';
+import {
+  extractPdf,
+  toPageRefs,
+  type PdfExtraction
+} from '../../infrastructure/parsers/PdfExtractor';
+import { PdfCache } from '../../infrastructure/storage/PdfCache';
+import type { BookFormatProvider, CreateReaderInput, ImportBookInput } from '../BookFormat';
+import { CachedExtractionLoader } from '../CachedExtractionLoader';
+import { createBookOutline, importCachedBook } from '../FormatProviderHelpers';
+import { PdfReader } from './PdfReader';
 
 /**
- * pdf 格式 provider（对应 epub 的 EpubProvider）：
- * 导入即全文抽取 + 扫描图片元信息并缓存；创建 PdfReadingController；
+ * pdf 格式 provider（对应 epub 的 PdfProvider）：
+ * 导入即全文抽取 + 扫描图片元信息并缓存；创建 PdfReader；
  * 目录以页为节点（target = section）；删除时清缓存。
  */
 export class PdfProvider implements BookFormatProvider {
   readonly format: BookFormat = 'pdf';
   readonly supportedExtensions = ['pdf'];
+  private readonly cache: PdfCache;
+  private readonly extractionLoader: CachedExtractionLoader<PdfExtraction>;
 
-  async importBook(input: ImportBookInput): Promise<BookData> {
-    const bookData: BookData = {
-      name: input.name,
-      id: input.id,
-      process: 0,
-      url: input.filePath,
-      format: this.format,
-      pdfProgress: { pageIndex: 0, charOffset: 0 }
-    };
-
-    try {
-      const extraction = await extractPdf(bookData.url);
-      bookData.chapters = toPageRefs(extraction);
-
-      const stat = await fs.promises.stat(bookData.url);
-      const cache = PdfCache.create(input.context.globalStorageUri);
-      await cache.set(bookData.id, stat.mtimeMs, extraction);
-    } catch (error) {
-      const text = error instanceof Error ? error.message : '解析 pdf 失败';
-      message.warn(`${input.displayName ?? `《${bookData.name}》`}${text}，仍已加入书架`);
-    }
-
-    return bookData;
+  constructor(cacheDirectory: Uri = Uri.file(process.cwd())) {
+    this.cache = PdfCache.create(cacheDirectory);
+    this.extractionLoader = new CachedExtractionLoader(this.cache, extractPdf);
   }
 
-  async createReader(input: CreateReaderInput): Promise<PdfReadingController> {
-    return new PdfReadingController(input.book, input.app.pdfReader);
+  importBook(input: ImportBookInput): Promise<BookData> {
+    return importCachedBook({
+      input,
+      createBook: (bookInput) => ({
+        name: bookInput.name,
+        id: bookInput.id,
+        process: 0,
+        url: bookInput.filePath,
+        format: this.format,
+        pdfProgress: { pageIndex: 0, charOffset: 0 }
+      }),
+      extract: extractPdf,
+      toChapterRefs: toPageRefs,
+      cache: this.cache,
+      failurePrefix: '解析 pdf 失败'
+    });
   }
 
-  async getOutline(book: BookData): Promise<BookOutlineItem[]> {
-    return (book.chapters ?? []).map((chapter, index) => ({
-      id: `${book.id}:section:${index}`,
-      title: chapter.title,
-      target: { kind: 'section', sectionIndex: index }
-    }));
+  createReader(input: CreateReaderInput): PdfReader {
+    return new PdfReader(input.book, input.services, this.extractionLoader);
   }
 
-  async deleteCache(book: BookData, context: ImportBookInput['context']): Promise<void> {
-    await PdfCache.create(context.globalStorageUri).delete(book.id);
+  getOutline(book: BookData): Promise<BookOutlineItem[]> {
+    return Promise.resolve(createBookOutline(book));
+  }
+
+  deleteCache(book: BookData): Promise<void> {
+    return this.cache.delete(book.id);
   }
 }

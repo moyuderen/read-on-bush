@@ -6,7 +6,7 @@
 ## 1. 背景与目标
 
 Read On Bush 当前**仅支持 `.txt`**：解析器注册表 `parserFactories` 只登记了 `.txt`
-（`src/core/parsers/index.ts`），下游阅读链路（`Book` / 状态栏 / 终端伪装）建立在
+（`src/infrastructure/parsers/index.ts`），下游阅读链路（`Book` / 状态栏 / 终端伪装）建立在
 **扁平 `string[]` + 整数游标 `process`** 的模型上。
 
 目标：**新增直接阅读 `.epub` 的能力**，提供 epub 原生体验（章节目录、跳章），同时保持
@@ -101,7 +101,7 @@ camouflageRender（视觉原语）            EpubBook（阅读模型）
 
 ## 5. 数据模型
 
-### 5.1 `BookData`（`src/core/Book.ts`）扩展
+### 5.1 `BookData`（`src/domain/books/BookData.ts`）扩展
 
 加法式扩展，**不动 txt 现有字段**：
 
@@ -216,21 +216,21 @@ epub 无视全局 `displayTarget`；但 `terminalCamouflageLineWidth / lineCount
 ### 新增
 | 文件 | 职责 |
 |---|---|
-| `src/core/parsers/EpubExtractor.ts` | `fflate` 解 zip + OPF spine + XHTML→文本 → `EpubExtraction` |
-| `src/core/EpubBook.ts` | epub 阅读模型：`Chapter[]`、进度、自动流入分页、`viewImage` |
-| `src/core/display/camouflageRender.ts` | 抽出的纯视觉原语（`getTemplate`/`splitContent`/宽度/`formatCamouflageScreen`） |
-| `src/core/display/epubTerminalDisplay.ts` | `EpubTerminalDisplay implements Pseudoterminal`：自有终端/生命周期/`handleInput`/看图标记 |
-| `src/core/storage/EpubCache.ts` | globalStorage sidecar 缓存 + mtime 失效 |
+| `src/infrastructure/parsers/EpubExtractor.ts` | `fflate` 解 zip + OPF spine + XHTML→文本 → `EpubExtraction` |
+| `src/domain/books/EpubBook.ts` | epub 阅读模型：`Chapter[]`、进度、自动流入分页、`viewImage` |
+| `src/presentation/reader/CamouflageRenderer.ts` | 抽出的纯视觉原语（`getTemplate`/`splitContent`/宽度/`formatCamouflageScreen`） |
+| `src/presentation/reader/PaginatedReaderDisplay.ts` | `EpubTerminalDisplay implements Pseudoterminal`：自有终端/生命周期/`handleInput`/看图标记 |
+| `src/infrastructure/storage/EpubCache.ts` | globalStorage sidecar 缓存 + mtime 失效 |
 
 ### 修改
 | 文件 | 改动 |
 |---|---|
-| `src/core/Book.ts` | `BookData` 加 `format` / `epubProgress` / `chapters` 与对应类型 |
-| `src/core/parsers/index.ts` | 拆分"支持扩展名"（txt∪epub）与 txt 专用 `createBookParser`；导出 `getBookFormat` |
-| `src/core/display/terminalCamouflageDisplay.ts` | 纯函数移入 `camouflageRender.ts`；`formatTerminalCamouflageScreen` 瘦身为薄壳（txt 行为不变） |
-| `src/core/BookList.ts` | `openOnBook` 按 `format` 分派；导入按扩展名设 `format`、提章节标题 |
-| `src/core/BookTree.ts` | epub 书可展开 + 章节子节点（`BookTreeChapterItem`），点击跳章 |
-| `src/core/Commands.ts` | 新增 epub 命令枚举（`openChapter`、上/下一页、上/下一章、看图、停止） |
+| `src/domain/books/TxtBook.ts` | `BookData` 加 `format` / `epubProgress` / `chapters` 与对应类型 |
+| `src/infrastructure/parsers/index.ts` | 拆分"支持扩展名"（txt∪epub）与 txt 专用 `createBookParser`；导出 `getBookFormat` |
+| `src/presentation/reader/TxtCamouflageDisplay.ts` | 纯函数移入 `camouflageRender.ts`；`formatTerminalCamouflageScreen` 瘦身为薄壳（txt 行为不变） |
+| `src/application/BookCatalog.ts` | `openOnBook` 按 `format` 分派；导入按扩展名设 `format`、提章节标题 |
+| `src/presentation/bookshelf/BookTreeProvider.ts` | epub 书可展开 + 章节子节点（`BookTreeChapterItem`），点击跳章 |
+| `src/config/commands.ts` | 新增 epub 命令枚举（`openChapter`、上/下一页、上/下一章、看图、停止） |
 | `package.json` | 注册 epub 命令/keybindings；`dependencies` 加 `fflate`、`fast-xml-parser` |
 
 ## 9. 实现阶段
