@@ -47,7 +47,9 @@ export enum Commands {
   RemoveFromRecent = 'readOnBush.removeFromRecent',
 
   SwitchReadingMode = 'readOnBush.switchReadingMode',
-  SwitchCodingMode = 'readOnBush.switchCodingMode'
+  SwitchCodingMode = 'readOnBush.switchCodingMode',
+
+  AutoTurnToggle = 'readOnBush.autoTurn.toggle'
 }
 
 export enum CustomWhenClauseContext {

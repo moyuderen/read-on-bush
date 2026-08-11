@@ -75,6 +75,8 @@ export interface BookReaderController {
   getSearchDocument?(): SearchDocument | undefined;
   refreshSettings?(): void;
   refreshPrivacyDisplay?(): void;
+  toggleAutoTurn?(): void;
+  disposeAutoTurn?(): void;
 }
 
 export interface BookFormatProvider {

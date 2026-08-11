@@ -92,6 +92,8 @@ export class ReadingSession implements TxtReadingPort {
       return;
     }
 
+    this.currentReader.disposeAutoTurn?.();
+
     // 翻页进度是防抖写入的，关闭前立即 flush 并等待持久化完成，确保最后一次进度不丢失。
     await this.app.bookList.flushProgressWrite();
 
@@ -136,6 +138,10 @@ export class ReadingSession implements TxtReadingPort {
 
   stopTxt(): void {
     this.txtReader?.stop();
+  }
+
+  toggleAutoTurn(): void {
+    this.currentReader?.toggleAutoTurn?.();
   }
 
   private get txtReader(): TxtReaderCapability | undefined {

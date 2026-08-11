@@ -1,4 +1,4 @@
-import { type ExtensionContext } from 'vscode';
+import { commands, type ExtensionContext } from 'vscode';
 import { BookCatalog } from './BookCatalog';
 import { ReaderDisplayManager } from '../presentation/reader';
 import { CamouflageTemplateService } from '../presentation/reader/rendering';
@@ -13,6 +13,7 @@ import {
   ReaderViewSurface,
   TerminalSurface
 } from '../presentation/readerSurfaces';
+import { Commands } from '../config/commands';
 import { getCamouflageSurface } from '../config/settings';
 
 export class ApplicationContext {
@@ -63,6 +64,11 @@ export class ApplicationContext {
     );
     this.bookList = new BookCatalog(this);
     context.subscriptions.push(this.bookList);
+    context.subscriptions.push(
+      commands.registerCommand(Commands.AutoTurnToggle, () => {
+        this.readingSession.toggleAutoTurn();
+      })
+    );
   }
 
   showIdleReaderHint(): void {

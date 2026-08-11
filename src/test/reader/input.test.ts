@@ -62,4 +62,19 @@ suite('CamouflageInput', () => {
 
     assert.deepStrictEqual(calls, ['search']);
   });
+
+  test('dispatches a to the autoTurn handler', () => {
+    const calls: string[] = [];
+
+    handleCamouflageInput('A', {
+      next: () => calls.push('next'),
+      prev: () => calls.push('prev'),
+      jump: () => calls.push('jump'),
+      toggleDebug: () => calls.push('debug'),
+      toggleAutoTurn: () => calls.push('autoTurn'),
+      quit: () => calls.push('quit')
+    });
+
+    assert.deepStrictEqual(calls, ['autoTurn']);
+  });
 });

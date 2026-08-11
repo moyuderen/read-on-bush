@@ -1,6 +1,7 @@
 import { workspace } from 'vscode';
 import type { ConfigurationChangeEvent } from 'vscode';
 import { AppName, LineWidth } from './constants';
+import type { AutoTurnConfig } from '../domain/autoTurn';
 
 export const BOOK_LIST_GROUP_BY_OPTIONS = ['none', 'category', 'directory'] as const;
 export const READING_DISPLAY_TARGET_OPTIONS = ['statusBar', 'terminalCamouflage'] as const;
@@ -47,6 +48,10 @@ export type ReadOnBushSettings = {
   bookListGroupBy: BookListGroupBy;
   recentBookCount: number;
   cacheLimitMB: number;
+  autoTurnSpeed: number;
+  autoTurnMinSeconds: number;
+  autoTurnMaxSeconds: number;
+  autoTurnFixedSeconds: number;
 };
 
 export const defaultSettings: ReadOnBushSettings = {
@@ -67,7 +72,11 @@ export const defaultSettings: ReadOnBushSettings = {
   terminalCamouflageCustomTemplate: null,
   bookListGroupBy: 'none',
   recentBookCount: 5,
-  cacheLimitMB: 100
+  cacheLimitMB: 100,
+  autoTurnSpeed: 450,
+  autoTurnMinSeconds: 2,
+  autoTurnMaxSeconds: 30,
+  autoTurnFixedSeconds: 0
 };
 
 export type ReadOnBushSettingKey = keyof ReadOnBushSettings;
@@ -232,6 +241,51 @@ export function getCacheLimitMB(): number {
   );
 }
 
+export function getAutoTurnSpeed(): number {
+  return normalizeNumber(
+    getConfigurationValue('autoTurnSpeed'),
+    defaultSettings.autoTurnSpeed,
+    1,
+    9999
+  );
+}
+
+export function getAutoTurnMinSeconds(): number {
+  return normalizeNumber(
+    getConfigurationValue('autoTurnMinSeconds'),
+    defaultSettings.autoTurnMinSeconds,
+    1,
+    600
+  );
+}
+
+export function getAutoTurnMaxSeconds(): number {
+  return normalizeNumber(
+    getConfigurationValue('autoTurnMaxSeconds'),
+    defaultSettings.autoTurnMaxSeconds,
+    1,
+    600
+  );
+}
+
+export function getAutoTurnFixedSeconds(): number {
+  return normalizeNumber(
+    getConfigurationValue('autoTurnFixedSeconds'),
+    defaultSettings.autoTurnFixedSeconds,
+    0,
+    600
+  );
+}
+
+export function getAutoTurnConfig(): AutoTurnConfig {
+  return {
+    speedCharsPerMin: getAutoTurnSpeed(),
+    minSeconds: getAutoTurnMinSeconds(),
+    maxSeconds: getAutoTurnMaxSeconds(),
+    fixedSeconds: getAutoTurnFixedSeconds()
+  };
+}
+
 export function getSettings(): ReadOnBushSettings {
   return {
     lineWidth: getLineWidth(),
@@ -251,7 +305,11 @@ export function getSettings(): ReadOnBushSettings {
     terminalCamouflageCustomTemplate: getTerminalCamouflageCustomTemplate(),
     bookListGroupBy: getBookListGroupBy(),
     recentBookCount: getRecentBookCount(),
-    cacheLimitMB: getCacheLimitMB()
+    cacheLimitMB: getCacheLimitMB(),
+    autoTurnSpeed: getAutoTurnSpeed(),
+    autoTurnMinSeconds: getAutoTurnMinSeconds(),
+    autoTurnMaxSeconds: getAutoTurnMaxSeconds(),
+    autoTurnFixedSeconds: getAutoTurnFixedSeconds()
   };
 }
 

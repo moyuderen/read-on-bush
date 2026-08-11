@@ -414,6 +414,34 @@
           "minimum": 0,
           "maximum": 10000,
           "description": "EPUB/PDF 解析缓存上限（MB）。超过后自动按 LRU 淘汰最旧缓存；设置为 0 表示不限制"
+        },
+        "readOnBush.autoTurnSpeed": {
+          "type": "number",
+          "default": 450,
+          "minimum": 1,
+          "maximum": 9999,
+          "description": "自动翻页的阅读速度（字符/分钟）。阅读中按 a 键启动自动翻页后，按此速度估算每页停留时间"
+        },
+        "readOnBush.autoTurnMinSeconds": {
+          "type": "number",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 600,
+          "description": "自动翻页每页最短停留秒数（按字数估算模式下生效）"
+        },
+        "readOnBush.autoTurnMaxSeconds": {
+          "type": "number",
+          "default": 30,
+          "minimum": 1,
+          "maximum": 600,
+          "description": "自动翻页每页最长停留秒数（按字数估算模式下生效）"
+        },
+        "readOnBush.autoTurnFixedSeconds": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 600,
+          "description": "自动翻页每页固定停留秒数。设置为 0 时按字数估算；大于 0 时完全覆盖按字数计算"
         }
       }
     },
@@ -627,6 +655,11 @@
         "title": "从最近阅读中移除",
         "category": "Read On Bush",
         "icon": "$(close)"
+      },
+      {
+        "command": "readOnBush.autoTurn.toggle",
+        "title": "切换自动翻页",
+        "category": "Read On Bush"
       }
     ],
     "keybindings": [

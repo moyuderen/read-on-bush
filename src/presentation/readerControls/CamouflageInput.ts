@@ -1,4 +1,4 @@
-export const CAMOUFLAGE_INPUT_KEYS = ['n', 'p', 'j', 'i', 'd', 'f', 'q'] as const;
+export const CAMOUFLAGE_INPUT_KEYS = ['n', 'p', 'j', 'i', 'd', 'f', 'a', 'q'] as const;
 
 export type CamouflageInputHandlers = {
   next: () => void;
@@ -6,6 +6,7 @@ export type CamouflageInputHandlers = {
   jump: () => void;
   search?: () => void;
   toggleDebug: () => void;
+  toggleAutoTurn?: () => void;
   quit: () => void;
   viewImage?: () => void;
   onNonQuitKey?: () => void;
@@ -68,6 +69,12 @@ function handleCamouflageKey(key: string, handlers: CamouflageInputHandlers): vo
   if (key === 'd') {
     handlers.onNonQuitKey?.();
     handlers.toggleDebug();
+    return;
+  }
+
+  if (key === 'a') {
+    handlers.onNonQuitKey?.();
+    handlers.toggleAutoTurn?.();
     return;
   }
 

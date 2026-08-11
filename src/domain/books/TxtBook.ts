@@ -45,18 +45,19 @@ export class TxtBook {
     this.setProcess(this.process - step);
   }
 
-  nextLine(): void {
+  nextLine(): boolean {
     if (this.disposed || !this.isReading) {
-      return;
+      return false;
     }
 
     if (this.process >= this.contents.length - 1) {
       this.dependencies.notifier.info('已经是最后一页了');
-      return;
+      return false;
     }
 
     const step = this.dependencies.display.getNextProcessStep(this.getDisplayState());
     this.setProcess(this.process + step);
+    return true;
   }
 
   jumpLine(process: number, persistProgress = true): void {

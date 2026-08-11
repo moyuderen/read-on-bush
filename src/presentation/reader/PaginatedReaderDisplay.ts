@@ -104,6 +104,7 @@ export class PaginatedReaderDisplay extends CamouflageDisplayBase {
       jump: () => this.executeRealContentCommand(this.commandIds.jump),
       search: () => this.executeRealContentCommand(Commands.SearchCurrentBook),
       toggleDebug: () => this.toggleDebugContent(),
+      toggleAutoTurn: () => this.executeRealContentCommand(Commands.AutoTurnToggle),
       quit: () => this.concealController.handleQuitKey(),
       viewImage: () => this.executeRealContentCommand(this.commandIds.viewImage),
       onNonQuitKey: () => this.concealController.clearPendingQuit()

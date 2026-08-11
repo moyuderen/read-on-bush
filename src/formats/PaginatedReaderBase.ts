@@ -1,6 +1,8 @@
 import { commands } from 'vscode';
 import type { Disposable } from 'vscode';
 import type { BookData, BookFormat, BookNavigationTarget } from '../domain/books';
+import { AutoTurnScheduler, type AutoTurnState } from '../domain/autoTurn';
+import { getAutoTurnConfig } from '../config/settings';
 import {
   PaginatedReaderDisplay,
   type PaginatedCommandIds,
@@ -23,6 +25,7 @@ export abstract class PaginatedReaderBase<
   private readonly subscriptions: Disposable[] = [];
   private openGeneration = 0;
   private disposed = false;
+  private autoTurn?: AutoTurnScheduler;
 
   protected constructor(
     protected readonly bookData: BookData,
@@ -60,6 +63,7 @@ export abstract class PaginatedReaderBase<
 
       const syncedBook = this.syncBook(this.bookData, extraction);
       this.currentReader = this.createReader(syncedBook, extraction);
+      this.createAutoTurnScheduler();
       this.terminal.bind(this.currentReader, this.getTerminalSettings());
       this.terminal.reveal();
       this.services.notifier.info(
@@ -81,13 +85,12 @@ export abstract class PaginatedReaderBase<
   }
 
   async next(): Promise<void> {
-    const reader = this.currentReader;
-    if (reader?.next(this.terminal.getEffectiveLineWidth(), this.terminal.getLineCount())) {
-      this.terminal.render();
-    }
+    this.autoTurn?.pauseIfRunning();
+    this.advancePage();
   }
 
   async prev(): Promise<void> {
+    this.autoTurn?.pauseIfRunning();
     const reader = this.currentReader;
     if (reader?.prev(this.terminal.getEffectiveLineWidth(), this.terminal.getLineCount())) {
       this.terminal.render();
@@ -103,6 +106,7 @@ export abstract class PaginatedReaderBase<
       return;
     }
     this.disposed = true;
+    this.disposeAutoTurn();
     for (const subscription of this.subscriptions) {
       subscription.dispose();
     }
@@ -135,6 +139,7 @@ export abstract class PaginatedReaderBase<
   }
 
   async jumpTo(target: BookNavigationTarget, options?: ReaderJumpOptions): Promise<void> {
+    this.autoTurn?.pauseIfRunning();
     if (target.kind === 'section') {
       this.jumpToSection(target.sectionIndex, target.offset, options);
     }
@@ -160,9 +165,55 @@ export abstract class PaginatedReaderBase<
   async stop(showMessage = true): Promise<void> {
     this.openGeneration += 1;
     this.onStop();
+    this.disposeAutoTurn();
     // 翻页进度是防抖写入的，停止前等待 flush，确保最后一次进度不丢失。
     await this.services.bookCatalog.flushProgressWrite();
     this.stopReading(showMessage ? this.stopMessage : undefined);
+  }
+
+  toggleAutoTurn(): void {
+    this.autoTurn?.toggle();
+  }
+
+  disposeAutoTurn(): void {
+    this.autoTurn?.dispose();
+    this.autoTurn = undefined;
+  }
+
+  private createAutoTurnScheduler(): void {
+    this.autoTurn = new AutoTurnScheduler(
+      {
+        turnPage: async () => this.advancePage(),
+        getVisibleText: () =>
+          this.currentReader
+            ?.getScreen(this.terminal.getEffectiveLineWidth(), this.terminal.getLineCount())
+            .lines.join('') ?? '',
+        onStateChange: (state: AutoTurnState) => {
+          if (state === 'running') {
+            this.services.notifier.info('自动翻页已开启');
+          } else if (state === 'paused') {
+            this.services.notifier.info('自动翻页已暂停');
+          }
+          // idle 不提示：到达末页时书籍模型的 next() 已显示 "已经是最后一页了"，
+          // 异常路径由 onError 处理，关闭路径无需额外提示。
+        },
+        onError: (error) => {
+          this.services.notifier.error(
+            `自动翻页出错：${error instanceof Error ? error.message : '未知错误'}`
+          );
+        }
+      },
+      getAutoTurnConfig
+    );
+  }
+
+  private advancePage(): boolean {
+    const reader = this.currentReader;
+    if (reader?.next(this.terminal.getEffectiveLineWidth(), this.terminal.getLineCount())) {
+      this.terminal.render();
+      return true;
+    }
+    return false;
   }
 
   protected stopReading(messageText?: string): void {
