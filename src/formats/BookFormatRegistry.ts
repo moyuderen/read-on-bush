@@ -100,4 +100,12 @@ export class BookFormatRegistry {
     }
     return 0;
   }
+
+  /** 动态更新共享解析缓存上限；所有共享 provider 同步更新限制。 */
+  async updateCacheLimitBytes(maxSizeBytes: number): Promise<void> {
+    const updates = [...new Set(this.providersByExtension.values())]
+      .filter((provider) => provider.setCacheLimitBytes)
+      .map((provider) => provider.setCacheLimitBytes!(maxSizeBytes));
+    await Promise.all(updates);
+  }
 }

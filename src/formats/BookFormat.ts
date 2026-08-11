@@ -9,6 +9,7 @@ import type {
   ReadingPrivacyPort,
   TxtDisplayPort
 } from '../domain/books';
+import type { SearchDocument } from '../domain/search';
 import type { CamouflageTemplateService } from '../presentation/reader/rendering';
 import type { ResolvedTerminalTemplate } from '../presentation/readerTemplates';
 import type { ReaderSurface } from '../presentation/readerSurfaces';
@@ -48,6 +49,10 @@ export type CreateReaderInput = {
   services: ReaderServices;
 };
 
+export type ReaderJumpOptions = {
+  persistProgress?: boolean;
+};
+
 export type TxtReaderCapability = {
   readonly currentTxtState?: ReadingDisplayState;
   readonly currentTxtPageCount: number;
@@ -65,7 +70,9 @@ export interface BookReaderController {
   dispose?(): void;
   next(): Promise<void>;
   previous(): Promise<void>;
-  jumpTo?(target: BookNavigationTarget): Promise<void>;
+  jumpTo?(target: BookNavigationTarget, options?: ReaderJumpOptions): Promise<void>;
+  getCurrentLocation?(): BookNavigationTarget | undefined;
+  getSearchDocument?(): SearchDocument | undefined;
   refreshSettings?(): void;
   refreshPrivacyDisplay?(): void;
 }
@@ -78,8 +85,10 @@ export interface BookFormatProvider {
   createReader(input: CreateReaderInput): BookReaderController;
   getOutline?(book: BookData): Promise<BookOutlineItem[]>;
   deleteCache?(book: BookData): Promise<void>;
+  loadSearchDocument?(book: BookData): Promise<SearchDocument>;
   /** 清除该 provider 的全部缓存文件。 */
   clearCache?(): Promise<void>;
   /** 该 provider 缓存当前占用字节数。 */
   getCacheSize?(): Promise<number>;
+  setCacheLimitBytes?(maxSizeBytes: number): Promise<void>;
 }

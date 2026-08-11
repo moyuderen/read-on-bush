@@ -48,22 +48,30 @@ function hasSameNormalization(left: BookData, right: BookData): boolean {
 }
 
 export class GlobalStateBookStore implements BookStore {
+  private books?: BookData[];
   private pendingSave: Promise<void> = Promise.resolve();
 
   getBooks(): BookData[] {
-    const value = getStorage(BOOKS_STORAGE_KEY);
-    const books = Array.isArray(value) ? (value as BookData[]) : [];
-    const normalizedBooks = books.map(normalizeBook);
-
-    if (normalizedBooks.some((book, index) => !hasSameNormalization(book, books[index]))) {
-      void this.saveBooks(normalizedBooks);
+    if (this.books) {
+      return this.books;
     }
 
-    return normalizedBooks;
+    const value = getStorage(BOOKS_STORAGE_KEY);
+    const storedBooks = Array.isArray(value) ? (value as BookData[]) : [];
+    this.books = storedBooks.map(normalizeBook);
+
+    if (this.books.some((book, index) => !hasSameNormalization(book, storedBooks[index]))) {
+      void this.saveBooks(this.books);
+    }
+
+    return this.books;
   }
 
   saveBooks(books: BookData[]): Promise<void> {
-    this.pendingSave = setStorage(BOOKS_STORAGE_KEY, books.map(normalizeBook));
+    this.books = books.map(normalizeBook);
+    const snapshot = this.books.map((book, index) => normalizeBook({ ...book }, index));
+    const previous = this.pendingSave;
+    this.pendingSave = previous.catch(() => undefined).then(() => setStorage(BOOKS_STORAGE_KEY, snapshot));
     return this.pendingSave;
   }
 

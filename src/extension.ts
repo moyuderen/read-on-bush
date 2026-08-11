@@ -1,8 +1,13 @@
 import * as vscode from 'vscode';
+import type { ApplicationContext } from './application/ApplicationContext';
 import { setup } from './application/bootstrap';
 
-export function activate(context: vscode.ExtensionContext) {
-  setup(context);
+let app: ApplicationContext | undefined;
+
+export function activate(context: vscode.ExtensionContext): void {
+  app = setup(context);
 }
 
-export function deactivate() {}
+export async function deactivate(): Promise<void> {
+  await app?.bookList.flushProgressWrite();
+}

@@ -6,6 +6,7 @@ import message from '../utils/message';
 import type { ReadingNotifier } from '../domain/books';
 import { createDefaultBookFormatRegistry, type BookFormatRegistry } from '../formats';
 import { ReadingSession } from './ReadingSession';
+import { SearchService } from './SearchService';
 import { PrivacyService } from './PrivacyService';
 import {
   SurfaceRouter,
@@ -25,6 +26,7 @@ export class ApplicationContext {
   public formatRegistry: BookFormatRegistry;
   public readonly notifier: ReadingNotifier;
   public readingSession: ReadingSession;
+  public searchService: SearchService;
   public privacyDisplay: PrivacyService;
 
   constructor(context: ExtensionContext) {
@@ -45,6 +47,14 @@ export class ApplicationContext {
       getCamouflageSurface()
     );
     this.readingSession = new ReadingSession(this);
+    this.searchService = new SearchService({
+      context,
+      formatRegistry: this.formatRegistry,
+      privacyDisplay: this.privacyDisplay,
+      notifier: this.notifier,
+      getCurrentReader: () => this.readingSession.current,
+      jumpTo: (target, options) => this.readingSession.jumpTo(target, options)
+    });
     this.displayManager = new ReaderDisplayManager(
       context,
       this.templateService,

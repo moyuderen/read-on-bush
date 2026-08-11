@@ -1,10 +1,12 @@
 import { window } from 'vscode';
 import { Commands } from '../../config/commands';
 import type { BookData, BookFormat } from '../../domain/books';
+import type { SearchDocument } from '../../domain/search';
 import { EpubBook } from '../../domain/books/EpubBook';
 import { PaginatedReaderBase } from '../PaginatedReaderBase';
 import { CachedExtractionLoader } from '../CachedExtractionLoader';
-import type { ReaderServices } from '../BookFormat';
+import type { ReaderJumpOptions, ReaderServices } from '../BookFormat';
+import { createEpubSearchDocument } from '../SearchDocumentBuilders';
 import {
   extractEpub,
   readEpubImageBytes,
@@ -25,6 +27,7 @@ export class EpubReader extends PaginatedReaderBase<EpubBook, EpubExtraction, Ep
   protected readonly openErrorMessage = 'Open epub failed';
   protected readonly stopMessage = 'Stop epub reading';
   private readonly extractionLoader: CachedExtractionLoader<EpubExtraction>;
+  private searchDocument?: SearchDocument;
 
   constructor(
     book: BookData,
@@ -76,13 +79,38 @@ export class EpubReader extends PaginatedReaderBase<EpubBook, EpubExtraction, Ep
   }
 
   /** 跳转到指定章节（书籍已由 ReadingSession 打开）。 */
-  jumpToSection(index: number): void {
+  jumpToSection(index: number, offset = 0, options?: ReaderJumpOptions): void {
     if (!this.currentReader) {
       return;
     }
 
-    this.currentReader.jumpToChapter(index);
+    this.currentReader.jumpToChapter(index, offset, options?.persistProgress !== false);
     this.terminal.render();
+  }
+
+  protected getCurrentSectionLocation(): { kind: 'section'; sectionIndex: number; offset: number } | undefined {
+    const progress = this.currentReader?.getCurrentProgress();
+    return progress
+      ? { kind: 'section', sectionIndex: progress.chapterIndex, offset: progress.charOffset }
+      : undefined;
+  }
+
+  getSearchDocument(): SearchDocument | undefined {
+    if (!this.currentReader) {
+      return undefined;
+    }
+    return (this.searchDocument ??= createEpubSearchDocument(
+      this.book.id,
+      this.currentReader.extraction
+    ));
+  }
+
+  protected onOpenStart(): void {
+    this.searchDocument = undefined;
+  }
+
+  protected onStop(): void {
+    this.searchDocument = undefined;
   }
 
   protected getImagesInView(): EpubImage[] {

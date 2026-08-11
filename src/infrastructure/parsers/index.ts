@@ -1,8 +1,14 @@
 import { TxtParser } from './TxtParser';
 import { getFileExtension } from '../../utils/fileExtension';
 
+export type TxtSearchSegment = {
+  text: string;
+  separator: string;
+};
+
 export interface BookParser {
   readContent(): Promise<string[]>;
+  readSearchSegments(): Promise<TxtSearchSegment[]>;
 }
 
 export type TxtEncoding = 'auto' | 'utf-8' | 'utf-16le' | 'utf-16be' | 'gb18030';

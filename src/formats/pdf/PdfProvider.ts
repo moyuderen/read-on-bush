@@ -64,4 +64,8 @@ export class PdfProvider implements BookFormatProvider {
   getCacheSize(): Promise<number> {
     return this.cache.getCacheSize();
   }
+
+  setCacheLimitBytes(maxSizeBytes: number): Promise<void> {
+    return this.cache.setMaxSizeBytes(maxSizeBytes);
+  }
 }

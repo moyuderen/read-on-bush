@@ -17,6 +17,8 @@ export enum Commands {
   SortBookList = 'readOnBush.sortBookList',
   SwitchBookListGroupBy = 'readOnBush.switchBookListGroupBy',
   SearchBook = 'readOnBush.searchBook',
+  SearchCurrentBook = 'readOnBush.searchCurrentBook',
+  SearchBack = 'readOnBush.searchBack',
   PrevLine = 'readOnBush.prev',
   NextLine = 'readOnBush.next',
   JumpLine = 'readOnBush.jump',

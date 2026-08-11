@@ -10,7 +10,7 @@ import {
 import { ImagePreviewPanel } from '../presentation/reader/ImagePreviewPanel';
 import { getReaderDisplaySettings } from '../presentation/reader/ReaderDisplaySettings';
 import { runWithProgressNotification } from './FormatProviderHelpers';
-import type { BookReaderController, ReaderServices } from './BookFormat';
+import type { BookReaderController, ReaderJumpOptions, ReaderServices } from './BookFormat';
 
 export abstract class PaginatedReaderBase<
   TBook extends PaginatedReaderBook,
@@ -95,7 +95,7 @@ export abstract class PaginatedReaderBase<
   }
 
   async close(): Promise<void> {
-    this.stop(false);
+    await this.stop(false);
   }
 
   dispose(): void {
@@ -134,10 +134,14 @@ export abstract class PaginatedReaderBase<
     }
   }
 
-  async jumpTo(target: BookNavigationTarget): Promise<void> {
+  async jumpTo(target: BookNavigationTarget, options?: ReaderJumpOptions): Promise<void> {
     if (target.kind === 'section') {
-      this.jumpToSection(target.sectionIndex);
+      this.jumpToSection(target.sectionIndex, target.offset, options);
     }
+  }
+
+  getCurrentLocation(): BookNavigationTarget | undefined {
+    return this.getCurrentSectionLocation();
   }
 
   refreshPrivacyDisplay(): void {
@@ -153,11 +157,11 @@ export abstract class PaginatedReaderBase<
     this.terminal.render();
   }
 
-  stop(showMessage = true): void {
+  async stop(showMessage = true): Promise<void> {
     this.openGeneration += 1;
     this.onStop();
-    // 翻页进度是防抖写入的，停止前 flush 确保最后一次进度不丢失。
-    void this.services.bookCatalog.flushProgressWrite();
+    // 翻页进度是防抖写入的，停止前等待 flush，确保最后一次进度不丢失。
+    await this.services.bookCatalog.flushProgressWrite();
     this.stopReading(showMessage ? this.stopMessage : undefined);
   }
 
@@ -206,6 +210,15 @@ export abstract class PaginatedReaderBase<
   protected abstract getImagesInView(): TImage[];
   protected abstract pickImage(images: TImage[]): Promise<TImage | undefined>;
   protected abstract showImage(image: TImage): Promise<void>;
-  protected abstract jumpToSection(index: number): void;
+  protected abstract jumpToSection(
+    index: number,
+    offset?: number,
+    options?: ReaderJumpOptions
+  ): void;
+
+  protected getCurrentSectionLocation(): BookNavigationTarget | undefined {
+    return undefined;
+  }
+
   abstract readonly format: BookFormat;
 }

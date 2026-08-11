@@ -155,10 +155,13 @@ export class EpubBook {
     return true;
   }
 
-  jumpToChapter(index: number): void {
-    const lastIndex = Math.max(this.extraction.chapters.length - 1, 0);
-    const chapterIndex = Math.min(Math.max(index, 0), lastIndex);
-    this.setProgress({ chapterIndex, charOffset: 0 });
+  jumpToChapter(index: number, charOffset = 0, persistProgress = true): void {
+    const progress = this.normalizeProgress({ chapterIndex: index, charOffset });
+    this.setProgress(progress, persistProgress);
+  }
+
+  getCurrentProgress(): EpubProgress {
+    return { ...this.progress };
   }
 
   private createChapterMetrics(extraction: EpubExtraction): {
@@ -187,9 +190,11 @@ export class EpubBook {
     return { chapterIndex, charOffset };
   }
 
-  private setProgress(progress: EpubProgress): void {
+  private setProgress(progress: EpubProgress, persistProgress = true): void {
     this.progress = progress;
-    this.book.epubProgress = progress;
-    this.dependencies.progress.updateEpubProgress(this.book.id, progress);
+    if (persistProgress) {
+      this.book.epubProgress = progress;
+      this.dependencies.progress.updateEpubProgress(this.book.id, progress);
+    }
   }
 }

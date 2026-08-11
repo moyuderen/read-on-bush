@@ -4,6 +4,7 @@ export type ExtractionCacheRecord<T> = {
   bookId: string;
   version: number;
   fileMtime: number;
+  lastAccessAt?: number;
   extraction: T;
 };
 
@@ -14,9 +15,7 @@ export type ExtractionCacheOptions<T> = {
   maxSizeBytes?: number;
 };
 
-const pendingOperations = new Map<string, Promise<void>>();
-// 逐目录串行化淘汰，避免多次 set 并发触发时重复扫描/删除。
-const pendingEvictions = new Map<string, Promise<void>>();
+const pendingDirectoryOperations = new Map<string, Promise<void>>();
 
 /**
  * 将 task 串行化到 map 中 key 对应的 promise 链上：
@@ -31,19 +30,29 @@ function serialize(
   const previous = map.get(key) ?? Promise.resolve();
   const current = previous.catch(() => undefined).then(task);
   map.set(key, current);
-  current.finally(() => {
+  const cleanup = () => {
     if (map.get(key) === current) {
       map.delete(key);
     }
-  });
+  };
+  void current.then(cleanup, cleanup);
   return current;
 }
 
 export class ExtractionCache<T> {
+  private maxSizeBytes: number;
+
   constructor(
     private readonly cacheDir: Uri,
     private readonly options: ExtractionCacheOptions<T>
-  ) {}
+  ) {
+    this.maxSizeBytes = options.maxSizeBytes ?? 0;
+  }
+
+  async setMaxSizeBytes(maxSizeBytes: number): Promise<void> {
+    this.maxSizeBytes = Number.isFinite(maxSizeBytes) ? Math.max(0, Math.floor(maxSizeBytes)) : 0;
+    await this.enqueueDirectory(() => this.enforceLimitInternal(this.maxSizeBytes));
+  }
 
   async get(bookId: string, fileMtime: number): Promise<T | undefined> {
     let bytes: Uint8Array;
@@ -58,6 +67,7 @@ export class ExtractionCache<T> {
       if (!this.isValidRecord(value, bookId, fileMtime)) {
         return undefined;
       }
+      void this.touchAccessTime(bookId);
       return value.extraction;
     } catch {
       return undefined;
@@ -65,24 +75,25 @@ export class ExtractionCache<T> {
   }
 
   async set(bookId: string, fileMtime: number, extraction: T): Promise<void> {
-    await this.enqueue(bookId, async () => {
+    await this.enqueueDirectory(async () => {
       await workspace.fs.createDirectory(this.cacheDir);
       const record: ExtractionCacheRecord<T> = {
         bookId,
         version: this.options.version,
         fileMtime,
+        lastAccessAt: Date.now(),
         extraction
       };
       await workspace.fs.writeFile(
         this.recordUri(bookId),
         new TextEncoder().encode(JSON.stringify(record))
       );
+      await this.enforceLimitInternal(this.maxSizeBytes);
     });
-    this.scheduleEviction();
   }
 
   async delete(bookId: string): Promise<void> {
-    await this.enqueue(bookId, async () => {
+    await this.enqueueDirectory(async () => {
       try {
         await workspace.fs.delete(this.recordUri(bookId));
       } catch {
@@ -99,21 +110,23 @@ export class ExtractionCache<T> {
 
   /** 删除缓存目录中的所有 `.json` 文件。 */
   async clearAll(): Promise<void> {
-    const names = await this.listCacheFileNames();
-    await Promise.all(names.map((name) => this.deleteCacheFile(name)));
+    await this.enqueueDirectory(async () => {
+      const names = await this.listCacheFileNames();
+      await Promise.all(names.map((name) => this.deleteCacheFile(name)));
+    });
   }
 
-  /**
-   * 容量淘汰：按文件 mtime（写入时间）升序删除，直到总大小 ≤ maxBytes。
-   * 这是最少最近写入优先（least-recently-written），非严格 LRU——
-   * get（读取）不更新 mtime，因此频繁阅读但未重新解析的书籍仍可能被淘汰。
-   */
+  /** 按最后访问时间淘汰缓存；旧记录回退到文件 mtime。 */
   async enforceLimit(maxBytes: number): Promise<void> {
+    await this.enqueueDirectory(() => this.enforceLimitInternal(maxBytes));
+  }
+
+  private async enforceLimitInternal(maxBytes: number): Promise<void> {
     if (maxBytes <= 0) {
       return;
     }
 
-    const entries = (await this.listCacheEntries()).sort((a, b) => a.mtime - b.mtime);
+    const entries = (await this.listCacheEntries()).sort((a, b) => a.lastAccessAt - b.lastAccessAt);
     const totalSize = entries.reduce((sum, entry) => sum + entry.size, 0);
     if (totalSize <= maxBytes) {
       return;
@@ -133,35 +146,37 @@ export class ExtractionCache<T> {
     await Promise.all(victims.map((name) => this.deleteCacheFile(name)));
   }
 
-  private scheduleEviction(): void {
-    const maxBytes = this.options.maxSizeBytes;
-    if (!maxBytes || maxBytes <= 0) {
-      return;
-    }
-    void serialize(pendingEvictions, this.cacheDir.toString(), () =>
-      this.enforceLimit(maxBytes)
-    );
-  }
-
   /**
-   * 扫描缓存目录，返回 `.json` 文件的名称、大小和 mtime。
-   * stat 调用并行执行。目录不存在或读取失败时返回空数组（不抛错）。
+   * 扫描缓存目录，返回文件大小和最后访问时间。
+   * 旧缓存没有 lastAccessAt 时回退到文件 mtime。
    */
   private async listCacheEntries(): Promise<
-    Array<{ name: string; size: number; mtime: number }>
+    Array<{ name: string; size: number; lastAccessAt: number }>
   > {
     const names = await this.listCacheFileNames();
     const stats = await Promise.all(
       names.map(async (name) => {
         try {
-          const stat = await workspace.fs.stat(Uri.joinPath(this.cacheDir, name));
-          return { name, size: stat.size, mtime: stat.mtime };
+          const uri = Uri.joinPath(this.cacheDir, name);
+          const stat = await workspace.fs.stat(uri);
+          let lastAccessAt = stat.mtime;
+          try {
+            const value = JSON.parse(new TextDecoder('utf-8').decode(await workspace.fs.readFile(uri))) as {
+              lastAccessAt?: unknown;
+            };
+            if (typeof value.lastAccessAt === 'number') {
+              lastAccessAt = value.lastAccessAt;
+            }
+          } catch {
+            // 读取元数据失败时使用文件 mtime。
+          }
+          return { name, size: stat.size, lastAccessAt };
         } catch {
           return undefined;
         }
       })
     );
-    return stats.filter((entry): entry is { name: string; size: number; mtime: number } =>
+    return stats.filter((entry): entry is { name: string; size: number; lastAccessAt: number } =>
       entry !== undefined
     );
   }
@@ -206,8 +221,21 @@ export class ExtractionCache<T> {
     );
   }
 
-  private enqueue(bookId: string, operation: () => Promise<void>): Promise<void> {
-    return serialize(pendingOperations, `${this.cacheDir.toString()}::${bookId}`, operation);
+  private async touchAccessTime(bookId: string): Promise<void> {
+    await this.enqueueDirectory(async () => {
+      const uri = this.recordUri(bookId);
+      try {
+        const record = JSON.parse(new TextDecoder('utf-8').decode(await workspace.fs.readFile(uri))) as Record<string, unknown>;
+        record.lastAccessAt = Date.now();
+        await workspace.fs.writeFile(uri, new TextEncoder().encode(JSON.stringify(record)));
+      } catch {
+        // 缓存可能已在触碰期间被清理，忽略即可。
+      }
+    });
+  }
+
+  private enqueueDirectory(operation: () => Promise<void>): Promise<void> {
+    return serialize(pendingDirectoryOperations, this.cacheDir.toString(), operation);
   }
 
   private recordUri(bookId: string): Uri {

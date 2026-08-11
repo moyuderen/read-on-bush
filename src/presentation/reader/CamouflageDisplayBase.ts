@@ -79,6 +79,12 @@ export abstract class CamouflageDisplayBase {
     return this.concealController.isRealContentMode();
   }
 
+  protected executeRealContentCommand(command: string): void {
+    if (this.isRealContentMode()) {
+      void commands.executeCommand(command);
+    }
+  }
+
   focus(): void {
     this.readerView.focus();
   }

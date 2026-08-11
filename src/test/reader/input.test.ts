@@ -47,4 +47,19 @@ suite('CamouflageInput', () => {
 
     assert.deepStrictEqual(calls, ['clear', 'next']);
   });
+
+  test('dispatches f to the search handler', () => {
+    const calls: string[] = [];
+
+    handleCamouflageInput('F', {
+      next: () => calls.push('next'),
+      prev: () => calls.push('prev'),
+      jump: () => calls.push('jump'),
+      search: () => calls.push('search'),
+      toggleDebug: () => calls.push('debug'),
+      quit: () => calls.push('quit')
+    });
+
+    assert.deepStrictEqual(calls, ['search']);
+  });
 });

@@ -1,5 +1,5 @@
 import fs from 'fs';
-import type { BookParser, BookParserOptions, TxtEncoding } from '.';
+import type { BookParser, BookParserOptions, TxtEncoding, TxtSearchSegment } from '.';
 import { LineWidth } from '../../config/constants';
 
 type DecoderEncoding = Exclude<TxtEncoding, 'auto'>;
@@ -189,9 +189,14 @@ export class TxtParser implements BookParser {
   }
 
   async readContent(): Promise<string[]> {
+    const segments = await this.readSearchSegments();
+    return segments.map((segment) => segment.text);
+  }
+
+  async readSearchSegments(): Promise<TxtSearchSegment[]> {
     const bytes = new Uint8Array(await fs.promises.readFile(this.url));
     const { text } = detectEncoding(bytes, this.encoding);
-    const results: string[] = [];
+    const results: TxtSearchSegment[] = [];
 
     let start = 0;
     for (let index = 0; index < text.length; index++) {
@@ -199,17 +204,35 @@ export class TxtParser implements BookParser {
       if (code !== 10 && code !== 13) {
         continue;
       }
-      this.appendLineSegments(results, text.slice(start, index));
+      this.appendSearchLineSegments(results, text.slice(start, index), '\n');
+      if (code === 13 && text.charCodeAt(index + 1) === 10) {
+        index++;
+      }
       start = index + 1;
     }
-    this.appendLineSegments(results, text.slice(start));
+    this.appendSearchLineSegments(results, text.slice(start), '');
 
     return results;
   }
 
-  private appendLineSegments(results: string[], segment: string): void {
+  private appendSearchLineSegments(
+    results: TxtSearchSegment[],
+    segment: string,
+    finalSeparator: string
+  ): void {
+    if (!segment) {
+      if (finalSeparator && results.length > 0) {
+        results[results.length - 1].separator += finalSeparator;
+      }
+      return;
+    }
+
     for (let i = 0; i < segment.length; i += this.lineWidth) {
-      results.push(segment.slice(i, Math.min(i + this.lineWidth, segment.length)));
+      results.push({
+        text: segment.slice(i, Math.min(i + this.lineWidth, segment.length)),
+        separator: i + this.lineWidth < segment.length ? '' : finalSeparator
+      });
     }
   }
+
 }

@@ -24,6 +24,7 @@ export function createDefaultBookFormatRegistry(
 export type {
   BookFormatProvider,
   BookReaderController,
+  ReaderJumpOptions,
   ReaderServices,
   TxtReaderCapability
 } from './BookFormat';

@@ -40,6 +40,10 @@ export class EpubCache {
     return this.cache.getCacheSize();
   }
 
+  setMaxSizeBytes(maxSizeBytes: number): Promise<void> {
+    return this.cache.setMaxSizeBytes(maxSizeBytes);
+  }
+
   clearAll(): Promise<void> {
     return this.cache.clearAll();
   }

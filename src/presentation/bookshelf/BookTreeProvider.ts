@@ -26,7 +26,7 @@ export class BookTreeBookItem extends vscode.TreeItem {
   constructor(
     public readonly bookData: BookData,
     public name: string,
-    public id: string,
+    public readonly bookId: string,
     public url: string,
     public process: number = 0,
     public category?: string,
@@ -34,7 +34,8 @@ export class BookTreeBookItem extends vscode.TreeItem {
     public currentChapterIndex?: number,
     hasOutline = false,
     format: BookFormat = bookData.format ?? 'txt',
-    private readonly privacyDisplayMode: PrivacyDisplayMode = 'normal'
+    private readonly privacyDisplayMode: PrivacyDisplayMode = 'normal',
+    treeItemId = `book/${bookId}`
   ) {
     super(
       name,
@@ -44,6 +45,7 @@ export class BookTreeBookItem extends vscode.TreeItem {
     this.label = `《${this.name}》`;
     this.tooltip = getBookTooltip(bookData, privacyDisplayMode);
     this.iconPath = new vscode.ThemeIcon(getBookIcon(format));
+    this.id = treeItemId;
     this.contextValue = this.type;
     this.command = {
       title: this.name,
@@ -128,7 +130,8 @@ export type BookTreeItem = BookTreeBookItem | BookTreeGroupItem | BookTreeOutlin
 function createBookTreeItem(
   book: BookData,
   registry: BookFormatRegistry,
-  privacyDisplay: PrivacyService
+  privacyDisplay: PrivacyService,
+  treeItemPrefix = 'book'
 ): BookTreeBookItem {
   const provider = registry.getProviderForBook(book);
   const privacyDisplayMode = privacyDisplay.currentMode;
@@ -143,7 +146,8 @@ function createBookTreeItem(
     book.pdfProgress?.pageIndex ?? book.epubProgress?.chapterIndex,
     !!provider?.getOutline,
     provider?.format ?? book.format,
-    privacyDisplayMode
+    privacyDisplayMode,
+    `${treeItemPrefix}/${book.id}`
   );
 }
 
@@ -238,7 +242,7 @@ export class BookTreeProvider
     }
     const bookIds = source
       .filter((item): item is BookTreeBookItem => item.type === 'book')
-      .map((book) => book.id);
+      .map((book) => book.bookId);
     if (bookIds.length === 0) {
       return;
     }
@@ -320,7 +324,7 @@ export class BookTreeProvider
       return outline.map(
         (item) =>
           new BookTreeOutlineItem(
-            element.id,
+            element.bookId,
             item.target,
             item.title,
             isCurrentOutlineTarget(item.target, element.currentChapterIndex),
@@ -339,7 +343,7 @@ export class BookTreeProvider
   getAllBookItems(): BookTreeBookItem[] {
     const byId = new Map<string, BookTreeBookItem>();
     this.walkBookItems(this.books, (item) => {
-      byId.set(item.id, this.preferBookItem(byId.get(item.id), item));
+      byId.set(item.bookId, this.preferBookItem(byId.get(item.bookId), item));
     });
     return [...byId.values()];
   }
@@ -374,7 +378,7 @@ export class BookTreeProvider
   findBookItem(id: string): BookTreeBookItem | undefined {
     let preferred: BookTreeBookItem | undefined;
     this.walkBookItems(this.books, (item) => {
-      if (item.id === id) {
+      if (item.bookId === id) {
         preferred = this.preferBookItem(preferred, item);
       }
     });
@@ -385,7 +389,7 @@ export class BookTreeProvider
   private findAllBookItems(id: string, items: BookTreeItem[]): BookTreeBookItem[] {
     const result: BookTreeBookItem[] = [];
     this.walkBookItems(items, (item) => {
-      if (item.id === id) {
+      if (item.bookId === id) {
         result.push(item);
       }
     });
@@ -445,7 +449,7 @@ export class BookTreeProvider
     }
 
     const children = recentBooks.map((book) => {
-      const item = createBookTreeItem(book, this.registry, this.privacyDisplay);
+      const item = createBookTreeItem(book, this.registry, this.privacyDisplay, 'recent');
       item.contextValue = 'recentBook';
       return item;
     });

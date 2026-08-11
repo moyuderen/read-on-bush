@@ -1,5 +1,7 @@
 import { Uri } from 'vscode';
 import type { BookData, BookFormat, BookOutlineItem } from '../../domain/books';
+import { createEpubSearchDocument } from '../SearchDocumentBuilders';
+import type { SearchDocument } from '../../domain/search';
 import {
   extractEpub,
   toChapterRefs,
@@ -48,6 +50,11 @@ export class EpubProvider implements BookFormatProvider {
     return Promise.resolve(createBookOutline(book));
   }
 
+  async loadSearchDocument(book: BookData): Promise<SearchDocument> {
+    const extraction = await this.extractionLoader.load(book);
+    return createEpubSearchDocument(book.id, extraction);
+  }
+
   deleteCache(book: BookData): Promise<void> {
     return this.cache.delete(book.id);
   }
@@ -58,5 +65,9 @@ export class EpubProvider implements BookFormatProvider {
 
   getCacheSize(): Promise<number> {
     return this.cache.getCacheSize();
+  }
+
+  setCacheLimitBytes(maxSizeBytes: number): Promise<void> {
+    return this.cache.setMaxSizeBytes(maxSizeBytes);
   }
 }

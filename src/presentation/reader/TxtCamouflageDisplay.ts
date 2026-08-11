@@ -71,6 +71,7 @@ export class TxtCamouflageDisplay extends CamouflageDisplayBase {
       next: () => void commands.executeCommand(Commands.NextLine),
       prev: () => void commands.executeCommand(Commands.PrevLine),
       jump: () => void commands.executeCommand(Commands.JumpLine),
+      search: () => this.executeRealContentCommand(Commands.SearchCurrentBook),
       toggleDebug: () => this.toggleDebugContent(),
       quit: () => this.concealController.handleQuitKey(),
       onNonQuitKey: () => this.concealController.clearPendingQuit()

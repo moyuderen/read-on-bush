@@ -8,6 +8,7 @@ import type {
 } from '../domain/books';
 import type {
   BookReaderController,
+  ReaderJumpOptions,
   ReaderServices,
   TxtReaderCapability
 } from '../formats';
@@ -65,6 +66,7 @@ export class ReadingSession implements TxtReadingPort {
 
     this.app.bookList.markLastOpened(book.id);
     this.formatEmitter.fire(reader.format);
+    void this.app.searchService.prewarm(reader.book);
   }
 
   async next(): Promise<void> {
@@ -75,13 +77,13 @@ export class ReadingSession implements TxtReadingPort {
     await this.currentReader?.previous();
   }
 
-  async jumpTo(target: BookNavigationTarget): Promise<void> {
+  async jumpTo(target: BookNavigationTarget, options?: ReaderJumpOptions): Promise<void> {
     if (!this.currentReader?.jumpTo) {
       this.app.notifier.warn('当前书籍不支持该跳转方式');
       return;
     }
 
-    await this.currentReader.jumpTo(target);
+    await this.currentReader.jumpTo(target, options);
   }
 
   async closeCurrent(): Promise<void> {
@@ -94,6 +96,7 @@ export class ReadingSession implements TxtReadingPort {
     await this.app.bookList.flushProgressWrite();
 
     const reader = this.currentReader;
+    this.app.searchService.clear(reader.book.id);
     this.currentReader = undefined;
     await reader.close();
     reader.dispose?.();

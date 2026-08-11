@@ -540,6 +540,18 @@
         "icon": "$(search)"
       },
       {
+        "command": "readOnBush.searchCurrentBook",
+        "title": "搜索当前书籍全文",
+        "category": "Read On Bush",
+        "icon": "$(search)"
+      },
+      {
+        "command": "readOnBush.searchBack",
+        "title": "返回搜索前位置",
+        "category": "Read On Bush",
+        "icon": "$(arrow-left)"
+      },
+      {
         "command": "readOnBush.epub.next",
         "title": "EPUB 读书：下一页",
         "category": "Read On Bush"
@@ -587,6 +599,11 @@
       {
         "command": "readOnBush.pdf.viewImage",
         "title": "PDF 读书：查看图片",
+        "category": "Read On Bush"
+      },
+      {
+        "command": "readOnBush.openBook",
+        "title": "打开书籍",
         "category": "Read On Bush"
       },
       {

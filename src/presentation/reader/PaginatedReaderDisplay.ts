@@ -1,4 +1,3 @@
-import { commands } from 'vscode';
 import { Commands } from '../../config/commands';
 import type { ResolvedTerminalTemplate } from '../readerTemplates';
 import { CamouflageDisplayBase } from './CamouflageDisplayBase';
@@ -103,6 +102,7 @@ export class PaginatedReaderDisplay extends CamouflageDisplayBase {
       next: () => this.executeRealContentCommand(this.commandIds.next),
       prev: () => this.executeRealContentCommand(this.commandIds.prev),
       jump: () => this.executeRealContentCommand(this.commandIds.jump),
+      search: () => this.executeRealContentCommand(Commands.SearchCurrentBook),
       toggleDebug: () => this.toggleDebugContent(),
       quit: () => this.concealController.handleQuitKey(),
       viewImage: () => this.executeRealContentCommand(this.commandIds.viewImage),
@@ -114,11 +114,6 @@ export class PaginatedReaderDisplay extends CamouflageDisplayBase {
     this.book = undefined;
   }
 
-  private executeRealContentCommand(command: string): void {
-    if (this.isRealContentMode()) {
-      void commands.executeCommand(command);
-    }
-  }
 
   private applySettings(settings: ReaderDisplaySettings): void {
     this.updateTemplate(settings.template);

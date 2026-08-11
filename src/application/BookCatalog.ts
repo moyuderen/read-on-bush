@@ -120,7 +120,7 @@ export class BookCatalog implements Disposable {
       }),
       commands.registerCommand(Commands.DeleteBook, (event) => {
         if (this.isBookItem(event)) {
-          this.deleteBook(event.id);
+          this.deleteBook(event.bookId);
         }
       }),
       commands.registerCommand(Commands.RenameBook, (event) => {
@@ -164,7 +164,7 @@ export class BookCatalog implements Disposable {
       }),
       commands.registerCommand(Commands.RemoveFromRecent, (event) => {
         if (this.isBookItem(event)) {
-          this.removeFromRecent(event.id);
+          this.removeFromRecent(event.bookId);
         }
       }),
       commands.registerCommand(Commands.SearchBook, () => {
@@ -178,7 +178,7 @@ export class BookCatalog implements Disposable {
       return;
     }
 
-    const bookData = await this.getExistingBookForOpen(book.id);
+    const bookData = await this.getExistingBookForOpen(book.bookId);
     if (!bookData) {
       return;
     }
@@ -439,11 +439,11 @@ export class BookCatalog implements Disposable {
     }
 
     const nextName = name.trim();
-    this.books = this.bookStorage.renameBook(book.id, nextName);
+    this.books = this.bookStorage.renameBook(book.bookId, nextName);
     this.updateBookTreeProvider();
 
     const currentReader = this.app.readingSession.current;
-    if (currentReader?.book.id === book.id) {
+    if (currentReader?.book.id === book.bookId) {
       currentReader.book.name = nextName;
     }
 
@@ -465,7 +465,7 @@ export class BookCatalog implements Disposable {
       return;
     }
 
-    this.books = this.bookStorage.updateBookPrivacyAlias(book.id, alias);
+    this.books = this.bookStorage.updateBookPrivacyAlias(book.bookId, alias);
     if (this.privacyDisplay.isPrivate) {
       this.updateBookTreeProvider();
     }
@@ -539,12 +539,12 @@ export class BookCatalog implements Disposable {
       if (input === undefined) {
         return;
       }
-      this.applyBookCategory(book.id, input);
+      this.applyBookCategory(book.bookId, input);
       return;
     }
 
     // 选择「清除分类」或已有分类时直接写入。
-    this.applyBookCategory(book.id, pick.action === 'clear' ? '' : pick.label);
+    this.applyBookCategory(book.bookId, pick.action === 'clear' ? '' : pick.label);
   }
 
   private applyBookCategory(bookId: string, category: string) {
@@ -681,7 +681,7 @@ export class BookCatalog implements Disposable {
       return;
     }
 
-    this.books = this.bookStorage.updateBookCategory(book.id);
+    this.books = this.bookStorage.updateBookCategory(book.bookId);
     this.updateBookTreeProvider();
     message('分类已清除');
   }
@@ -722,14 +722,9 @@ export class BookCatalog implements Disposable {
     }
 
     const treeItem = pick.treeItem;
-    const bookId = treeItem.id;
+    const bookId = treeItem.bookId;
 
-    // 预先将该书标记为「最近打开」，使后续 openOnBook → markLastOpened
-    // 检测到 wasMostRecent=true 从而跳过 updateBookTreeProvider 整树重建。
-    // 树不重建 → treeItem 引用始终有效 → reveal 不会失效。
-    this.books = this.bookStorage.updateLastOpened(bookId);
-
-    // 打开阅读——内部 markLastOpened 检测到已是最近阅读，跳过树重建。
+    // 只在阅读器成功打开后由 ReadingSession 记录最近阅读，避免失败打开污染最近阅读列表。
     await this.openOnBook(treeItem);
 
     // 使用当前树中的实例进行 reveal。即使打开流程未来触发了树刷新，
@@ -810,7 +805,7 @@ export class BookCatalog implements Disposable {
     const importTasks: Array<() => Promise<BookData>> = [];
     let skippedCount = 0;
 
-    const isBatch = supported.length > 1;
+    const isBatch = importTasks.length > 1;
 
     for (const filePath of supported) {
       const filePathKey = this.getBookPathKey(filePath);
@@ -837,8 +832,24 @@ export class BookCatalog implements Disposable {
       : await this.runInBatches(importTasks, 3);
 
     if (nextBooks.length > 0) {
-      this.books = this.bookStorage.addBooks(nextBooks, books);
-      this.updateBookTreeProvider();
+      const latestBooks = this.bookStorage.getBooks();
+      const latestPathKeys = new Set(
+        latestBooks.map((book) => this.getBookPathKey(book.url, false))
+      );
+      const booksToAdd = nextBooks.filter((book) => {
+        const key = this.getBookPathKey(book.url, false);
+        if (latestPathKeys.has(key)) {
+          return false;
+        }
+        latestPathKeys.add(key);
+        return true;
+      });
+      skippedCount += nextBooks.length - booksToAdd.length;
+
+      if (booksToAdd.length > 0) {
+        this.books = this.bookStorage.addBooks(booksToAdd, latestBooks);
+        this.updateBookTreeProvider();
+      }
     }
 
     // supported 导入结果消息（维持现有语义）。supported 为空时不弹重复提示，

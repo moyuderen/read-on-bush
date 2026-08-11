@@ -7,6 +7,7 @@ import message from '../utils/message';
 import {
   affectsReadOnBushConfiguration,
   affectsSetting,
+  getCacheLimitMB,
   getDefaultReadingMode,
   getTerminalCamouflageStyle,
   type ReadOnBushSettingKey
@@ -57,6 +58,12 @@ export class ConfigurationCoordinator {
 
     if (defaultReadingModeChanged) {
       applyReadingMode(getDefaultReadingMode());
+    }
+
+    if (affectsSetting(event, 'cacheLimitMB')) {
+      void this.app.formatRegistry
+        .updateCacheLimitBytes(getCacheLimitMB() * 1024 * 1024)
+        .catch(() => message.error('更新解析缓存上限失败'));
     }
 
     if (affectsSetting(event, 'camouflageSurface')) {

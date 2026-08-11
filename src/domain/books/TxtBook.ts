@@ -16,6 +16,7 @@ export class TxtBook {
   public book: BookData;
   public contents: string[];
   public isReading: boolean;
+  private process: number;
   private disposed = false;
 
   constructor(
@@ -26,7 +27,8 @@ export class TxtBook {
     this.book = book;
     this.contents = contents;
     this.isReading = true;
-    this.book.process = Math.min(this.book.process, Math.max(this.contents.length - 1, 0));
+    this.process = Math.min(book.process, Math.max(this.contents.length - 1, 0));
+    this.book.process = this.process;
   }
 
   prevLine(): void {
@@ -34,13 +36,13 @@ export class TxtBook {
       return;
     }
 
-    if (this.book.process < 1) {
+    if (this.process < 1) {
       this.dependencies.notifier.info('已经是第一页了');
       return;
     }
 
     const step = this.dependencies.display.getPrevProcessStep(this.getDisplayState());
-    this.setProcess(this.book.process - step);
+    this.setProcess(this.process - step);
   }
 
   nextLine(): void {
@@ -48,29 +50,29 @@ export class TxtBook {
       return;
     }
 
-    if (this.book.process >= this.contents.length - 1) {
+    if (this.process >= this.contents.length - 1) {
       this.dependencies.notifier.info('已经是最后一页了');
       return;
     }
 
     const step = this.dependencies.display.getNextProcessStep(this.getDisplayState());
-    this.setProcess(this.book.process + step);
+    this.setProcess(this.process + step);
   }
 
-  jumpLine(process: number): void {
+  jumpLine(process: number, persistProgress = true): void {
     if (this.disposed || !this.isReading) {
       return;
     }
 
-    this.setProcess(process);
+    this.setProcess(process, persistProgress);
   }
 
   getDisplayState(): ReadingDisplayState {
     return {
-      content: this.contents[this.book.process] || '',
+      content: this.contents[this.process] || '',
       contents: this.contents,
       book: this.book,
-      process: this.book.process,
+      process: this.process,
       total: this.contents.length,
       isReading: this.isReading
     };
@@ -95,10 +97,13 @@ export class TxtBook {
     this.contents = [];
   }
 
-  private setProcess(process: number): void {
+  private setProcess(process: number, persistProgress = true): void {
     const maxProcess = Math.max(this.contents.length - 1, 0);
-    this.book.process = Math.min(Math.max(process, 0), maxProcess);
+    this.process = Math.min(Math.max(process, 0), maxProcess);
     this.dependencies.display.render(this.getDisplayState());
-    this.dependencies.progress.updateBookProcess(this.book.id, this.book.process);
+    if (persistProgress) {
+      this.book.process = this.process;
+      this.dependencies.progress.updateBookProcess(this.book.id, this.process);
+    }
   }
 }
