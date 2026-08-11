@@ -290,6 +290,16 @@ export class BookTreeProvider
     return element;
   }
 
+  /**
+   * 返回树节点的父节点。
+   * TreeView.reveal() 依赖该方法展开分组并定位嵌套书籍。
+   */
+  getParent(element: BookTreeItem): BookTreeItem | undefined {
+    return this.books.find(
+      (item) => item.type === 'group' && item.children.some((child) => child === element)
+    );
+  }
+
   async getChildren(element?: BookTreeItem | undefined): Promise<BookTreeItem[]> {
     if (!element) {
       return this.books;
@@ -322,19 +332,63 @@ export class BookTreeProvider
     return [];
   }
 
+  /**
+   * 获取树中所有书籍项（扁平化，去重）。
+   * 同一本书可能同时出现在「最近阅读」和正常分组中，优先保留非最近阅读的实例。
+   */
+  getAllBookItems(): BookTreeBookItem[] {
+    const byId = new Map<string, BookTreeBookItem>();
+    this.walkBookItems(this.books, (item) => {
+      byId.set(item.id, this.preferBookItem(byId.get(item.id), item));
+    });
+    return [...byId.values()];
+  }
+
+  private preferBookItem(
+    existing: BookTreeBookItem | undefined,
+    candidate: BookTreeBookItem
+  ): BookTreeBookItem {
+    return !existing ||
+      (existing.contextValue === 'recentBook' && candidate.contextValue !== 'recentBook')
+      ? candidate
+      : existing;
+  }
+
+  private walkBookItems(
+    items: BookTreeItem[],
+    visit: (item: BookTreeBookItem) => void
+  ): void {
+    for (const item of items) {
+      if (item.type === 'book') {
+        visit(item);
+      } else if (item.type === 'group') {
+        this.walkBookItems(item.children, visit);
+      }
+    }
+  }
+
+  /**
+   * 查找指定 id 的书籍树项，优先返回非「最近阅读」分组中的实例，
+   * 使 reveal 定位到书籍的正常位置而非置顶的最近阅读区。
+   */
+  findBookItem(id: string): BookTreeBookItem | undefined {
+    let preferred: BookTreeBookItem | undefined;
+    this.walkBookItems(this.books, (item) => {
+      if (item.id === id) {
+        preferred = this.preferBookItem(preferred, item);
+      }
+    });
+    return preferred;
+  }
+
   /** 查找指定 id 的所有书籍项（同一本书可能同时出现在最近阅读和正常分组中）。 */
   private findAllBookItems(id: string, items: BookTreeItem[]): BookTreeBookItem[] {
     const result: BookTreeBookItem[] = [];
-    for (const item of items) {
-      if (item.type === 'book' && item.id === id) {
+    this.walkBookItems(items, (item) => {
+      if (item.id === id) {
         result.push(item);
       }
-
-      if (item.type === 'group') {
-        result.push(...this.findAllBookItems(id, item.children));
-      }
-    }
-
+    });
     return result;
   }
 

@@ -535,6 +535,11 @@
         "icon": "$(group-by-ref-type)"
       },
       {
+        "command": "readOnBush.searchBook",
+        "title": "搜索书籍",
+        "icon": "$(search)"
+      },
+      {
         "command": "readOnBush.epub.next",
         "title": "EPUB 读书：下一页",
         "category": "Read On Bush"
@@ -693,6 +698,11 @@
         }
       ],
       "view/title": [
+        {
+          "command": "readOnBush.searchBook",
+          "group": "navigation@0",
+          "when": "view == readOnBush-bookList"
+        },
         {
           "command": "readOnBush.import",
           "group": "navigation@1",

@@ -20,13 +20,17 @@ export function getBookMessageName(book: BookData, mode: PrivacyDisplayMode): st
   return mode === 'private' ? '文档' : `《${book.name}》`;
 }
 
+export function getBookFormatLabel(book: BookData): string {
+  return book.format?.toUpperCase() || path.extname(book.url).slice(1).toUpperCase();
+}
+
 export function getBookTooltip(book: BookData, mode: PrivacyDisplayMode): string {
   if (mode === 'private') {
     return getBookDisplayName(book, mode);
   }
 
   const fileName = path.basename(book.url);
-  const format = book.format?.toUpperCase() || path.extname(book.url).slice(1).toUpperCase();
+  const format = getBookFormatLabel(book);
   return format ? `文件：${fileName}\n格式：${format}` : `文件：${fileName}`;
 }
 

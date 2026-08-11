@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { window, commands, workspace, env, Uri, QuickPickItemKind, ProgressLocation } from 'vscode';
-import { type Disposable, type ExtensionContext } from 'vscode';
+import { window, commands, workspace, env, Uri, QuickPickItemKind } from 'vscode';
+import { type Disposable, type ExtensionContext, type TreeView } from 'vscode';
 import { BookTreeProvider, BookTreeItem, BookTreeBookItem } from '../presentation/bookshelf/BookTreeProvider';
 import { ApplicationContext } from './ApplicationContext';
 import {
@@ -23,7 +23,8 @@ import {
   BookStore,
   GlobalStateBookStore
 } from '../infrastructure/storage/BookStore';
-import { PrivacyService } from './PrivacyService';
+import { PrivacyService, getBookFormatLabel } from './PrivacyService';
+import { runWithProgressNotification } from '../formats/FormatProviderHelpers';
 import { DebouncedTask } from '../utils/debounce';
 
 type SortType =
@@ -66,6 +67,7 @@ export class BookCatalog implements Disposable {
   private readonly bookTreeProvider: BookTreeProvider;
   private readonly bookStorage: BookStore;
   private readonly privacyDisplay: PrivacyService;
+  private readonly treeView: TreeView<BookTreeItem>;
 
   /**
    * 翻页时连续写入进度会产生大量序列化与树刷新开销。这里把三种进度写入合并为一次
@@ -95,12 +97,11 @@ export class BookCatalog implements Disposable {
     this.bookTreeProvider.onReassignCategory = (bookIds, category) => {
       this.reassignCategory(bookIds, category);
     };
-    this.context.subscriptions.push(
-      window.createTreeView('readOnBush-bookList', {
-        treeDataProvider: this.bookTreeProvider,
-        dragAndDropController: this.bookTreeProvider
-      })
-    );
+    this.treeView = window.createTreeView('readOnBush-bookList', {
+      treeDataProvider: this.bookTreeProvider,
+      dragAndDropController: this.bookTreeProvider
+    });
+    this.context.subscriptions.push(this.treeView);
     this.initCommands();
     this.updatePrivacyDisplayContext();
   }
@@ -166,6 +167,9 @@ export class BookCatalog implements Disposable {
         if (this.isBookItem(event)) {
           this.removeFromRecent(event.id);
         }
+      }),
+      commands.registerCommand(Commands.SearchBook, () => {
+        void this.searchBook();
       })
     );
   }
@@ -175,8 +179,11 @@ export class BookCatalog implements Disposable {
       return;
     }
 
-    const bookData = await this.getExistingBookForOpen(book.id);
+    await this.openBookById(book.id);
+  }
 
+  private async openBookById(bookId: string): Promise<void> {
+    const bookData = await this.getExistingBookForOpen(bookId);
     if (!bookData) {
       return;
     }
@@ -347,12 +354,7 @@ export class BookCatalog implements Disposable {
       return;
     }
 
-    const bookData = await this.getExistingBookForOpen(lastBook.id);
-    if (!bookData) {
-      return;
-    }
-
-    await this.app.readingSession.open(bookData);
+    await this.openBookById(lastBook.id);
   }
 
   dispose(): void {
@@ -684,6 +686,68 @@ export class BookCatalog implements Disposable {
     message('分类已清除');
   }
 
+  /**
+   * QuickPick 模糊搜索书架中的书籍，选中后在树视图中高亮该书并直接打开阅读。
+   */
+  async searchBook(): Promise<void> {
+    const bookItems = this.bookTreeProvider.getAllBookItems();
+    if (bookItems.length === 0) {
+      message.warn('书架中暂无书籍。');
+      return;
+    }
+
+    const mode = this.privacyDisplay.currentMode;
+    const now = Date.now();
+    const items = bookItems.map((item) => {
+      const book = item.bookData;
+      const format = getBookFormatLabel(book);
+      const description =
+        mode === 'private'
+          ? format
+          : [format, book.category].filter(Boolean).join(' · ');
+      return {
+        label: this.privacyDisplay.getBookDisplayName(book),
+        description,
+        detail: book.lastOpenedAt ? formatRelativeTime(book.lastOpenedAt, now) : undefined,
+        treeItem: item,
+      };
+    });
+
+    const pick = await window.showQuickPick(items, {
+      placeHolder: '搜索书籍…',
+      matchOnDescription: true,
+      matchOnDetail: true,
+    });
+    if (!pick) {
+      return;
+    }
+
+    const treeItem = pick.treeItem;
+    const bookId = treeItem.id;
+
+    // 预先将该书标记为「最近打开」，使后续 openOnBook → markLastOpened
+    // 检测到 wasMostRecent=true 从而跳过 updateBookTreeProvider 整树重建。
+    // 树不重建 → treeItem 引用始终有效 → reveal 不会失效。
+    this.books = this.bookStorage.updateLastOpened(bookId);
+
+    // 打开阅读——内部 markLastOpened 检测到已是最近阅读，跳过树重建。
+    await this.openOnBook(treeItem);
+
+    // 使用当前树中的实例进行 reveal。即使打开流程未来触发了树刷新，
+    // 这里也不会继续使用过期的 TreeItem 引用。
+    const currentTreeItem = this.bookTreeProvider.findBookItem(bookId);
+    if (!currentTreeItem) {
+      return;
+    }
+
+    await commands.executeCommand('readOnBush-bookList.focus');
+    try {
+      await this.treeView.reveal(currentTreeItem, { select: true, focus: false, expand: true });
+    } catch (error) {
+      console.warn('无法定位搜索到的书籍:', error);
+    }
+  }
+
   async switchBookListGroupBy() {
     const options: GroupByOption[] = [
       { label: '不分组', description: '保持扁平书架', value: 'none' },
@@ -763,12 +827,8 @@ export class BookCatalog implements Disposable {
 
     // 批量导入用单条汇总进度通知，避免 N 本并发弹 N 个通知。
     const nextBooks = isBatch
-      ? await window.withProgress(
-          {
-            location: ProgressLocation.Notification,
-            title: `正在导入 ${importTasks.length} 本书...`,
-            cancellable: false
-          },
+      ? await runWithProgressNotification(
+          `正在导入 ${importTasks.length} 本书...`,
           () => this.runInBatches(importTasks, 3)
         )
       : await this.runInBatches(importTasks, 3);
@@ -893,6 +953,27 @@ export class BookCatalog implements Disposable {
         return fallback;
     }
   }
+}
+
+function formatRelativeTime(timestamp: number, now = Date.now()): string {
+  const diff = now - timestamp;
+  const minutes = Math.floor(diff / 60_000);
+  const hours = Math.floor(diff / 3_600_000);
+  const days = Math.floor(diff / 86_400_000);
+
+  if (minutes < 1) {
+    return '刚刚阅读';
+  }
+  if (minutes < 60) {
+    return `${minutes} 分钟前阅读`;
+  }
+  if (hours < 24) {
+    return `${hours} 小时前阅读`;
+  }
+  if (days < 30) {
+    return `${days} 天前阅读`;
+  }
+  return `${new Date(timestamp).toLocaleDateString('zh-CN')} 阅读`;
 }
 
 function formatBytes(bytes: number): string {
