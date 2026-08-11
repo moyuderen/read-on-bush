@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { window, commands, workspace, env, Uri, QuickPickItemKind } from 'vscode';
-import { type ExtensionContext } from 'vscode';
+import { type Disposable, type ExtensionContext } from 'vscode';
 import { BookTreeProvider, BookTreeItem, BookTreeBookItem } from '../presentation/bookshelf/BookTreeProvider';
 import { ApplicationContext } from './ApplicationContext';
 import {
@@ -23,6 +23,7 @@ import {
   GlobalStateBookStore
 } from '../infrastructure/storage/BookStore';
 import { PrivacyService } from './PrivacyService';
+import { DebouncedTask } from '../utils/debounce';
 
 type SortType =
   | 'nameAsc'
@@ -57,13 +58,19 @@ type CategoryPickItem = {
   action?: 'create' | 'clear';
 };
 
-export class BookCatalog {
+export class BookCatalog implements Disposable {
   public app: ApplicationContext;
   public context: ExtensionContext;
   public books: BookData[];
   private readonly bookTreeProvider: BookTreeProvider;
   private readonly bookStorage: BookStore;
   private readonly privacyDisplay: PrivacyService;
+
+  /**
+   * 翻页时连续写入进度会产生大量序列化与树刷新开销。这里把三种进度写入合并为一次
+   * 防抖写入：快速翻页时 500ms 内只持久化/刷新一次。closeCurrent / dispose 时会 flush。
+   */
+  private readonly progressDebounce = new DebouncedTask(500);
 
   constructor(app: ApplicationContext, bookStorage: BookStore = new GlobalStateBookStore()) {
     this.app = app;
@@ -253,18 +260,33 @@ export class BookCatalog {
   }
 
   updateBookProcess(id: string, process: number): void {
-    this.books = this.bookStorage.updateBookProcess(id, process);
-    this.bookTreeProvider.updateBookProcess(id, process);
+    this.progressDebounce.schedule(() => {
+      this.books = this.bookStorage.updateBookProcess(id, process);
+      this.bookTreeProvider.updateBookProcess(id, process);
+    });
   }
 
   updateEpubProgress(id: string, progress: EpubProgress) {
-    this.books = this.bookStorage.updateEpubProgress(id, progress);
-    this.bookTreeProvider.updateEpubProgress(id, progress);
+    this.progressDebounce.schedule(() => {
+      this.books = this.bookStorage.updateEpubProgress(id, progress);
+      this.bookTreeProvider.updateEpubProgress(id, progress);
+    });
   }
 
   updatePdfProgress(id: string, progress: PdfProgress) {
-    this.books = this.bookStorage.updatePdfProgress(id, progress);
-    this.bookTreeProvider.updatePdfProgress(id, progress);
+    this.progressDebounce.schedule(() => {
+      this.books = this.bookStorage.updatePdfProgress(id, progress);
+      this.bookTreeProvider.updatePdfProgress(id, progress);
+    });
+  }
+
+  /** 立即执行尚未触发的防抖进度写入（关闭书籍/卸载扩展时调用，避免丢失最后一次进度）。 */
+  flushProgressWrite(): void {
+    this.progressDebounce.flush();
+  }
+
+  dispose(): void {
+    this.progressDebounce.dispose();
   }
 
   syncChapters(id: string, chapters: ChapterRef[]): BookData | undefined {

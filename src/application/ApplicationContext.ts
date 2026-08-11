@@ -52,6 +52,7 @@ export class ApplicationContext {
       this.readerSurface
     );
     this.bookList = new BookCatalog(this);
+    context.subscriptions.push(this.bookList);
   }
 
   showIdleReaderHint(): void {
