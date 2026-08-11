@@ -6,6 +6,37 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.9.0] - 2026-08-11
+
+### Added
+
+- **自动翻页**：阅读中按 `a` 键启动/暂停/恢复自动翻页。默认按可见字符数估算停留时间（450 字符/分钟，钳制 2–30 秒），支持 `autoTurnFixedSeconds` 固定秒数模式完全覆盖按字数计算。手动翻页/搜索/跳转立即暂停并冻结剩余时间；TXT 与 EPUB/PDF 均支持；到达末页自动停止。
+- **全文搜索**：阅读中按 `f` 搜索当前书籍全文（TXT / EPUB），支持跨段匹配、全角/NFKC 规范化、分页加载、跳转高亮和返回栈；隐私模式下搜索结果自动脱敏。
+- **书架搜索**：书架标题栏新增搜索按钮，QuickPick 模糊搜索书籍并直接打开阅读。
+- **最近阅读**：书架顶部自动展示「最近阅读」分组，按打开时间降序排列；新增「继续阅读」命令和「从最近阅读中移除」右键操作；通过 `recentBookCount` 配置控制数量（默认 5，设为 0 禁用）。
+- **缓存管理**：新增 `cacheLimitMB` 设置（默认 100MB），超过后按 LRU 自动淘汰最旧缓存；新增「清除全部缓存」命令。
+- 新增 `autoTurnSpeed`、`autoTurnMinSeconds`、`autoTurnMaxSeconds`、`autoTurnFixedSeconds` 四项自动翻页配置。
+- EPUB/PDF 大文件首次解析时显示 VS Code 进度通知。
+
+### Changed
+
+- 翻页进度写入改为 500ms 防抖（`DebouncedTask`），减少快速翻页时的序列化开销；关闭/停止前自动 flush 确保进度不丢失。
+- 导入进度通知在隐私模式下不再泄露真实书名。
+- `setStorage` 改为 async 等待写入完成，防止关机丢失进度。
+- 批量导入改用单条汇总进度通知。
+- 缓存淘汰改为按最后访问时间（LRU），读取时异步更新；`cacheLimitMB` 运行时修改立即生效。
+
+### Fixed
+
+- 修复 BookStore 全量保存竞态：内存快照 + 串行队列，flush 等待全部写入完成。
+- 修复 ExtractionCache `clearAll` 与后台写入竞态：目录级统一操作队列。
+- 修复扩展退出时最终阅读进度可能丢失（stop / close / deactivate 均等待 flush）。
+- 修复批量导入使用过期快照覆盖并发增删改。
+- 修复书架树节点重复 `TreeItem.id` 导致点击报命令未找到。
+- 修复搜索书籍提前污染最近阅读列表。
+- 修复 DebouncedTask 缺少 disposed 守卫。
+- 修复 epubPagination 导入路径大小写不一致（TS1261）。
+
 ## [2.8.0] - 2026-08-11
 
 ### Added
