@@ -1,53 +1,54 @@
-import fs from 'fs';
-import message from '../../utils/message';
+import { Uri } from 'vscode';
 import type { BookData, BookFormat, BookOutlineItem } from '../../domain/books';
-import { extractEpub, toChapterRefs } from '../../core/parsers/EpubExtractor';
-import { EpubCache } from '../../core/storage/EpubCache';
-import type { BookFormatProvider, CreateReaderInput, ImportBookInput } from '../types';
-import { EpubReadingController } from './EpubReadingController';
+import {
+  extractEpub,
+  toChapterRefs,
+  type EpubExtraction
+} from '../../infrastructure/parsers/EpubExtractor';
+import { EpubCache } from '../../infrastructure/storage/EpubCache';
+import type { BookFormatProvider, CreateReaderInput, ImportBookInput } from '../BookFormat';
+import { CachedExtractionLoader } from '../CachedExtractionLoader';
+import { createBookOutline, importCachedBook } from '../FormatProviderHelpers';
+import { EpubReader } from './EpubReader';
 
 export class EpubProvider implements BookFormatProvider {
   readonly format: BookFormat = 'epub';
   readonly supportedExtensions = ['epub'];
+  private readonly cache: EpubCache;
+  private readonly extractionLoader: CachedExtractionLoader<EpubExtraction>;
 
-  async importBook(input: ImportBookInput): Promise<BookData> {
-    const bookData: BookData = {
-      name: input.name,
-      id: input.id,
-      process: 0,
-      url: input.filePath,
-      format: this.format,
-      epubProgress: { chapterIndex: 0, charOffset: 0 }
-    };
-
-    try {
-      const extraction = await extractEpub(bookData.url);
-      bookData.chapters = toChapterRefs(extraction);
-
-      const stat = await fs.promises.stat(bookData.url);
-      const cache = EpubCache.create(input.context.globalStorageUri);
-      await cache.set(bookData.id, stat.mtimeMs, extraction);
-    } catch (error) {
-      const text = error instanceof Error ? error.message : '解析 epub 失败';
-      message.warn(`${input.displayName ?? `《${bookData.name}》`}${text}，仍已加入书架`);
-    }
-
-    return bookData;
+  constructor(cacheDirectory: Uri = Uri.file(process.cwd())) {
+    this.cache = EpubCache.create(cacheDirectory);
+    this.extractionLoader = new CachedExtractionLoader(this.cache, extractEpub);
   }
 
-  async createReader(input: CreateReaderInput): Promise<EpubReadingController> {
-    return new EpubReadingController(input.book, input.app.epubReader);
+  importBook(input: ImportBookInput): Promise<BookData> {
+    return importCachedBook({
+      input,
+      createBook: (bookInput) => ({
+        name: bookInput.name,
+        id: bookInput.id,
+        process: 0,
+        url: bookInput.filePath,
+        format: this.format,
+        epubProgress: { chapterIndex: 0, charOffset: 0 }
+      }),
+      extract: extractEpub,
+      toChapterRefs,
+      cache: this.cache,
+      failurePrefix: '解析 epub 失败'
+    });
   }
 
-  async getOutline(book: BookData): Promise<BookOutlineItem[]> {
-    return (book.chapters ?? []).map((chapter, index) => ({
-      id: `${book.id}:section:${index}`,
-      title: chapter.title,
-      target: { kind: 'section', sectionIndex: index }
-    }));
+  createReader(input: CreateReaderInput): EpubReader {
+    return new EpubReader(input.book, input.services, this.extractionLoader);
   }
 
-  async deleteCache(book: BookData, context: ImportBookInput['context']): Promise<void> {
-    await EpubCache.create(context.globalStorageUri).delete(book.id);
+  getOutline(book: BookData): Promise<BookOutlineItem[]> {
+    return Promise.resolve(createBookOutline(book));
+  }
+
+  deleteCache(book: BookData): Promise<void> {
+    return this.cache.delete(book.id);
   }
 }

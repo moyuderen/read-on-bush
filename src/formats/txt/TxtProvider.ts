@@ -1,5 +1,5 @@
 import type { BookData, BookFormat } from '../../domain/books';
-import type { BookFormatProvider, CreateReaderInput, ImportBookInput } from '../types';
+import type { BookFormatProvider, CreateReaderInput, ImportBookInput } from '../BookFormat';
 import { TxtReadingController } from './TxtReadingController';
 
 export class TxtProvider implements BookFormatProvider {
@@ -16,7 +16,7 @@ export class TxtProvider implements BookFormatProvider {
     };
   }
 
-  async createReader(input: CreateReaderInput): Promise<TxtReadingController> {
-    return new TxtReadingController(input.book, input.app);
+  createReader(input: CreateReaderInput): TxtReadingController {
+    return new TxtReadingController(input.book, input.services);
   }
 }

@@ -1,0 +1,77 @@
+:root {
+  color-scheme: light dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 20px;
+  color: var(--vscode-terminal-foreground, var(--vscode-foreground));
+  background: var(--vscode-terminal-background, var(--vscode-panel-background, var(--vscode-editor-background)));
+  font-family: var(--vscode-editor-font-family, var(--vscode-font-family));
+  font-size: var(--vscode-editor-font-size, var(--vscode-font-size));
+  line-height: var(--vscode-editor-line-height, 1.5);
+}
+
+.reader-shell {
+  min-height: calc(100vh - 40px);
+  outline: none;
+  white-space: pre;
+}
+
+.reader-screen {
+  min-height: 1lh;
+  white-space: pre;
+  user-select: text;
+}
+
+.reader-line {
+  min-height: 1lh;
+  white-space: pre;
+}
+
+.reader-line span {
+  white-space: pre;
+}
+
+.ansi-plain {
+  color: var(--vscode-terminal-foreground, var(--vscode-foreground));
+}
+
+.ansi-dim {
+  color: var(--vscode-descriptionForeground);
+}
+
+.ansi-red {
+  color: var(--vscode-terminal-ansiRed, var(--vscode-charts-red));
+}
+
+.ansi-green {
+  color: var(--vscode-terminal-ansiGreen, var(--vscode-charts-green));
+}
+
+.ansi-yellow {
+  color: var(--vscode-terminal-ansiYellow, var(--vscode-charts-yellow));
+}
+
+.ansi-blue {
+  color: var(--vscode-terminal-ansiBlue, var(--vscode-charts-blue));
+}
+
+.ansi-magenta {
+  color: var(--vscode-terminal-ansiMagenta, var(--vscode-charts-purple));
+}
+
+.ansi-cyan {
+  color: var(--vscode-terminal-ansiCyan, var(--vscode-charts-cyan));
+}
+
+.reader-measure {
+  position: absolute;
+  visibility: hidden;
+  white-space: pre;
+  pointer-events: none;
+}
