@@ -8,13 +8,13 @@ import {
   screenFrom,
   wrapChapter,
   type WrappedChapter
-} from './EpubPagination';
+} from './epubPagination';
 
 /**
  * epub 阅读模型。与 txt 的 Book 平行，但：
  * - 内容是 EpubExtraction（章节结构），不是扁平 string[]；
  * - 进度是 { chapterIndex, charOffset }，不是整数 process；
- * - 翻页基于 EpubPagination（跨章自动流入、前后对称）。
+ * - 翻页基于 epubPagination（跨章自动流入、前后对称）。
  *
  * 分页所需的 lineWidth/lineCount 由调用方（epub 终端）按当前终端尺寸在渲染时传入。
  */

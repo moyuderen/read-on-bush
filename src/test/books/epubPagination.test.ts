@@ -3,7 +3,7 @@ import {
   formatResolvedCamouflageScreen,
   resolveBuiltinTemplate
 } from '../../presentation/reader/rendering';
-import { buildProgressLabel, wrapChapter } from '../../domain/books/EpubPagination';
+import { buildProgressLabel, wrapChapter } from '../../domain/books/epubPagination';
 import type { EpubExtraction } from '../../infrastructure/parsers/EpubExtractor';
 
 suite('EpubPagination terminal safety', () => {

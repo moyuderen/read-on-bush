@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { ProgressLocation, window } from 'vscode';
 import message from '../utils/message';
 import type {
   BookData,
@@ -19,7 +20,18 @@ export async function importCachedBook<T>(options: {
   const bookData = options.createBook(options.input);
 
   try {
-    const extraction = await options.extract(bookData.url);
+    const extraction = await window.withProgress(
+      {
+        location: ProgressLocation.Notification,
+        title: `正在导入《${bookData.name}》...`,
+        cancellable: false
+      },
+      async () => {
+        // 先让出事件循环，确保 VS Code 有机会渲染进度通知后再开始同步解析。
+        await new Promise(resolve => setTimeout(resolve));
+        return options.extract(bookData.url);
+      }
+    );
     bookData.chapters = options.toChapterRefs(extraction);
     const stat = await fs.promises.stat(bookData.url);
     await options.cache.set(bookData.id, stat.mtimeMs, extraction);

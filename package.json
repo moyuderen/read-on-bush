@@ -405,10 +405,6 @@
     },
     "commands": [
       {
-        "command": "readOnBush.helloWorld",
-        "title": "Hello World"
-      },
-      {
         "command": "readOnBush.switchReadingMode",
         "title": "快捷键激活",
         "category": "Read On Bush",
@@ -627,12 +623,6 @@
         }
       ]
     },
-    "viewsWelcome": [
-      {
-        "view": "content",
-        "contents": "[Hello World](command:readOnBush.helloWorld)"
-      }
-    ],
     "menus": {
       "view/item/context": [
         {

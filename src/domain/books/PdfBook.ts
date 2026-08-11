@@ -25,7 +25,7 @@ import {
   screenFrom,
   wrapChapter,
   type WrappedChapter
-} from './EpubPagination';
+} from './epubPagination';
 
 /**
  * pdf 阅读模型。镜像 EpubBook，但复用 epub 的分页引擎——一页当作分页里的一个「章节」：
