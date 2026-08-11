@@ -39,6 +39,8 @@ export enum Commands {
 
   OpenBookOutline = 'readOnBush.openBookOutline',
 
+  ClearCache = 'readOnBush.clearCache',
+
   SwitchReadingMode = 'readOnBush.switchReadingMode',
   SwitchCodingMode = 'readOnBush.switchCodingMode'
 }

@@ -9,10 +9,14 @@
 export class DebouncedTask {
   private timer?: ReturnType<typeof setTimeout>;
   private pendingTask?: () => void;
+  private disposed = false;
 
   constructor(private readonly delayMs: number) {}
 
   schedule(task: () => void): void {
+    if (this.disposed) {
+      return;
+    }
     this.pendingTask = task;
     if (this.timer) {
       clearTimeout(this.timer);
@@ -32,6 +36,10 @@ export class DebouncedTask {
   }
 
   dispose(): void {
+    if (this.disposed) {
+      return;
+    }
+    this.disposed = true;
     this.flush();
   }
 }

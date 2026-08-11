@@ -17,6 +17,10 @@ export type ImportBookInput = {
   id: string;
   name: string;
   filePath: string;
+  /** 进度通知/错误提示中使用的显示名称（隐私模式下已脱敏）。 */
+  displayName?: string;
+  /** 批量导入时设为 true，跳过单本书的进度通知。 */
+  silent?: boolean;
 };
 
 export type ReaderPrivacy = ReadingPrivacyPort & {
@@ -26,6 +30,8 @@ export type ReaderPrivacy = ReadingPrivacyPort & {
 
 export type BookCatalogPort = BookProgressPort & {
   syncChapters(id: string, chapters: { title: string }[]): BookData | undefined;
+  /** 立即执行尚未触发的防抖进度写入并等待持久化完成。 */
+  flushProgressWrite(): Promise<void>;
 };
 
 export type ReaderServices = {
@@ -72,4 +78,8 @@ export interface BookFormatProvider {
   createReader(input: CreateReaderInput): BookReaderController;
   getOutline?(book: BookData): Promise<BookOutlineItem[]>;
   deleteCache?(book: BookData): Promise<void>;
+  /** 清除该 provider 的全部缓存文件。 */
+  clearCache?(): Promise<void>;
+  /** 该 provider 缓存当前占用字节数。 */
+  getCacheSize?(): Promise<number>;
 }

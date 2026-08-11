@@ -400,6 +400,13 @@
             "按文件目录分组"
           ],
           "description": "书架分组方式"
+        },
+        "readOnBush.cacheLimitMB": {
+          "type": "number",
+          "default": 100,
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "EPUB/PDF 解析缓存上限（MB）。超过后自动按 LRU 淘汰最旧缓存；设置为 0 表示不限制"
         }
       }
     },
@@ -574,6 +581,12 @@
         "command": "readOnBush.openBookOutline",
         "title": "Open Book Outline",
         "icon": "$(bookmark)"
+      },
+      {
+        "command": "readOnBush.clearCache",
+        "title": "清除全部缓存",
+        "category": "Read On Bush",
+        "icon": "$(trash)"
       }
     ],
     "keybindings": [
@@ -694,6 +707,11 @@
         },
         {
           "command": "readOnBush.createCategory",
+          "group": "navigation",
+          "when": "view == readOnBush-bookList"
+        },
+        {
+          "command": "readOnBush.clearCache",
           "group": "navigation",
           "when": "view == readOnBush-bookList"
         }

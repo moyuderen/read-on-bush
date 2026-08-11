@@ -12,15 +12,16 @@ export type PdfCacheRecord = ExtractionCacheRecord<PdfExtraction>;
 export class PdfCache {
   private readonly cache: ExtractionCache<PdfExtraction>;
 
-  constructor(cacheDir: Uri) {
+  constructor(cacheDir: Uri, maxSizeBytes?: number) {
     this.cache = new ExtractionCache(cacheDir, {
       version: PDF_EXTRACTION_CACHE_VERSION,
-      isExtraction: isPdfExtraction
+      isExtraction: isPdfExtraction,
+      maxSizeBytes
     });
   }
 
-  static create(globalStorageUri: Uri): PdfCache {
-    return new PdfCache(Uri.joinPath(globalStorageUri, 'cache'));
+  static create(globalStorageUri: Uri, maxSizeBytes?: number): PdfCache {
+    return new PdfCache(Uri.joinPath(globalStorageUri, 'cache'), maxSizeBytes);
   }
 
   get(bookId: string, fileMtime: number): Promise<PdfExtraction | undefined> {
@@ -33,6 +34,14 @@ export class PdfCache {
 
   delete(bookId: string): Promise<void> {
     return this.cache.delete(bookId);
+  }
+
+  getCacheSize(): Promise<number> {
+    return this.cache.getCacheSize();
+  }
+
+  clearAll(): Promise<void> {
+    return this.cache.clearAll();
   }
 }
 

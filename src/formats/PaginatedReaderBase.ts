@@ -1,4 +1,4 @@
-import { commands, ProgressLocation, window } from 'vscode';
+import { commands } from 'vscode';
 import type { Disposable } from 'vscode';
 import type { BookData, BookFormat, BookNavigationTarget } from '../domain/books';
 import {
@@ -9,6 +9,7 @@ import {
 } from '../presentation/reader/PaginatedReaderDisplay';
 import { ImagePreviewPanel } from '../presentation/reader/ImagePreviewPanel';
 import { getReaderDisplaySettings } from '../presentation/reader/ReaderDisplaySettings';
+import { runWithProgressNotification } from './FormatProviderHelpers';
 import type { BookReaderController, ReaderServices } from './BookFormat';
 
 export abstract class PaginatedReaderBase<
@@ -155,6 +156,8 @@ export abstract class PaginatedReaderBase<
   stop(showMessage = true): void {
     this.openGeneration += 1;
     this.onStop();
+    // 翻页进度是防抖写入的，停止前 flush 确保最后一次进度不丢失。
+    void this.services.bookCatalog.flushProgressWrite();
     this.stopReading(showMessage ? this.stopMessage : undefined);
   }
 
@@ -182,21 +185,15 @@ export abstract class PaginatedReaderBase<
   protected onStop(): void {}
 
   /**
-   * 在 VS Code 进度通知中执行文件解析；解析大文件（首次打开 EPUB/PDF）时向用户展示
-   * 加载状态，缓存命中时快速返回、通知几乎不闪现。隐私模式下书名被替换为"文档"。
+   * 在 VS Code 进度通知中执行文件解析。首次打开（缓存未命中）时通知持续显示；
+   * 缓存命中时解析为 async I/O，事件循环自然让出，通知几乎不闪现。
+   * 隐私模式下书名被替换为"文档"。
    */
   private async loadExtractionWithProgress(book: BookData): Promise<TExtraction> {
-    return window.withProgress(
-      {
-        location: ProgressLocation.Notification,
-        title: `正在解析${this.services.privacyDisplay.getBookMessageName(book)}...`,
-        cancellable: false
-      },
-      async () => {
-        // 先让出事件循环，确保 VS Code 有机会渲染进度通知后再开始同步解析。
-        await new Promise(resolve => setTimeout(resolve));
-        return this.loadExtraction(book);
-      }
+    const displayName = this.services.privacyDisplay.getBookMessageName(book);
+    return runWithProgressNotification(
+      `正在解析${displayName}...`,
+      () => this.loadExtraction(book)
     );
   }
 

@@ -34,9 +34,9 @@ export function getStorage<T = unknown>(key: string): T | undefined {
   }
 }
 
-export function setStorage<T>(key: string, value: T): void {
+export async function setStorage<T>(key: string, value: T): Promise<void> {
   const str = JSON.stringify({ value, type: typeof value });
-  void getStorageInstance().update(key, str);
+  await getStorageInstance().update(key, str);
 }
 
 export function rmStorage(key: string): void {

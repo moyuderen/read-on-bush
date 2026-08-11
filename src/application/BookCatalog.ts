@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { window, commands, workspace, env, Uri, QuickPickItemKind } from 'vscode';
+import { window, commands, workspace, env, Uri, QuickPickItemKind, ProgressLocation } from 'vscode';
 import { type Disposable, type ExtensionContext } from 'vscode';
 import { BookTreeProvider, BookTreeItem, BookTreeBookItem } from '../presentation/bookshelf/BookTreeProvider';
 import { ApplicationContext } from './ApplicationContext';
@@ -71,6 +71,13 @@ export class BookCatalog implements Disposable {
    * 防抖写入：快速翻页时 500ms 内只持久化/刷新一次。closeCurrent / dispose 时会 flush。
    */
   private readonly progressDebounce = new DebouncedTask(500);
+
+  /**
+   * 待执行的进度写入任务，按 `类型:bookId` 去重。
+   * 防抖窗口内不同类型/不同书籍的更新各自记录最新值，flush 时全部执行——
+   * 避免一种类型的更新被另一种类型的 schedule 覆盖丢弃。
+   */
+  private readonly pendingProgress = new Map<string, () => void>();
 
   constructor(app: ApplicationContext, bookStorage: BookStore = new GlobalStateBookStore()) {
     this.app = app;
@@ -147,6 +154,9 @@ export class BookCatalog implements Disposable {
       }),
       commands.registerCommand(Commands.SwitchBookListGroupBy, () => {
         this.switchBookListGroupBy();
+      }),
+      commands.registerCommand(Commands.ClearCache, () => {
+        void this.clearCache();
       })
     );
   }
@@ -260,29 +270,47 @@ export class BookCatalog implements Disposable {
   }
 
   updateBookProcess(id: string, process: number): void {
-    this.progressDebounce.schedule(() => {
+    this.scheduleProgressWrite(`process:${id}`, () => {
       this.books = this.bookStorage.updateBookProcess(id, process);
       this.bookTreeProvider.updateBookProcess(id, process);
     });
   }
 
   updateEpubProgress(id: string, progress: EpubProgress) {
-    this.progressDebounce.schedule(() => {
+    this.scheduleProgressWrite(`epub:${id}`, () => {
       this.books = this.bookStorage.updateEpubProgress(id, progress);
       this.bookTreeProvider.updateEpubProgress(id, progress);
     });
   }
 
   updatePdfProgress(id: string, progress: PdfProgress) {
-    this.progressDebounce.schedule(() => {
+    this.scheduleProgressWrite(`pdf:${id}`, () => {
       this.books = this.bookStorage.updatePdfProgress(id, progress);
       this.bookTreeProvider.updatePdfProgress(id, progress);
     });
   }
 
-  /** 立即执行尚未触发的防抖进度写入（关闭书籍/卸载扩展时调用，避免丢失最后一次进度）。 */
-  flushProgressWrite(): void {
+  /**
+   * 记录一次进度写入任务并触发防抖。同一 key 的多次调用只保留最新值；
+   * 不同 key 各自保留，flush 时全部执行。
+   */
+  private scheduleProgressWrite(key: string, task: () => void): void {
+    this.pendingProgress.set(key, task);
+    this.progressDebounce.schedule(() => this.drainPendingProgress());
+  }
+
+  /** 执行所有待处理的进度写入任务并清空队列。 */
+  private drainPendingProgress(): void {
+    for (const task of this.pendingProgress.values()) {
+      task();
+    }
+    this.pendingProgress.clear();
+  }
+
+  /** 立即执行尚未触发的防抖进度写入，并等待持久化完成（关闭书籍/卸载扩展时调用）。 */
+  async flushProgressWrite(): Promise<void> {
     this.progressDebounce.flush();
+    await this.bookStorage.flush();
   }
 
   dispose(): void {
@@ -632,6 +660,29 @@ export class BookCatalog implements Disposable {
     message('书架分组方式已更新');
   }
 
+  /** 清除 EPUB/PDF 全部解析缓存；阅读进度不受影响，下次打开需重新解析。 */
+  async clearCache() {
+    const size = await this.app.formatRegistry.getTotalCacheSize();
+
+    if (size === 0) {
+      message('缓存为空，无需清除');
+      return;
+    }
+
+    const action = await window.showWarningMessage(
+      `确定清除全部缓存（当前 ${formatBytes(size)}）？阅读进度不受影响，但下次打开 EPUB/PDF 书籍时需要重新解析。`,
+      '清除缓存',
+      '取消'
+    );
+
+    if (action !== '清除缓存') {
+      return;
+    }
+
+    await this.app.formatRegistry.clearAllCaches();
+    message(`已清除全部缓存（${formatBytes(size)}）`);
+  }
+
   private async getBookPathsInDirectory(
     directoryPath: string
   ): Promise<{ supported: string[]; convertible: string[] }> {
@@ -654,6 +705,8 @@ export class BookCatalog implements Disposable {
     const importTasks: Array<() => Promise<BookData>> = [];
     let skippedCount = 0;
 
+    const isBatch = supported.length > 1;
+
     for (const filePath of supported) {
       const filePathKey = this.getBookPathKey(filePath);
 
@@ -663,10 +716,20 @@ export class BookCatalog implements Disposable {
       }
 
       bookPathKeys.add(filePathKey);
-      importTasks.push(() => this.importBookPath(filePath));
+      importTasks.push(() => this.importBookPath(filePath, isBatch));
     }
 
-    const nextBooks = await this.runInBatches(importTasks, 3);
+    // 批量导入用单条汇总进度通知，避免 N 本并发弹 N 个通知。
+    const nextBooks = isBatch
+      ? await window.withProgress(
+          {
+            location: ProgressLocation.Notification,
+            title: `正在导入 ${importTasks.length} 本书...`,
+            cancellable: false
+          },
+          () => this.runInBatches(importTasks, 3)
+        )
+      : await this.runInBatches(importTasks, 3);
 
     if (nextBooks.length > 0) {
       this.books = this.bookStorage.addBooks(nextBooks, books);
@@ -703,13 +766,15 @@ export class BookCatalog implements Disposable {
     return { supported, convertible };
   }
 
-  private async importBookPath(filePath: string): Promise<BookData> {
+  private async importBookPath(filePath: string, silent = false): Promise<BookData> {
     const provider = this.app.formatRegistry.getProviderByPath(filePath);
     const name = path.parse(filePath).base;
     return provider.importBook({
       name,
       id: generateId(),
-      filePath
+      filePath,
+      displayName: this.privacyDisplay.isPrivate ? '文档' : `《${name}》`,
+      silent
     });
   }
 
@@ -786,4 +851,14 @@ export class BookCatalog implements Disposable {
         return fallback;
     }
   }
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

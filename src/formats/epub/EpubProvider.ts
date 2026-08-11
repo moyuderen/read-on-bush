@@ -17,8 +17,8 @@ export class EpubProvider implements BookFormatProvider {
   private readonly cache: EpubCache;
   private readonly extractionLoader: CachedExtractionLoader<EpubExtraction>;
 
-  constructor(cacheDirectory: Uri = Uri.file(process.cwd())) {
-    this.cache = EpubCache.create(cacheDirectory);
+  constructor(cacheDirectory: Uri = Uri.file(process.cwd()), maxSizeBytes?: number) {
+    this.cache = EpubCache.create(cacheDirectory, maxSizeBytes);
     this.extractionLoader = new CachedExtractionLoader(this.cache, extractEpub);
   }
 
@@ -50,5 +50,13 @@ export class EpubProvider implements BookFormatProvider {
 
   deleteCache(book: BookData): Promise<void> {
     return this.cache.delete(book.id);
+  }
+
+  clearCache(): Promise<void> {
+    return this.cache.clearAll();
+  }
+
+  getCacheSize(): Promise<number> {
+    return this.cache.getCacheSize();
   }
 }

@@ -89,8 +89,8 @@ export class ReadingSession implements TxtReadingPort {
       return;
     }
 
-    // 翻页进度是防抖写入的，关闭前立即 flush，确保最后一次进度不丢失。
-    this.app.bookList.flushProgressWrite();
+    // 翻页进度是防抖写入的，关闭前立即 flush 并等待持久化完成，确保最后一次进度不丢失。
+    await this.app.bookList.flushProgressWrite();
 
     const reader = this.currentReader;
     this.currentReader = undefined;

@@ -22,8 +22,8 @@ export class PdfProvider implements BookFormatProvider {
   private readonly cache: PdfCache;
   private readonly extractionLoader: CachedExtractionLoader<PdfExtraction>;
 
-  constructor(cacheDirectory: Uri = Uri.file(process.cwd())) {
-    this.cache = PdfCache.create(cacheDirectory);
+  constructor(cacheDirectory: Uri = Uri.file(process.cwd()), maxSizeBytes?: number) {
+    this.cache = PdfCache.create(cacheDirectory, maxSizeBytes);
     this.extractionLoader = new CachedExtractionLoader(this.cache, extractPdf);
   }
 
@@ -55,5 +55,13 @@ export class PdfProvider implements BookFormatProvider {
 
   deleteCache(book: BookData): Promise<void> {
     return this.cache.delete(book.id);
+  }
+
+  clearCache(): Promise<void> {
+    return this.cache.clearAll();
+  }
+
+  getCacheSize(): Promise<number> {
+    return this.cache.getCacheSize();
   }
 }

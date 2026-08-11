@@ -75,4 +75,29 @@ export class BookFormatRegistry {
       extension.slice(1)
     );
   }
+
+  /**
+   * 清除缓存。EPUB/PDF 共享同一缓存目录，清除任一 provider 即清空全部。
+   */
+  async clearAllCaches(): Promise<void> {
+    for (const provider of new Set(this.providersByExtension.values())) {
+      if (provider.clearCache) {
+        await provider.clearCache();
+        return;
+      }
+    }
+  }
+
+  /**
+   * 所有 provider 缓存当前占用的总字节数。
+   * EPUB/PDF 共享同一目录，仅查询首个支持的 provider 以避免重复计算。
+   */
+  async getTotalCacheSize(): Promise<number> {
+    for (const provider of new Set(this.providersByExtension.values())) {
+      if (provider.getCacheSize) {
+        return provider.getCacheSize();
+      }
+    }
+    return 0;
+  }
 }

@@ -12,15 +12,16 @@ export type EpubCacheRecord = ExtractionCacheRecord<EpubExtraction>;
 export class EpubCache {
   private readonly cache: ExtractionCache<EpubExtraction>;
 
-  constructor(cacheDir: Uri) {
+  constructor(cacheDir: Uri, maxSizeBytes?: number) {
     this.cache = new ExtractionCache(cacheDir, {
       version: EPUB_EXTRACTION_CACHE_VERSION,
-      isExtraction: isEpubExtraction
+      isExtraction: isEpubExtraction,
+      maxSizeBytes
     });
   }
 
-  static create(globalStorageUri: Uri): EpubCache {
-    return new EpubCache(Uri.joinPath(globalStorageUri, 'cache'));
+  static create(globalStorageUri: Uri, maxSizeBytes?: number): EpubCache {
+    return new EpubCache(Uri.joinPath(globalStorageUri, 'cache'), maxSizeBytes);
   }
 
   get(bookId: string, fileMtime: number): Promise<EpubExtraction | undefined> {
@@ -33,6 +34,14 @@ export class EpubCache {
 
   delete(bookId: string): Promise<void> {
     return this.cache.delete(bookId);
+  }
+
+  getCacheSize(): Promise<number> {
+    return this.cache.getCacheSize();
+  }
+
+  clearAll(): Promise<void> {
+    return this.cache.clearAll();
   }
 }
 

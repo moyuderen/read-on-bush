@@ -5,7 +5,9 @@ const BOOKS_STORAGE_KEY = 'books';
 
 export interface BookStore {
   getBooks(): BookData[];
-  saveBooks(books: BookData[]): void;
+  saveBooks(books: BookData[]): Promise<void>;
+  /** 等待所有尚未完成的持久化写入完成（关闭/卸载时调用）。 */
+  flush(): Promise<void>;
   addBook(book: BookData): BookData[];
   addBooks(books: BookData[], existingBooks?: BookData[]): BookData[];
   updateBookProcess(id: string, process: number): BookData[];
@@ -44,20 +46,27 @@ function hasSameNormalization(left: BookData, right: BookData): boolean {
 }
 
 export class GlobalStateBookStore implements BookStore {
+  private pendingSave: Promise<void> = Promise.resolve();
+
   getBooks(): BookData[] {
     const value = getStorage(BOOKS_STORAGE_KEY);
     const books = Array.isArray(value) ? (value as BookData[]) : [];
     const normalizedBooks = books.map(normalizeBook);
 
     if (normalizedBooks.some((book, index) => !hasSameNormalization(book, books[index]))) {
-      this.saveBooks(normalizedBooks);
+      void this.saveBooks(normalizedBooks);
     }
 
     return normalizedBooks;
   }
 
-  saveBooks(books: BookData[]): void {
-    setStorage(BOOKS_STORAGE_KEY, books.map(normalizeBook));
+  saveBooks(books: BookData[]): Promise<void> {
+    this.pendingSave = setStorage(BOOKS_STORAGE_KEY, books.map(normalizeBook));
+    return this.pendingSave;
+  }
+
+  flush(): Promise<void> {
+    return this.pendingSave;
   }
 
   addBook(book: BookData): BookData[] {
