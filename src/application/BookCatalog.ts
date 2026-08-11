@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { window, commands, workspace, env, Uri, QuickPickItemKind } from 'vscode';
+import { window, commands, workspace, env, Uri, QuickPickItemKind, ProgressLocation } from 'vscode';
 import { type Disposable, type ExtensionContext, type TreeView } from 'vscode';
 import { BookTreeProvider, BookTreeItem, BookTreeBookItem } from '../presentation/bookshelf/BookTreeProvider';
 import { ApplicationContext } from './ApplicationContext';
@@ -23,8 +23,7 @@ import {
   BookStore,
   GlobalStateBookStore
 } from '../infrastructure/storage/BookStore';
-import { PrivacyService, getBookFormatLabel } from './PrivacyService';
-import { runWithProgressNotification } from '../formats/FormatProviderHelpers';
+import { PrivacyService, getBookDisplayName } from './PrivacyService';
 import { DebouncedTask } from '../utils/debounce';
 
 type SortType =
@@ -179,11 +178,7 @@ export class BookCatalog implements Disposable {
       return;
     }
 
-    await this.openBookById(book.id);
-  }
-
-  private async openBookById(bookId: string): Promise<void> {
-    const bookData = await this.getExistingBookForOpen(bookId);
+    const bookData = await this.getExistingBookForOpen(book.id);
     if (!bookData) {
       return;
     }
@@ -354,7 +349,12 @@ export class BookCatalog implements Disposable {
       return;
     }
 
-    await this.openBookById(lastBook.id);
+    const bookData = await this.getExistingBookForOpen(lastBook.id);
+    if (!bookData) {
+      return;
+    }
+
+    await this.app.readingSession.open(bookData);
   }
 
   dispose(): void {
@@ -697,18 +697,17 @@ export class BookCatalog implements Disposable {
     }
 
     const mode = this.privacyDisplay.currentMode;
-    const now = Date.now();
     const items = bookItems.map((item) => {
       const book = item.bookData;
-      const format = getBookFormatLabel(book);
+      const format = book.format?.toUpperCase() ?? '';
       const description =
-        mode === 'private'
+        mode === 'private' || !book.category
           ? format
-          : [format, book.category].filter(Boolean).join(' · ');
+          : [format, book.category].join(' · ');
       return {
-        label: this.privacyDisplay.getBookDisplayName(book),
+        label: getBookDisplayName(book, mode),
         description,
-        detail: book.lastOpenedAt ? formatRelativeTime(book.lastOpenedAt, now) : undefined,
+        detail: book.lastOpenedAt ? formatRelativeTime(book.lastOpenedAt) : undefined,
         treeItem: item,
       };
     });
@@ -827,8 +826,12 @@ export class BookCatalog implements Disposable {
 
     // 批量导入用单条汇总进度通知，避免 N 本并发弹 N 个通知。
     const nextBooks = isBatch
-      ? await runWithProgressNotification(
-          `正在导入 ${importTasks.length} 本书...`,
+      ? await window.withProgress(
+          {
+            location: ProgressLocation.Notification,
+            title: `正在导入 ${importTasks.length} 本书...`,
+            cancellable: false
+          },
           () => this.runInBatches(importTasks, 3)
         )
       : await this.runInBatches(importTasks, 3);
@@ -955,8 +958,8 @@ export class BookCatalog implements Disposable {
   }
 }
 
-function formatRelativeTime(timestamp: number, now = Date.now()): string {
-  const diff = now - timestamp;
+function formatRelativeTime(timestamp: number): string {
+  const diff = Date.now() - timestamp;
   const minutes = Math.floor(diff / 60_000);
   const hours = Math.floor(diff / 3_600_000);
   const days = Math.floor(diff / 86_400_000);
