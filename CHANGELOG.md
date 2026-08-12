@@ -6,6 +6,14 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.9.1] - 2026-08-12
+
+### Changed
+
+- 中文化 VS Code 命令面板、书架标题栏和书籍/分类右键菜单中的操作标题。
+- 同步更新 README 中的导入、刷新、排序、分类和隐私界面操作说明。
+- 修正扩展图标配置并精简激活事件配置。
+
 ## [2.9.0] - 2026-08-11
 
 ### Added
