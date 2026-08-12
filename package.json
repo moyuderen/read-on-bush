@@ -57,8 +57,6 @@
   ],
   "icon": "public/moyu.png",
   "activationEvents": [
-    "onView:readOnBush-bookList",
-    "onView:readOnBush-readerView",
     "onStartupFinished"
   ],
   "main": "./out/extension.js",
@@ -489,77 +487,77 @@
       },
       {
         "command": "readOnBush.deleteEntry",
-        "title": "Delete",
+        "title": "删除书籍",
         "icon": "$(trash)"
       },
       {
         "command": "readOnBush.renameBook",
-        "title": "Rename",
+        "title": "重命名书籍",
         "icon": "$(edit)"
       },
       {
         "command": "readOnBush.setBookCategory",
-        "title": "Set Category",
+        "title": "设置分类",
         "icon": "$(tag)"
       },
       {
         "command": "readOnBush.clearBookCategory",
-        "title": "Clear Category",
+        "title": "清除分类",
         "icon": "$(clear-all)"
       },
       {
         "command": "readOnBush.setPrivacyAlias",
-        "title": "Set Privacy Alias",
+        "title": "设置隐私别名",
         "icon": "$(eye)"
       },
       {
         "command": "readOnBush.togglePrivacyDisplay",
-        "title": "Toggle Privacy Display",
+        "title": "切换隐私界面",
         "icon": "$(eye)"
       },
       {
         "command": "readOnBush.enablePrivacyDisplay",
-        "title": "Enable Privacy Display",
+        "title": "开启隐私界面",
         "icon": "$(eye)"
       },
       {
         "command": "readOnBush.disablePrivacyDisplay",
-        "title": "Disable Privacy Display",
+        "title": "关闭隐私界面",
         "icon": "$(eye-closed)"
       },
       {
         "command": "readOnBush.createCategory",
-        "title": "New Category",
+        "title": "新建分类",
         "icon": "$(new-folder)"
       },
       {
         "command": "readOnBush.renameCategory",
-        "title": "Rename Category",
+        "title": "重命名分类",
         "icon": "$(edit)"
       },
       {
         "command": "readOnBush.import",
-        "title": "Import",
+        "title": "导入书籍",
         "icon": "$(add)"
       },
       {
         "command": "readOnBush.importDirectory",
-        "title": "Import Directory",
+        "title": "导入目录",
         "icon": "$(folder)"
       },
       {
         "command": "readOnBush.refreshBookList",
-        "title": "Refresh",
+        "title": "刷新书架",
         "icon": "$(search-refresh)"
       },
       {
         "command": "readOnBush.sortBookList",
-        "title": "Sort",
+        "title": "排序书架",
         "icon": "$(sort-precedence)"
       },
       {
         "command": "readOnBush.switchBookListGroupBy",
-        "title": "Group By",
+        "title": "分组方式",
         "icon": "$(group-by-ref-type)"
       },
       {
@@ -636,7 +634,7 @@
       },
       {
         "command": "readOnBush.openBookOutline",
-        "title": "Open Book Outline",
+        "title": "打开书籍目录",
         "icon": "$(bookmark)"
       },
       {
