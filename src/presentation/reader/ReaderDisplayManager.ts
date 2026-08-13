@@ -85,6 +85,14 @@ export class ReaderDisplayManager {
     this.camouflageDisplay.pause();
   }
 
+  concealActive(): void {
+    this.camouflageDisplay.concealContent();
+  }
+
+  revealActive(): void {
+    this.camouflageDisplay.revealContent();
+  }
+
   refresh(state?: ReadingDisplayState) {
     const currentState = state || this.lastState;
 

@@ -8,6 +8,7 @@ import { createDefaultBookFormatRegistry, type BookFormatRegistry } from '../for
 import { ReadingSession } from './ReadingSession';
 import { SearchService } from './SearchService';
 import { PrivacyService } from './PrivacyService';
+import { AutoConcealService } from './AutoConcealService';
 import {
   SurfaceRouter,
   ReaderViewSurface,
@@ -29,6 +30,7 @@ export class ApplicationContext {
   public readingSession: ReadingSession;
   public searchService: SearchService;
   public privacyDisplay: PrivacyService;
+  public autoConceal: AutoConcealService;
 
   constructor(context: ExtensionContext) {
     this.context = context;
@@ -64,6 +66,8 @@ export class ApplicationContext {
     );
     this.bookList = new BookCatalog(this);
     context.subscriptions.push(this.bookList);
+    this.autoConceal = new AutoConcealService(this);
+    context.subscriptions.push(this.autoConceal);
     context.subscriptions.push(
       commands.registerCommand(Commands.AutoTurnToggle, () => {
         this.readingSession.toggleAutoTurn();

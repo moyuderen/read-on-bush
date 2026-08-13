@@ -440,6 +440,16 @@
           "minimum": 0,
           "maximum": 600,
           "description": "自动翻页每页固定停留秒数。设置为 0 时按字数估算；大于 0 时完全覆盖按字数计算"
+        },
+        "readOnBush.autoConcealOnFocusLoss": {
+          "type": "boolean",
+          "default": true,
+          "description": "VS Code 窗口失去焦点时，自动将伪装阅读内容切换为占位文案（仅对自动触发的隐蔽，恢复焦点时可自动恢复）"
+        },
+        "readOnBush.autoRevealOnFocus": {
+          "type": "boolean",
+          "default": false,
+          "description": "VS Code 窗口恢复焦点时，是否自动恢复因失焦而隐蔽的阅读内容（手动按 q/d 隐蔽的内容不受影响）"
         }
       }
     },

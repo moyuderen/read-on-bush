@@ -77,6 +77,8 @@ export interface BookReaderController {
   refreshPrivacyDisplay?(): void;
   toggleAutoTurn?(): void;
   disposeAutoTurn?(): void;
+  concealContent?(): void;
+  revealContent?(): void;
 }
 
 export interface BookFormatProvider {

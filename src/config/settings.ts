@@ -52,6 +52,8 @@ export type ReadOnBushSettings = {
   autoTurnMinSeconds: number;
   autoTurnMaxSeconds: number;
   autoTurnFixedSeconds: number;
+  autoConcealOnFocusLoss: boolean;
+  autoRevealOnFocus: boolean;
 };
 
 export const defaultSettings: ReadOnBushSettings = {
@@ -76,7 +78,9 @@ export const defaultSettings: ReadOnBushSettings = {
   autoTurnSpeed: 450,
   autoTurnMinSeconds: 2,
   autoTurnMaxSeconds: 30,
-  autoTurnFixedSeconds: 0
+  autoTurnFixedSeconds: 0,
+  autoConcealOnFocusLoss: true,
+  autoRevealOnFocus: false
 };
 
 export type ReadOnBushSettingKey = keyof ReadOnBushSettings;
@@ -286,6 +290,14 @@ export function getAutoTurnConfig(): AutoTurnConfig {
   };
 }
 
+export function getAutoConcealOnFocusLoss(): boolean {
+  return getConfigurationValue('autoConcealOnFocusLoss');
+}
+
+export function getAutoRevealOnFocus(): boolean {
+  return getConfigurationValue('autoRevealOnFocus');
+}
+
 export function getSettings(): ReadOnBushSettings {
   return {
     lineWidth: getLineWidth(),
@@ -309,7 +321,9 @@ export function getSettings(): ReadOnBushSettings {
     autoTurnSpeed: getAutoTurnSpeed(),
     autoTurnMinSeconds: getAutoTurnMinSeconds(),
     autoTurnMaxSeconds: getAutoTurnMaxSeconds(),
-    autoTurnFixedSeconds: getAutoTurnFixedSeconds()
+    autoTurnFixedSeconds: getAutoTurnFixedSeconds(),
+    autoConcealOnFocusLoss: getAutoConcealOnFocusLoss(),
+    autoRevealOnFocus: getAutoRevealOnFocus()
   };
 }
 

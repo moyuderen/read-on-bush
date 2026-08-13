@@ -79,6 +79,20 @@ export abstract class CamouflageDisplayBase {
     return this.concealController.isRealContentMode();
   }
 
+  concealContent(): boolean {
+    if (!this.opened) {
+      return false;
+    }
+    return this.concealController.conceal('auto');
+  }
+
+  revealContent(): boolean {
+    if (!this.opened) {
+      return false;
+    }
+    return this.concealController.reveal('auto');
+  }
+
   protected executeRealContentCommand(command: string): void {
     if (this.isRealContentMode()) {
       void commands.executeCommand(command);

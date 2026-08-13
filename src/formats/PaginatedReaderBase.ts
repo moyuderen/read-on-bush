@@ -175,6 +175,14 @@ export abstract class PaginatedReaderBase<
     this.autoTurn?.toggle();
   }
 
+  concealContent(): void {
+    this.terminal.concealContent();
+  }
+
+  revealContent(): void {
+    this.terminal.revealContent();
+  }
+
   disposeAutoTurn(): void {
     this.autoTurn?.dispose();
     this.autoTurn = undefined;
