@@ -6,6 +6,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.9.3] - 2026-08-14
+
+### Changed
+
+- 补充 README 中「VS Code 窗口失焦自动隐蔽」功能说明及 `autoConcealOnFocusLoss`、`autoRevealOnFocus` 配置项文档，对齐 v2.9.2 已发布功能。
+
 ## [2.9.2] - 2026-08-14
 
 ### Added
