@@ -6,6 +6,13 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [2.9.2] - 2026-08-14
+
+### Added
+
+- **失焦自动隐蔽**：VS Code 窗口失去焦点时，自动将伪装阅读内容切换为占位文案，覆盖终端、阅读面板和状态栏显示。
+- 新增 `autoConcealOnFocusLoss` 和 `autoRevealOnFocus` 配置项；自动恢复只作用于失焦触发的隐蔽，不影响手动按 `q` / `d` 的隐蔽状态。
+
 ## [2.9.1] - 2026-08-12
 
 ### Changed

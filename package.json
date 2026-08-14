@@ -2,7 +2,7 @@
   "name": "readOnBush",
   "displayName": "Read On Bush",
   "description": "在 VS Code 中低调摸鱼看小说——状态栏或终端伪装窗口阅读 TXT / EPUB / PDF，内置书架管理、章节目录、进度跳转与快捷键模式。",
-  "version": "2.9.1",
+  "version": "2.9.2",
   "publisher": "moyuderen",
   "author": {
     "name": "moyuderen",
