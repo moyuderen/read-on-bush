@@ -179,9 +179,16 @@ ls -lh readOnBush-2.9.2.vsix
 
 确认只包含本次发布相关文件后：
 
+- `package.json`
+- `package-lock.json`
+- `CHANGELOG.md`
+- `README.md`（本次版本包含用户可见功能、配置或命令变更时必须纳入）
+
+如果本次没有用户可见变化，README 可以不修改；如果有用户可见变化，发布前必须同步更新功能说明、使用方式和配置项。
+
 ```bash
 git status --short
-git add package.json package-lock.json CHANGELOG.md
+git add package.json package-lock.json CHANGELOG.md README.md
 git commit -m "$(cat <<'EOF'
 chore(release): 发布 v2.9.2
 
