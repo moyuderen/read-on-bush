@@ -14,6 +14,7 @@ import {
 } from '../config/settings';
 
 const displayRefreshSettingKeys: readonly ReadOnBushSettingKey[] = [
+  'readerKeybindings',
   'statusBarPrefix',
   'showProgress',
   'displayTarget',
@@ -23,6 +24,7 @@ const displayRefreshSettingKeys: readonly ReadOnBushSettingKey[] = [
 ];
 
 const readingSessionRefreshSettingKeys: readonly ReadOnBushSettingKey[] = [
+  'readerKeybindings',
   'showChapterTitle',
   'terminalCamouflageLineWidth',
   'terminalCamouflageLineCount',

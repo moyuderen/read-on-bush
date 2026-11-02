@@ -1,4 +1,9 @@
 import { workspace } from 'vscode';
+import {
+  DEFAULT_READER_KEYBINDINGS,
+  resolveReaderKeybindings,
+  type ReaderKeybindings
+} from './readerKeybindings';
 import type { ConfigurationChangeEvent } from 'vscode';
 import { AppName, LineWidth } from './constants';
 import type { AutoTurnConfig } from '../domain/autoTurn';
@@ -30,6 +35,7 @@ export type ImagePreviewMode = (typeof IMAGE_PREVIEW_MODE_OPTIONS)[number];
 export type CamouflageSurface = (typeof CAMOUFLAGE_SURFACE_OPTIONS)[number];
 
 export type ReadOnBushSettings = {
+  readerKeybindings: ReaderKeybindings;
   lineWidth: number;
   txtEncoding: TxtEncodingSetting;
   defaultReadingMode: boolean;
@@ -57,6 +63,7 @@ export type ReadOnBushSettings = {
 };
 
 export const defaultSettings: ReadOnBushSettings = {
+  readerKeybindings: { ...DEFAULT_READER_KEYBINDINGS },
   lineWidth: LineWidth.Default,
   txtEncoding: 'auto',
   defaultReadingMode: true,
@@ -298,8 +305,13 @@ export function getAutoRevealOnFocus(): boolean {
   return getConfigurationValue('autoRevealOnFocus');
 }
 
+export function getReaderKeybindings(): ReaderKeybindings {
+  return resolveReaderKeybindings(getConfigurationValue('readerKeybindings'));
+}
+
 export function getSettings(): ReadOnBushSettings {
   return {
+    readerKeybindings: getReaderKeybindings(),
     lineWidth: getLineWidth(),
     txtEncoding: getTxtEncoding(),
     defaultReadingMode: getDefaultReadingMode(),

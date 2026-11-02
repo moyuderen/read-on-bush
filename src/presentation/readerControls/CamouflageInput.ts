@@ -1,4 +1,10 @@
-export const CAMOUFLAGE_INPUT_KEYS = ['n', 'p', 'j', 'i', 'd', 'f', 'a', 'q'] as const;
+import {
+  DEFAULT_READER_KEYBINDINGS,
+  type ReaderKeybindings,
+  type ReaderAction
+} from '../../config/readerKeybindings';
+
+export const CAMOUFLAGE_INPUT_KEYS = Object.values(DEFAULT_READER_KEYBINDINGS);
 
 export type CamouflageInputHandlers = {
   next: () => void;
@@ -12,73 +18,26 @@ export type CamouflageInputHandlers = {
   onNonQuitKey?: () => void;
 };
 
-export function handleCamouflageInput(data: string, handlers: CamouflageInputHandlers): void {
-  const key = normalizeCamouflageInput(data);
-
-  if (!key) {
-    return;
-  }
-
-  handleCamouflageKey(key, handlers);
-}
-
-function normalizeCamouflageInput(data: string): string | undefined {
+export function handleCamouflageInput(
+  data: string,
+  handlers: CamouflageInputHandlers,
+  keys: ReaderKeybindings = DEFAULT_READER_KEYBINDINGS
+): void {
+  let action: ReaderAction | undefined;
   if (data === '\x1b[C') {
-    return 'n';
+    action = 'next';
+  } else if (data === '\x1b[D') {
+    action = 'prev';
+  } else if (data.length === 1) {
+    action = (Object.keys(keys) as ReaderAction[]).find(
+      (candidate) => keys[candidate] === data.toLowerCase()
+    );
   }
-
-  if (data === '\x1b[D') {
-    return 'p';
-  }
-
-  const key = data.toLowerCase();
-  return key.length === 1 ? key : undefined;
-}
-
-function handleCamouflageKey(key: string, handlers: CamouflageInputHandlers): void {
-  if (key === 'n') {
-    handlers.onNonQuitKey?.();
-    handlers.next();
+  if (!action) {
     return;
   }
-
-  if (key === 'p') {
+  if (action !== 'quit') {
     handlers.onNonQuitKey?.();
-    handlers.prev();
-    return;
   }
-
-  if (key === 'j') {
-    handlers.onNonQuitKey?.();
-    handlers.jump();
-    return;
-  }
-
-  if (key === 'i') {
-    handlers.onNonQuitKey?.();
-    handlers.viewImage?.();
-    return;
-  }
-
-  if (key === 'f') {
-    handlers.onNonQuitKey?.();
-    handlers.search?.();
-    return;
-  }
-
-  if (key === 'd') {
-    handlers.onNonQuitKey?.();
-    handlers.toggleDebug();
-    return;
-  }
-
-  if (key === 'a') {
-    handlers.onNonQuitKey?.();
-    handlers.toggleAutoTurn?.();
-    return;
-  }
-
-  if (key === 'q') {
-    handlers.quit();
-  }
+  handlers[action]?.();
 }

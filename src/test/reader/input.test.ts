@@ -1,7 +1,25 @@
 import * as assert from 'assert';
 import { handleCamouflageInput } from '../../presentation/readerControls/CamouflageInput';
+import { resolveReaderKeybindings } from '../../config/readerKeybindings';
 
 suite('CamouflageInput', () => {
+  test('custom punctuation replaces the default toggle in both directions', () => {
+    const calls: string[] = [];
+    const handlers = {
+      next: () => calls.push('next'), prev: () => calls.push('prev'),
+      jump: () => calls.push('jump'), toggleDebug: () => calls.push('toggle'),
+      quit: () => calls.push('quit'), onNonQuitKey: () => calls.push('clear')
+    };
+    const keys = resolveReaderKeybindings({ toggleDebug: '/', next: 'x', quit: 'z' });
+    for (const data of ['/', '/', 'd', 'n', 'X', '\x1b[C', '\x1b[D', 'z', 'z', '//']) {
+      handleCamouflageInput(data, handlers, keys);
+    }
+    assert.deepStrictEqual(calls, [
+      'clear', 'toggle', 'clear', 'toggle', 'clear', 'next',
+      'clear', 'next', 'clear', 'prev', 'quit', 'quit'
+    ]);
+  });
+
   test('ignores pasted or batched text instead of dispatching every character', () => {
     const calls: string[] = [];
 

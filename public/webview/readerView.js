@@ -59,6 +59,11 @@
       return;
     }
 
+    if (Array.isArray(frame.inputKeys)) {
+      inputKeys.clear();
+      frame.inputKeys.forEach((key) => inputKeys.add(key));
+    }
+
     frame.lines.forEach((line, lineIndex) => {
       const lineElement = lineElements[lineIndex] ?? createLineElement(lineIndex);
       const spans = segmentElements[lineIndex];
@@ -152,6 +157,9 @@
   }
 
   function getInputData(event) {
+    if (event.ctrlKey || event.altKey || event.metaKey || event.isComposing) {
+      return undefined;
+    }
     if (event.key === 'ArrowRight') {
       return '\x1b[C';
     }

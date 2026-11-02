@@ -450,6 +450,71 @@
           "type": "boolean",
           "default": false,
           "description": "VS Code 窗口恢复焦点时，是否自动恢复因失焦而隐蔽的阅读内容（手动按 q/d 隐蔽的内容不受影响）"
+        },
+        "readOnBush.readerKeybindings": {
+          "type": "object",
+          "default": {
+            "next": "n",
+            "prev": "p",
+            "jump": "j",
+            "viewImage": "i",
+            "toggleDebug": "d",
+            "search": "f",
+            "toggleAutoTurn": "a",
+            "quit": "q"
+          },
+          "additionalProperties": false,
+          "description": "终端伪装和阅读面板内的单字符按键。支持可打印 ASCII 字符，字母不区分大小写；左右方向键始终翻页。重复或无效按键会使整组配置回退到默认值。修改后立即生效。",
+          "properties": {
+            "next": {
+              "type": "string",
+              "pattern": "^[!-~]$",
+              "default": "n",
+              "description": "下一页"
+            },
+            "prev": {
+              "type": "string",
+              "pattern": "^[!-~]$",
+              "default": "p",
+              "description": "上一页"
+            },
+            "jump": {
+              "type": "string",
+              "pattern": "^[!-~]$",
+              "default": "j",
+              "description": "跳转"
+            },
+            "viewImage": {
+              "type": "string",
+              "pattern": "^[!-~]$",
+              "default": "i",
+              "description": "查看图片"
+            },
+            "toggleDebug": {
+              "type": "string",
+              "pattern": "^[!-~]$",
+              "default": "d",
+              "description": "隐藏／恢复正文"
+            },
+            "search": {
+              "type": "string",
+              "pattern": "^[!-~]$",
+              "default": "f",
+              "description": "全文搜索"
+            },
+            "toggleAutoTurn": {
+              "type": "string",
+              "pattern": "^[!-~]$",
+              "default": "a",
+              "description": "自动翻页"
+            },
+            "quit": {
+              "type": "string",
+              "pattern": "^[!-~]$",
+              "default": "q",
+              "description": "快速隐藏（连按两次退出）"
+            }
+          }
         }
       }
     },

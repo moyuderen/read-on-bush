@@ -1,4 +1,5 @@
 import { commands, EventEmitter } from 'vscode';
+import { getReaderKeybindings } from '../../config/settings';
 import type { Disposable, ExtensionContext } from 'vscode';
 import { CamouflageConcealController, handleCamouflageInput } from '../readerControls';
 import type { CamouflageInputHandlers } from '../readerControls';
@@ -55,7 +56,7 @@ export abstract class CamouflageDisplayBase {
       return;
     }
 
-    handleCamouflageInput(data, this.getInputHandlers());
+    handleCamouflageInput(data, this.getInputHandlers(), getReaderKeybindings());
   }
 
   hide(): void {

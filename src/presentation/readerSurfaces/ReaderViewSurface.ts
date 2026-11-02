@@ -9,7 +9,7 @@ import {
 } from './ReaderViewProtocol';
 import { formatResolvedTerminalIdleScreen } from '../reader/rendering';
 import { STYLE_SGR_ENTRIES, type ResolvedTerminalTemplate } from '../readerTemplates';
-import { CAMOUFLAGE_INPUT_KEYS } from '../readerControls';
+import { getReaderKeybindings } from '../../config/settings';
 import type { ReaderSurface, ReaderSurfaceFrame } from './ReaderSurface';
 import { createReaderSurfaceFrame } from './ReaderFrame';
 
@@ -97,6 +97,7 @@ export class ReaderViewSurface implements vscode.WebviewViewProvider, ReaderSurf
       protocol: readerViewProtocolVersion,
       mode: frame.mode,
       terminalName: frame.template.template.terminalName,
+      inputKeys: Object.values(getReaderKeybindings()),
       lines: frame.lines
     };
     this.postLatestFrame();
@@ -186,7 +187,7 @@ export class ReaderViewSurface implements vscode.WebviewViewProvider, ReaderSurf
     const protocolConfig = JSON.stringify({
       version: readerViewProtocolVersion,
       styles: STYLE_SGR_ENTRIES.map(({ style }) => style),
-      inputKeys: CAMOUFLAGE_INPUT_KEYS
+      inputKeys: Object.values(getReaderKeybindings())
     }).replace(/</g, '\\u003c');
 
     return `<!DOCTYPE html>
