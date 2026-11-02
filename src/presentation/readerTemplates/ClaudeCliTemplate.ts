@@ -1,5 +1,5 @@
 import { ANSI_DIM, ANSI_GREEN, ANSI_MAGENTA, ANSI_RESET, ANSI_YELLOW, DIFF_CYAN, DIFF_DIM, DIFF_GREEN, DIFF_RED, paint } from './AnsiTemplate';
-import { CLAUDE_CLI_SHORTCUT_HINT } from './TemplateKeys';
+import { getClaudeCliShortcutHint } from './TemplateKeys';
 import type { TemplateHelpers, TerminalTemplate } from './TemplateTypes';
 
 type ParsedReadingProgress = {
@@ -46,17 +46,16 @@ export function createClaudeCliTemplate({
 }: TemplateHelpers): TerminalTemplate {
   const resolveWidth = (columns?: number): number =>
     columns && columns > 0 ? columns : fallbackContentWidth;
-  const bottomChromeCache = new Map<number, { divider: string; shortcutHint: string }>();
+  const bottomChromeCache = new Map<number, { divider: string }>();
 
-  const getBottomChrome = (width: number): { divider: string; shortcutHint: string } => {
+  const getBottomChrome = (width: number): { divider: string } => {
     const cached = bottomChromeCache.get(width);
     if (cached) {
       return cached;
     }
 
     const chrome = {
-      divider: '─'.repeat(width),
-      shortcutHint: paint(fitLineToWidth(CLAUDE_CLI_SHORTCUT_HINT, width), ANSI_DIM)
+      divider: '─'.repeat(width)
     };
     bottomChromeCache.set(width, chrome);
     return chrome;
@@ -77,7 +76,8 @@ export function createClaudeCliTemplate({
   const renderBottom = (progress: string, columns?: number): string[] => {
     const parsed = parseReadingProgress(progress);
     const width = resolveWidth(columns);
-    const { divider, shortcutHint } = getBottomChrome(width);
+    const { divider } = getBottomChrome(width);
+    const shortcutHint = paint(fitLineToWidth(getClaudeCliShortcutHint(), width), ANSI_DIM);
     const doneLine = renderActiveSummaryFromParsed(parsed, width);
     const percent = parsed.percent ?? 30;
     const totalBlocks = 14;

@@ -14,6 +14,7 @@ export type ReaderViewFrame = {
   protocol: typeof readerViewProtocolVersion;
   mode: TerminalCamouflageContentMode;
   terminalName: string;
+  inputKeys?: string[];
   lines: CamouflagePreviewLine[];
 };
 

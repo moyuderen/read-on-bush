@@ -1,6 +1,6 @@
 import type { BuiltinTerminalCamouflageStyle } from '../../config/settings';
 import { createBuiltinTemplates } from '../readerTemplates';
-import { KEYS_HINT } from '../readerTemplates/TemplateKeys';
+import { getKeysHint } from '../readerTemplates/TemplateKeys';
 import { SAFE_SGR_CODE_ALTERNATION } from '../readerTemplates';
 import type { ResolvedTerminalTemplate, TerminalTemplate } from '../readerTemplates';
 import { getCharWidth } from '../../domain/books/TextWidth';
@@ -192,7 +192,7 @@ function formatCamouflageScreenInternal(
   const bottomLines = template.bottom?.(progress, columns) ?? [
     template.done(progress, columns),
     '',
-    KEYS_HINT
+    getKeysHint()
   ];
 
   const lines = [
