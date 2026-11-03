@@ -1,5 +1,6 @@
 import { type BookData, type ChapterRef, type EpubProgress, type PdfProgress } from '../../domain/books';
 import { getStorage, setStorage } from '../../utils/storage';
+import { normalizeBookTxtEncoding, type TxtEncoding } from '../../domain/books/TxtEncoding';
 
 const BOOKS_STORAGE_KEY = 'books';
 
@@ -19,12 +20,14 @@ export interface BookStore {
   renameBook(id: string, name: string): BookData[];
   updateBookCategory(id: string, category?: string): BookData[];
   updateBookPrivacyAlias(id: string, privacyAlias?: string): BookData[];
+  updateBookTxtEncoding(id: string, encoding?: TxtEncoding): BookData[];
   deleteBook(id: string): BookData[];
 }
 
 function normalizeBook(book: BookData, index: number): BookData {
   return {
     ...book,
+    txtEncoding: normalizeBookTxtEncoding(book.txtEncoding),
     order: book.order ?? index,
     createdAt: book.createdAt ?? 0
   };
@@ -44,19 +47,21 @@ function normalizePrivacyAlias(privacyAlias?: string): string | undefined {
 }
 
 function hasSameNormalization(left: BookData, right: BookData): boolean {
-  return left.createdAt === right.createdAt && left.order === right.order;
+  return left.createdAt === right.createdAt && left.order === right.order && left.txtEncoding === right.txtEncoding;
 }
 
 export class GlobalStateBookStore implements BookStore {
   private books?: BookData[];
   private pendingSave: Promise<void> = Promise.resolve();
 
+  constructor(private readonly storage = { getStorage, setStorage }) {}
+
   getBooks(): BookData[] {
     if (this.books) {
       return this.books;
     }
 
-    const value = getStorage(BOOKS_STORAGE_KEY);
+    const value = this.storage.getStorage(BOOKS_STORAGE_KEY);
     const storedBooks = Array.isArray(value) ? (value as BookData[]) : [];
     this.books = storedBooks.map(normalizeBook);
 
@@ -71,7 +76,7 @@ export class GlobalStateBookStore implements BookStore {
     this.books = books.map(normalizeBook);
     const snapshot = this.books.map((book, index) => normalizeBook({ ...book }, index));
     const previous = this.pendingSave;
-    this.pendingSave = previous.catch(() => undefined).then(() => setStorage(BOOKS_STORAGE_KEY, snapshot));
+    this.pendingSave = previous.catch(() => undefined).then(() => this.storage.setStorage(BOOKS_STORAGE_KEY, snapshot));
     return this.pendingSave;
   }
 
@@ -165,6 +170,13 @@ export class GlobalStateBookStore implements BookStore {
     return this.updateBook(id, (book) => ({
       ...book,
       privacyAlias: nextPrivacyAlias
+    }));
+  }
+
+  updateBookTxtEncoding(id: string, encoding?: TxtEncoding): BookData[] {
+    return this.updateBook(id, (book) => ({
+      ...book,
+      txtEncoding: normalizeBookTxtEncoding(encoding)
     }));
   }
 

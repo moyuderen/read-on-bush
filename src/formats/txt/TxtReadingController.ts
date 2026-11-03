@@ -33,7 +33,7 @@ export class TxtReadingController implements BookReaderController {
   async open(): Promise<boolean> {
     const generation = ++this.openGeneration;
     try {
-      const parser = createConfiguredTxtParser(this.book.url);
+      const parser = createConfiguredTxtParser(this.book);
       const searchSegments = await parser.readSearchSegments();
       const contents = searchSegments.map((segment) => segment.text);
       if (generation !== this.openGeneration) {
