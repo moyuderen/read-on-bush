@@ -668,6 +668,12 @@
         "command": "readOnBush.autoTurn.toggle",
         "title": "切换自动翻页",
         "category": "Read On Bush"
+      },
+      {
+        "command": "readOnBush.setTxtEncoding",
+        "title": "设置 TXT 编码",
+        "category": "Read On Bush",
+        "icon": "$(symbol-key)"
       }
     ],
     "keybindings": [
@@ -753,6 +759,11 @@
           "command": "readOnBush.removeFromRecent",
           "group": "inline",
           "when": "view == readOnBush-bookList && viewItem == recentBook"
+        },
+        {
+          "command": "readOnBush.setTxtEncoding",
+          "when": "view == readOnBush-bookList && viewItem =~ /^(book|recentBook)$/",
+          "group": "bookSettings"
         }
       ],
       "view/title": [

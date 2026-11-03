@@ -5,6 +5,7 @@ export enum Commands {
   SetBookCategory = 'readOnBush.setBookCategory',
   ClearBookCategory = 'readOnBush.clearBookCategory',
   SetPrivacyAlias = 'readOnBush.setPrivacyAlias',
+  SetTxtEncoding = 'readOnBush.setTxtEncoding',
   TogglePrivacyDisplay = 'readOnBush.togglePrivacyDisplay',
   EnablePrivacyDisplay = 'readOnBush.enablePrivacyDisplay',
   DisablePrivacyDisplay = 'readOnBush.disablePrivacyDisplay',

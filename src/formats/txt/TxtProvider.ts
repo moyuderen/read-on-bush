@@ -24,7 +24,7 @@ export class TxtProvider implements BookFormatProvider {
   }
 
   async loadSearchDocument(book: BookData): Promise<SearchDocument> {
-    const parser = createConfiguredTxtParser(book.url);
+    const parser = createConfiguredTxtParser(book);
     const segments = await parser.readSearchSegments();
     return createTxtSearchDocument(book.id, segments);
   }

@@ -1,4 +1,5 @@
 import type { BookOutlineItem } from './BookOutline';
+import type { TxtEncoding } from './TxtEncoding';
 
 export type BookFormat = 'txt' | 'epub' | 'pdf' | 'mobi' | 'azw3' | (string & {});
 
@@ -30,6 +31,8 @@ export type BookData = {
   order?: number;
   format?: BookFormat;
   privacyAlias?: string;
+  /** TXT-only override; undefined inherits the global encoding. */
+  txtEncoding?: TxtEncoding;
   epubProgress?: EpubProgress;
   pdfProgress?: PdfProgress;
   chapters?: ChapterRef[];

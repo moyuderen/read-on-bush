@@ -25,6 +25,8 @@ import {
 } from '../infrastructure/storage/BookStore';
 import { PrivacyService, getBookDisplayName } from './PrivacyService';
 import { DebouncedTask } from '../utils/debounce';
+import { TXT_ENCODINGS, type TxtEncoding } from '../domain/books/TxtEncoding';
+import { getTxtEncoding } from '../config/settings';
 
 type SortType =
   | 'nameAsc'
@@ -134,6 +136,9 @@ export class BookCatalog implements Disposable {
       }),
       commands.registerCommand(Commands.ClearBookCategory, (event) => {
         this.clearBookCategory(event);
+      }),
+      commands.registerCommand(Commands.SetTxtEncoding, (event) => {
+        void this.setTxtEncoding(event);
       }),
       commands.registerCommand(Commands.SetPrivacyAlias, (event) => {
         void this.setPrivacyAlias(event);
@@ -448,6 +453,59 @@ export class BookCatalog implements Disposable {
     }
 
     message('重命名成功');
+  }
+
+  async setTxtEncoding(item?: BookTreeItem): Promise<void> {
+    let book: BookData | undefined;
+    if (this.isBookItem(item)) {
+      book = this.getBooks().find((candidate) => candidate.id === item.bookId);
+    } else {
+      const selected = await window.showQuickPick(
+        this.getBooks().filter((candidate) => this.app.formatRegistry.getProviderForBook(candidate)?.format === 'txt')
+          .map((candidate) => ({ label: getBookDisplayName(candidate, this.privacyDisplay.isPrivate ? 'private' : 'normal'), book: candidate })),
+        { placeHolder: '选择要设置编码的 TXT 书籍' }
+      );
+      book = selected?.book;
+    }
+    if (!book) {
+      return;
+    }
+    if (this.app.formatRegistry.getProviderForBook(book)?.format !== 'txt') {
+      message('只有 TXT 书籍支持设置编码');
+      return;
+    }
+    const labels: Record<TxtEncoding, string> = {
+      auto: '自动检测', 'utf-8': 'UTF-8', 'utf-16le': 'UTF-16 LE',
+      'utf-16be': 'UTF-16 BE', gb18030: 'GB18030 / GBK'
+    };
+    const choices: Array<{ label: string; encoding: TxtEncoding | undefined; description?: string }> = [
+      { label: '跟随全局设置', encoding: undefined, description: labels[getTxtEncoding()] },
+      ...TXT_ENCODINGS.map((encoding) => ({ label: labels[encoding], encoding }))
+    ];
+    for (const choice of choices) {
+      if (choice.encoding === book.txtEncoding) {
+        choice.description = [choice.description, '当前'].filter(Boolean).join(' · ');
+      }
+    }
+    const selected = await window.showQuickPick(choices, { placeHolder: '设置此书的 TXT 编码（不影响其他书籍）' });
+    if (!selected || selected.encoding === book.txtEncoding) {
+      return;
+    }
+    // Closing flushes pending progress before replacing the stored book object.
+    const wasOpen = this.app.readingSession.current?.book.id === book.id;
+    if (wasOpen) {
+      await this.app.readingSession.closeCurrent();
+    }
+    this.books = this.bookStorage.updateBookTxtEncoding(book.id, selected.encoding);
+    await this.bookStorage.flush();
+    this.app.searchService.clear(book.id);
+    this.updateBookTreeProvider();
+    const bookId = book.id;
+    const updated = this.books.find((candidate) => candidate.id === bookId);
+    if (wasOpen && updated) {
+      await this.app.readingSession.open(updated);
+    }
+    message('此书编码已设置');
   }
 
   async setPrivacyAlias(book: BookTreeItem) {

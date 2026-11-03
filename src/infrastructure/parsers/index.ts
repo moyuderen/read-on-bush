@@ -11,7 +11,8 @@ export interface BookParser {
   readSearchSegments(): Promise<TxtSearchSegment[]>;
 }
 
-export type TxtEncoding = 'auto' | 'utf-8' | 'utf-16le' | 'utf-16be' | 'gb18030';
+import type { TxtEncoding } from '../../domain/books/TxtEncoding';
+export type { TxtEncoding } from '../../domain/books/TxtEncoding';
 
 export type BookParserOptions = {
   lineWidth?: number;
